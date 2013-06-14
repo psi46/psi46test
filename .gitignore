@@ -1,0 +1,10 @@
+*.dep
+*.dsp
+*.ncb
+*.opt
+*.plg
+*.sln
+*.suo
+*.vcxpro*
+*.inc
+*.exe
