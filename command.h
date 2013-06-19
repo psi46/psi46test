@@ -34,7 +34,7 @@ class CCmdLine
 	char s[CMDLINELENGTH+1];
 	char *cmd, *par;
 	bool read(FILE *f);
-	bool isCmd(char name[]) { return strcmp(cmd,name) == 0; }
+	bool isCmd(const char name[]) { return strcmp(cmd,name) == 0; }
 
 	static const CSymbol symtable[];
 
@@ -62,7 +62,7 @@ typedef bool(*CMDFUNCTION)(CCmdLine &);
 
 class CCommand
 {
-	char *m_help;
+	const char *m_help;
 	CMDFUNCTION m_exec;
 public:
 	friend class CInterpreter;
@@ -79,7 +79,7 @@ public:
 	CInterpreter();
 	~CInterpreter() {};
 	void SetScriptPath(const char path[]);
-	void AddCommand(char name[], CMDFUNCTION f, char help[]);
+	void AddCommand(const char name[], CMDFUNCTION f, const char help[]);
 	bool run(FILE *f, int iter = 0);
 };
 

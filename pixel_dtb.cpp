@@ -20,6 +20,7 @@ bool CTestboard::Open(char name[], bool init)
 
 void CTestboard::Close()
 {
+	if (usb.Connected()) Daq_Close();
 	usb.Close();
 }
 

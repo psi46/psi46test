@@ -7,12 +7,12 @@
 #ifdef _WIN32
 #include <conio.h>
 #else
-#  include <unistd.h>
-#  include <termio.h>
-#  include <readline/readline.h>
-#  include <readline/history.h>
-#  include <cstdlib>
-#  include <cstring>
+#include <unistd.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 #endif
 
 
@@ -39,7 +39,7 @@ bool _kbhit()
 
 bool keypressed()
 {
-	if (!kbhit()) return false;
+	if (!_kbhit()) return false;
 	do getchar(); while (_kbhit());
 	return true;
 }
@@ -304,8 +304,7 @@ void CInterpreter::SetScriptPath(const char path[])
 	strncpy(scriptPath, path, 254);
 }
 
-
-void CInterpreter::AddCommand(char name[],CMDFUNCTION f, char help[])
+void CInterpreter::AddCommand(const char name[], CMDFUNCTION f, const char help[])
 {
 	CCommand c;
 	c.m_help = help;

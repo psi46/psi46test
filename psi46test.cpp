@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 	Log.section("DTB", false);
 	try
 	{
-		if (tb.Open(settings.port_tb))
+		if (tb.Open(settings.port_tb,true))
 		{
 			unsigned char bid;
 			string ver;

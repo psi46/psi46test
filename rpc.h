@@ -4,7 +4,6 @@
 
 #include <vector>
 #include <string>
-#include <cstdint>
 
 #include "rpc_io.h"
 #include "rpc_error.h"

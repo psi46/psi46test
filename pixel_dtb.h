@@ -13,12 +13,8 @@
 #pragma once
 
 #include "rpc.h"
-#include "pipe.h"
-#ifdef _WIN32
-#include "win32\usb.h"
-#else
+//#include "pipe.h"
 #include "linux/usb.h"
-#endif
 
 // size of ROC pixel array
 #define ROC_NUMROWS  80  // # rows
@@ -95,19 +91,19 @@
 class CTestboard
 {
 	CRpcIo *rpc_io;
-	CPipeClient pipe;
+//	CPipeClient pipe;
 	CUSB usb;
 public:
 	CRpcIo& GetIo() { return *rpc_io; }
 
 	CTestboard() : rpc_io(&usb) {}
-	~CTestboard() { Daq_Close(); }
+	~CTestboard() {}
 
 
 	// === DTB connection methods ==============================================
 
-	bool OpenPipe(const char *name) { return pipe.Open(name); }
-	void ClosePipe() { pipe.Close(); }
+//	bool OpenPipe(const char *name) { return pipe.Open(name); }
+//	void ClosePipe() { pipe.Close(); }
 
 	bool EnumFirst(unsigned int &nDevices) { return usb.EnumFirst(nDevices); };
 	bool EnumNext(char name[]) { return usb.EnumNext(name); }
@@ -181,6 +177,7 @@ public:
 	#define SIG_MODE_HI      2
 
 	DTB_EXPORT(dtb1) void Sig_SetMode(uint8_t signal, uint8_t mode);
+	DTB_EXPORT(dtb1) void Sig_SetPRBS(uint8_t signal, uint8_t speed);
 	DTB_EXPORT(dtb1) void Sig_SetDelay(uint8_t signal, uint16_t delay, int8_t duty = 0);
 	DTB_EXPORT(dtb1) void Sig_SetLevel(uint8_t signal, uint8_t level);
 	DTB_EXPORT(dtb1) void Sig_SetOffset(uint8_t offset);

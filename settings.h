@@ -14,7 +14,7 @@ class CSettings
 	bool read_int(int &value, int min, int max);
 	bool read_string(char string[], int size);
 public:
-	bool read(char filename[]);
+	bool read(const char filename[]);
 
 // --- data --------------------------------------------------------------
 	char port_tb[20];   // default USB serial number testboard

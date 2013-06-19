@@ -49,6 +49,7 @@ public:
 			case NO_CMD_MSG:      return "NO_CMD_MSG";
 			case UNKNOWN_CGRP:    return "UNKNOWN_CGRP";
 			case UNKNOWN_CMD:     return "UNKNOWN_CMD";
+            default:              return "?";
 		}
 		return "?";
 	}

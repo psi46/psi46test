@@ -1,53 +1,54 @@
 // pipe.h
 
 #pragma once
-
-#include "windows.h"
 #include "rpc.h"
+#include <unistd.h>
+#include <WinTypes.h>
+#include <sys/uio.h>
 
 class CPipeServer : public CRpcIo
 {
-	HANDLE hPipe;
+	int hPipe;
 public:
-	CPipeServer() : hPipe(INVALID_HANDLE_VALUE) {}
+	CPipeServer() : hPipe(-1) {}
 	~CPipeServer() {}
 	bool Create(const char *name);
 	void WaitConnection();
 	void Close();
 	void Read(void *buffer, unsigned int size)
 	{
-		DWORD n;
-		if (!ReadFile(hPipe, buffer, size, &n, NULL)) throw int(1);
+		ssize_t  n;
+        if ( (n = read(hPipe,buffer,size)) < 0 ) throw int(1);
 	}
 	void Flush() {}
 	void Clear() {}
 	void Write(const void *buffer, unsigned int size)
 	{
-		DWORD n;
-		if (!WriteFile(hPipe, buffer, size, &n, NULL)) throw int(2);
+		ssize_t n;
+        if ((n = write(hPipe, buffer, size)) < 0) throw int(2);
 	}
 };
 
 
 class CPipeClient : public CRpcIo
 {
-	HANDLE hPipe;
+	int hPipe;
 public:
-	CPipeClient() : hPipe(INVALID_HANDLE_VALUE) {}
+	CPipeClient() : hPipe(-1) {}
 	~CPipeClient() {}
 	bool Open(const char *name);
 	void Close();
 	void Read(void *buffer, unsigned int size)
 	{
-		DWORD n;
-		if (!ReadFile(hPipe, buffer, size, &n, NULL)) throw int(1);
+		ssize_t n;
+        if ( (n = read(hPipe, buffer, size)) < 0 ) throw int(1);
 	}
 	void Flush() {}
 	void Clear() {}
 	void Write(const void *buffer, unsigned int size)
 	{ 
-		DWORD n;
-		if (!WriteFile(hPipe, buffer, size, &n, NULL)) throw int(2);
+		ssize_t n;
+        if ((n = write(hPipe, buffer, size)) < 0) throw int(2);
 	}
 };
 

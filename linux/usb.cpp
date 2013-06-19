@@ -1,27 +1,29 @@
 // usb.cpp
 
-#include <stdio.h>
-#include <iostream>
+
+#include "../rpc_error.h"
 #include "usb.h"
+#include <ftd2xx.h>
+
 
 const char* CUSB::GetErrorMsg(int error)
 {
 	switch (error)
 	{
-	case FT_OK:                          return "ok";
-	case FT_INVALID_HANDLE:              return "invalid handle";
-	case FT_DEVICE_NOT_FOUND:            return "device not found";
-	case FT_DEVICE_NOT_OPENED:           return "device not opened";
-	case FT_IO_ERROR:                    return "io error";
-	case FT_INSUFFICIENT_RESOURCES:      return "insufficient resource";
-	case FT_INVALID_PARAMETER:           return "invalid parameter";
-	case FT_INVALID_BAUD_RATE:           return "invalid baud rate";
-	case FT_DEVICE_NOT_OPENED_FOR_ERASE: return "device not opened for erase";
-	case FT_DEVICE_NOT_OPENED_FOR_WRITE: return "device not opened for write";
-	case FT_FAILED_TO_WRITE_DEVICE:      return "failed to write device";
-	case FT_EEPROM_READ_FAILED:          return "eeprom read failed";
-	case FT_EEPROM_WRITE_FAILED:         return "eeprom write failed";
-	case FT_EEPROM_ERASE_FAILED:         return "eeprom erase failed";
+    case FT_OK:                          return "ok";
+    case FT_INVALID_HANDLE:              return "invalid handle";
+    case FT_DEVICE_NOT_FOUND:            return "device not found";
+    case FT_DEVICE_NOT_OPENED:           return "device not opened";
+    case FT_IO_ERROR:                    return "io error";
+    case FT_INSUFFICIENT_RESOURCES:      return "insufficient resource";
+    case FT_INVALID_PARAMETER:           return "invalid parameter";
+    case FT_INVALID_BAUD_RATE:           return "invalid baud rate";
+    case FT_DEVICE_NOT_OPENED_FOR_ERASE: return "device not opened for erase";
+    case FT_DEVICE_NOT_OPENED_FOR_WRITE: return "device not opened for write";
+    case FT_FAILED_TO_WRITE_DEVICE:      return "failed to write device";
+    case FT_EEPROM_READ_FAILED:          return "eeprom read failed";
+    case FT_EEPROM_WRITE_FAILED:         return "eeprom write failed";
+    case FT_EEPROM_ERASE_FAILED:         return "eeprom erase failed";
 	case FT_EEPROM_NOT_PRESENT:          return "eeprom not present";
 	case FT_EEPROM_NOT_PROGRAMMED:       return "eeprom not programmed";
 	case FT_INVALID_ARGS:                return "invalid args";
@@ -34,7 +36,8 @@ const char* CUSB::GetErrorMsg(int error)
 
 bool CUSB::EnumFirst(unsigned int &nDevices)
 {
-	ftStatus = FT_ListDevices(&enumCount, NULL, FT_LIST_NUMBER_ONLY);
+	ftStatus = FT_ListDevices(&enumCount,
+		NULL,FT_LIST_NUMBER_ONLY|FT_OPEN_BY_SERIAL_NUMBER);
 	if (ftStatus != FT_OK)
 	{
 		nDevices = enumCount = enumPos = 0;
@@ -61,17 +64,19 @@ bool CUSB::EnumNext(char name[])
 	return true;
 }
 
+
 bool CUSB::Open(char serialNumber[])
 {
 	if (isUSB_open) { ftStatus = FT_DEVICE_NOT_OPENED; return false; }
 
 	m_posR = m_sizeR = m_posW = 0;
 	ftStatus = FT_OpenEx(serialNumber, FT_OPEN_BY_SERIAL_NUMBER, &ftHandle);
-	if (ftStatus != FT_OK) {
-		return false;
-	}
+	if (ftStatus != FT_OK) return false;
 
-	FT_SetTimeouts(ftHandle,300000,300000);
+	ftStatus = FT_SetBitMode(ftHandle, 0xFF, 0x40);
+	if (ftStatus != FT_OK) return false;
+
+	FT_SetTimeouts(ftHandle,1000,1000);
 	isUSB_open = true;
 	return true;
 }
@@ -85,36 +90,33 @@ void CUSB::Close()
 }
 
 
-bool CUSB::Write(unsigned long bytesToWrite, const void *buffer)
+void CUSB::Write(const void *buffer, unsigned int bytesToWrite)
 {
-	if (!isUSB_open) return false;
+	if (!isUSB_open) throw RpcError(RpcError::WRITE_ERROR);
 
 	unsigned long k=0;
 	for (k=0; k < bytesToWrite; k++)
 	{
-		if (m_posW >= USBWRITEBUFFERSIZE) { if (!Flush()) return false; }
+		if (m_posW >= USBWRITEBUFFERSIZE) Flush();
 		m_bufferW[m_posW++] = ((unsigned char*)buffer)[k];
 	}
-	return true;
 }
 
 
-bool CUSB::Flush()
+void CUSB::Flush()
 {
-	unsigned long bytesWritten;
-	unsigned long bytesToWrite = m_posW;
+	DWORD bytesWritten;
+	DWORD bytesToWrite = m_posW;
 	m_posW = 0;
 
-	if (!isUSB_open) return false;
+	if (!isUSB_open) throw RpcError(RpcError::WRITE_ERROR);
 
-	if (!bytesToWrite) return true;
+	if (!bytesToWrite) return;
 
 	ftStatus = FT_Write(ftHandle, m_bufferW, bytesToWrite, &bytesWritten);
 
-	if (ftStatus != FT_OK) return false;
-	if (bytesWritten != bytesToWrite) { ftStatus = FT_IO_ERROR; return false; }
-
-	return true;
+	if (ftStatus != FT_OK) throw RpcError(RpcError::WRITE_ERROR);
+	if (bytesWritten != bytesToWrite) { ftStatus = FT_IO_ERROR; throw RpcError(RpcError::WRITE_ERROR); }
 }
 
 
@@ -122,7 +124,7 @@ bool CUSB::FillBuffer(unsigned long minBytesToRead)
 {
 	if (!isUSB_open) return false;
 
-	unsigned long bytesAvailable, bytesToRead;
+	DWORD bytesAvailable, bytesToRead;
 
 	ftStatus = FT_GetQueueStatus(ftHandle, &bytesAvailable);
 	if (ftStatus != FT_OK) return false;
@@ -143,12 +145,9 @@ bool CUSB::FillBuffer(unsigned long minBytesToRead)
 }
 
 
-bool CUSB::Read(unsigned long bytesToRead, void *buffer, unsigned long &bytesRead)
+void CUSB::Read(void *buffer,  unsigned int bytesToRead)
 {
-	bool timeout = false;
-	bytesRead = 0;
-
-	if (!isUSB_open) return false;
+	if (!isUSB_open) throw RpcError(RpcError::READ_ERROR);
 
 	unsigned long i;
 
@@ -157,68 +156,31 @@ bool CUSB::Read(unsigned long bytesToRead, void *buffer, unsigned long &bytesRea
 		if (m_posR<m_sizeR)
 			((unsigned char*)buffer)[i] = m_bufferR[m_posR++];
 
-		else if (!timeout)
+		else
 		{
 			unsigned long n = bytesToRead-i;
 			if (n>USBREADBUFFERSIZE) n = USBREADBUFFERSIZE;
 
-			if (!FillBuffer(n)) return false;
-			if (m_sizeR < n) timeout = true;
+			if (!FillBuffer(n)) throw RpcError(RpcError::READ_ERROR);
+			if (m_sizeR < n) throw RpcError(RpcError::READ_ERROR);
 
 			if (m_posR<m_sizeR)
 				((unsigned char*)buffer)[i] = m_bufferR[m_posR++];
 			else
 			{   // timeout (bytesRead < bytesToRead)
-				bytesRead = i;
-				return true;
+				throw RpcError(RpcError::READ_TIMEOUT);
 			}
 		}
-
-		else
-		{
-			bytesRead = i;
-			return true;
-		}
 	}
-
-	bytesRead = bytesToRead;
-	return true;
 }
 
 
-bool CUSB::Clear()
+void CUSB::Clear()
 {
-	if (!isUSB_open) return false;
+	if (!isUSB_open) return;
 
 	ftStatus = FT_Purge(ftHandle, FT_PURGE_RX|FT_PURGE_TX);
 	m_posR = m_sizeR = 0;
 	m_posW = 0;
-
-	return ftStatus != FT_OK;
-}
-
-
-bool CUSB::Read_String(char *s, unsigned short maxlength)
-{
-	char ch = 0;
-	unsigned short i=0;
-	do
-	{
-		if (!Read_CHAR(ch)) return false;
-		if (i<maxlength) { s[i] = ch; i++; }
-	} while (ch != 0);
-	if (i >= maxlength) s[maxlength-1] = 0;
-	return true;
-}
-
-
-bool CUSB::Write_String(const char *s)
-{
-	do
-	{
-		if (!Write_CHAR(*s)) return false;
-		s++;
-	} while (*s != 0);
-	return true;
 }
 

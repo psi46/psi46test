@@ -11,7 +11,7 @@ bool CSettings::read_int(int &value, int min, int max)
 
 	int v;
 	if (sscanf(s,"%i",&v) != 1) return false;
-	if (v<min || max<max) return false;
+	if (v<min || max<v) return false;
 	value = v;
 
 	return true;
@@ -35,8 +35,7 @@ bool CSettings::read_string(char string[], int size)
 	return true;
 }
 
-
-bool CSettings::read(char filename[])
+bool CSettings::read(const char filename[])
 {
 	bool ok = false;
 	f = fopen(filename, "rt");

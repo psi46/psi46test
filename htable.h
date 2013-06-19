@@ -32,14 +32,14 @@ public:
 
 	T* GetFirst()
 	{
-		for (it = 0; it < table_size; it++) if (itEl = table[it]) return &(itEl->value);
+		for (it = 0; it < table_size; it++) if ( (itEl = table[it]) ) return &(itEl->value);
 		return 0;
 	}
 	T* GetNext()
 	{
 		if (!itEl) return 0;
-		if (itEl = itEl->next) return &(itEl->value);
-		while (++it < table_size) if (itEl = table[it]) return &(itEl->value);
+		if ( (itEl = itEl->next) ) return &(itEl->value);
+		while (++it < table_size) if ( (itEl = table[it]) ) return &(itEl->value);
 		return 0;
 	}
 	const char* GetKey() { return itEl ? itEl->s : 0; }
@@ -47,7 +47,7 @@ public:
 
 
 template <class T>
-CHashTable<T>::CHashTable(unsigned int tablesize) : nEntries(0), table_size(tablesize), itEl(0)
+CHashTable<T>::CHashTable(unsigned int tablesize) : itEl(0), nEntries(0), table_size(tablesize)
 {
 	table = new CHashTableEntry*[table_size];
 	for (unsigned int i=0; i<table_size; i++) table[i] = 0;
@@ -138,8 +138,8 @@ bool CHashTable<T>::Delete(const char *key)
 	CHashTableEntry* p;
 	if (!FindEntry(key, i, p)) return false;
 
-	if (p->prev) p->prev->next = p.next; else table[i] = p.next;
-	if (p->next) p->next->prev = p.prev;
+	if (p->prev) p->prev->next = p->next; else table[i] = p->next;
+	if (p->next) p->next->prev = p->prev;
 
 	table[i] = p;
 	delete p;

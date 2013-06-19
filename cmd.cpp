@@ -59,7 +59,7 @@ CMD_PROC(scan)
 					printf(" VER=\"%s\"\n", ver.c_str());
 					tb->Close();
 				}
-				else printf(" - in use\n", i);
+				else printf(" - in use\n");
 			}
 		}
 	}
@@ -357,8 +357,15 @@ CMD_PROC(tinlvl)
 CMD_PROC(clkmode)
 {
 	int mode;
-	PAR_INT(mode,0,2);
-	tb.Sig_SetMode(SIG_CLK, mode);
+	PAR_INT(mode,0,3);
+	if (mode == 3)
+	{
+		int speed;
+		PAR_INT(speed,0,31);
+		tb.Sig_SetPRBS(SIG_CLK, speed);
+	}
+	else
+		tb.Sig_SetMode(SIG_CLK, mode);
 	DO_FLUSH
 	return true;
 }
@@ -366,8 +373,15 @@ CMD_PROC(clkmode)
 CMD_PROC(sdamode)
 {
 	int mode;
-	PAR_INT(mode,0,2);
-	tb.Sig_SetMode(SIG_SDA, mode);
+	PAR_INT(mode,0,3);
+	if (mode == 3)
+	{
+		int speed;
+		PAR_INT(speed,0,31);
+		tb.Sig_SetPRBS(SIG_SDA, speed);
+	}
+	else
+		tb.Sig_SetMode(SIG_SDA, mode);
 	DO_FLUSH
 	return true;
 }
@@ -375,8 +389,15 @@ CMD_PROC(sdamode)
 CMD_PROC(ctrmode)
 {
 	int mode;
-	PAR_INT(mode,0,2);
-	tb.Sig_SetMode(SIG_CTR, mode);
+	PAR_INT(mode,0,3);
+	if (mode == 3)
+	{
+		int speed;
+		PAR_INT(speed,0,31);
+		tb.Sig_SetPRBS(SIG_CTR, speed);
+	}
+	else
+		tb.Sig_SetMode(SIG_CTR, mode);
 	DO_FLUSH
 	return true;
 }
@@ -384,11 +405,19 @@ CMD_PROC(ctrmode)
 CMD_PROC(tinmode)
 {
 	int mode;
-	PAR_INT(mode,0,2);
-	tb.Sig_SetMode(SIG_TIN, mode);
+	PAR_INT(mode,0,3);
+	if (mode == 3)
+	{
+		int speed;
+		PAR_INT(speed,0,31);
+		tb.Sig_SetPRBS(SIG_TIN, speed);
+	}
+	else
+		tb.Sig_SetMode(SIG_TIN, mode);
 	DO_FLUSH
 	return true;
 }
+
 
 CMD_PROC(sigoffset)
 {
@@ -786,7 +815,7 @@ CMD_PROC(scope)
 		tb.Daq_GetData(data[i], 1024);
 		if (data[i].size() != 100)
 		{
-			printf("Data size &i: &i\n", i, int(data[i].size()));
+			printf("Data size %i: %i\n", i, int(data[i].size()));
 			return true;
 		}
 	}
@@ -1472,6 +1501,7 @@ void cmd()
 	CMD_REG(ctrmode,  "ctrmode <mode>                ctr mode");
 	CMD_REG(sdamode,  "sdamode <mode>                sda mode");
 	CMD_REG(tinmode,  "tinmode <mode>                tin mode");
+
 	CMD_REG(sigoffset,"sigoffset <offset>            output signal offset");
 	CMD_REG(lvds,     "lvds                          LVDS inputs");
 	CMD_REG(lcds,     "lcds                          LCDS inputs");
