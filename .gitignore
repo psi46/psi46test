@@ -16,3 +16,9 @@ psi46test_dll/
 *~
 *.o
 bin
+*.flash
+*.log
+*.bak
+*.txt
+psi46test
+*.d
