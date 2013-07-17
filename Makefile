@@ -3,7 +3,7 @@
 OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o linux/usb.o
 
 #CXXFLAGS = -g -O0 -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses
-CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include 
+CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses
 LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib
 
 #################
