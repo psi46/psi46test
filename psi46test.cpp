@@ -24,6 +24,76 @@ CSettings settings;  // global settings
 CProtocol Log;
 
 
+char usbId[64];
+
+bool FindDTB()
+{
+	unsigned int nDev;
+	unsigned int nr;
+	if (tb.EnumFirst(nDev))
+	{
+		if (nDev == 0)
+		{
+			printf("No devices connected.\n");
+			return false;
+		}
+
+		if (nDev == 1)	// If only 1 connected device -> open it
+		{
+			if (!tb.EnumNext(usbId))
+			{
+				printf("Cannot read name of connected device\n");
+				return false;
+			}
+			return true;
+		}
+		
+		// If more than 1 connected device list them
+		printf("\nConnected devices:\n");
+		for (nr=0; nr<nDev; nr++)
+		{
+			if (tb.EnumNext(usbId))
+			{
+				printf("%2u: %s", nr, usbId);
+				if (tb.Open(usbId, false))
+				{
+					try
+					{
+						unsigned int bid = tb.GetBoardId();
+						printf("  BID=%2u\n", bid);
+						tb.Close();
+					}
+					catch (...)
+					{
+						printf("  Not identifiable\n");
+						tb.Close();
+					}
+				}
+				else printf(" - in use\n");	
+			}
+			else printf("Cannot read name of device\n");
+		}
+		
+		printf("Please choose device (0-%u): ", (nDev-1));
+		char choice[8];
+		fgets(choice, 8, stdin);
+		sscanf (choice, "%d", &nr);
+		if (nr >= nDev)
+		{
+			nr = 0;
+			printf("No DTB opened\n");
+			return false;
+		}
+		if (!tb.Enum(usbId, nr))
+		{
+			printf("Cannot read name of device\n");
+			return false;
+		}
+	} else printf("Cannot access the USB driver\n");
+	return true;
+}
+
+
 // --- main ------------------------------------------
 
 void help()
@@ -64,24 +134,34 @@ int main(int argc, char* argv[])
 	}
 
 	// --- open test board --------------------------------
-
 	Log.section("DTB", false);
+
+	char *name = FindDTB() ? usbId : settings.port_tb;
 	try
 	{
-		if (tb.Open(settings.port_tb,true))
+		if (tb.Open(name))
 		{
-			unsigned char bid;
-			string ver;
-			tb.GetVersionString(ver);
-			bid = tb.GetBoardId();
-			printf("DTB %i: %s\n", (int)bid, ver.c_str());
-			Log.printf("BID=%i %s", (int)bid, ver.c_str());
-			if (!tb.CheckCompatibility())
-				printf("WARNING: DTB not compatible this software version!\n");
-			tb.Welcome();
-//			tb.I2cAddr(0);
-			tb.Flush();
-		} else {
+			printf("\nBoard %s opened\n", usbId);
+			string info;
+			try
+			{
+				tb.GetInfo(info);
+				printf("---------------------------------------------\n"
+					   "%s"
+					   "---------------------------------------------\n", info.c_str());
+				tb.Welcome();
+				tb.Flush();
+			}
+			catch(CRpcError e)
+			{
+				e.What();
+				printf("ERROR: DTB software version could not be identified, please update it!\n");
+				tb.Close();
+				printf("Connection to Board %s has been cancelled\n", name);
+			}
+		}
+		else
+		{
 			printf("USB error: %s\n", tb.ConnectionError());
 			printf("ATB: could not open port to device %s\n", settings.port_tb);
 			printf("Connect testboard and try command 'scan' to find connected devices.\n");
@@ -93,9 +173,10 @@ int main(int argc, char* argv[])
 
 		// --- call command interpreter -----------------------
 		nEntry = 0;
+
 		cmd();
 	}
-	catch (RpcError e)
+	catch (CRpcError e)
 	{
 		e.What();
 	}

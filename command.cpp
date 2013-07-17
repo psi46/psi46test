@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <sys/ioctl.h>
 #endif
 
 
@@ -303,6 +304,7 @@ void CInterpreter::SetScriptPath(const char path[])
 {
 	strncpy(scriptPath, path, 254);
 }
+
 
 void CInterpreter::AddCommand(const char name[], CMDFUNCTION f, const char help[])
 {

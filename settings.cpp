@@ -35,6 +35,7 @@ bool CSettings::read_string(char string[], int size)
 	return true;
 }
 
+
 bool CSettings::read(const char filename[])
 {
 	bool ok = false;

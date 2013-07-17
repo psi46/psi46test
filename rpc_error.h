@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-class RpcError
+class CRpcError
 {
 public:
 	enum errorId
@@ -23,12 +23,11 @@ public:
 		CMD_PAR_SIZE,
 		NO_DATA_MSG,
 		NO_CMD_MSG,
-		UNKNOWN_CGRP,
 		UNKNOWN_CMD,
 		UNDEF
 	} error;
-	RpcError() : error(RpcError::OK) {}
-	RpcError(errorId e) : error(e) {}
+	CRpcError() : error(CRpcError::OK) {}
+	CRpcError(errorId e) : error(e) {}
 	const char *GetMsg()
 	{
 		switch (error)
@@ -47,9 +46,8 @@ public:
 			case CMD_PAR_SIZE:    return "CMD_PAR_SIZE";
 			case NO_DATA_MSG:     return "NO_DATA_MSG";
 			case NO_CMD_MSG:      return "NO_CMD_MSG";
-			case UNKNOWN_CGRP:    return "UNKNOWN_CGRP";
 			case UNKNOWN_CMD:     return "UNKNOWN_CMD";
-            default:              return "?";
+			case UNDEF:           return "UNDEF";
 		}
 		return "?";
 	}

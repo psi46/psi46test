@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include "rpc_error.h"
+
+
 class CRpcIo
 {
 protected:
@@ -13,3 +16,16 @@ public:
 	virtual void Read(void *buffer, unsigned int size) = 0;
 	virtual void Close() = 0;
 };
+
+
+class CRpcIoNull : public CRpcIo
+{
+public:
+	void Write(const void *buffer, unsigned int size) { throw CRpcError(CRpcError::WRITE_ERROR); }
+	void Flush() {}
+	void Clear() {}
+	void Read(void *buffer, unsigned int size) { throw CRpcError(CRpcError::READ_ERROR); }
+	void Close() {}
+
+};
+

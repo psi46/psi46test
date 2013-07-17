@@ -15,10 +15,16 @@
 
 #include <math.h>
 #include <time.h>
-#include <iostream>
+#include <fstream>
 #include "psi46test.h"
+#include "plot.h"
 
 #include "command.h"
+
+#include <vector>
+
+using namespace std;
+
 
 #ifndef _WIN32
 #define _int64 long long
@@ -52,12 +58,15 @@ CMD_PROC(scan)
 				printf("%2u: %s", i, name);
 				if (tb->Open(name,true))
 				{
-					unsigned int bid = tb->GetBoardId();
-					printf("  BID=%2u;", bid);
-					string ver;
-					tb->GetVersionString(ver);
-					printf(" VER=\"%s\"\n", ver.c_str());
-					tb->Close();
+					try {
+						unsigned int bid = tb->GetBoardId();
+						printf("  BID=%2u;", bid);
+						tb->Close();
+					}
+					catch (...){
+						printf(" -> Device not identifiable\n");
+						tb->Close();
+					}
 				}
 				else printf(" - in use\n");
 			}
@@ -105,75 +114,122 @@ CMD_PROC(setled)
 	return true;
 }
 
-CMD_PROC(check)
+
+bool UpdateDTB(const char *filename)
 {
-	bool mainOk = tb.CheckCompatibility();
-	bool userOk = tb.CheckUserCompatibility();
-	if (mainOk && userOk) printf(" DTB compatible\n");
-	else
+	fstream src;
+
+	if (tb.UpgradeGetVersion() == 0x0100)
 	{
-		if (!mainOk)
-			printf("DTB not compatible\n Local: %016llX\n DTB:   %016llX\n",
-				tb.GetLocalRpcVersion(), tb.GetDtbRpcVersion());
-		if (!userOk)
-			printf("DTB user interface not compatible\n Local: %016llX\n DTB:   %016llX\n",
-				tb.GetLocalRpcUserVersion(), tb.GetDtbRpcUserVersion());
+		// open file
+		src.open(filename);
+		if (!src.is_open())
+		{
+			printf("ERROR UPGRADE: Could not open \"%s\"!\n", filename);
+			return false;
+		}
+
+		// check if upgrade is possible
+		printf("Start upgrading DTB.\n");
+		if (tb.UpgradeStart(0x0100) != 0)
+		{
+			string msg;
+			tb.UpgradeErrorMsg(msg);
+			printf("ERROR UPGRADE: %s!\n", msg.data());
+			return false;
+		}
+
+		// download data
+		printf("Download running ...\n");
+		string rec;
+		uint16_t recordCount = 0;
+		while (true)
+		{
+			getline(src, rec);
+			if (src.good())
+			{
+				if (rec.size() == 0) continue;
+				recordCount++;
+				if (tb.UpgradeData(rec) != 0)
+				{
+					string msg;
+					tb.UpgradeErrorMsg(msg);
+					printf("ERROR UPGRADE: %s!\n", msg.data());
+					return false;
+				}
+			}
+			else if (src.eof()) break;
+			else
+			{
+				printf("ERROR UPGRADE: Error reading \"%s\"!\n", filename);
+				return false;
+			}
+		}
+
+		if (tb.UpgradeError() != 0)
+		{
+			string msg;
+			tb.UpgradeErrorMsg(msg);
+			printf("ERROR UPGRADE: %s!\n", msg.data());
+			return false;
+		}
+		
+		// write EPCS FLASH
+		printf("DTB download complete.\n");
+		tb.mDelay(200);
+		printf("FLASH write start (LED 1..4 on)\n"
+			   "DO NOT INTERUPT DTB POWER !\n"
+			   "Wait till LEDs goes off.\n"
+		       "Restart the DTB.\n");
+		tb.UpgradeExec(recordCount);
+
+		return true;
 	}
-	return true;
+
+	printf("ERROR UPGRADE: Could not upgrade this DTB version!\n");
+	return false;
 }
 
-CMD_PROC(rpc)
+
+CMD_PROC(upgrade)
 {
-	printf(" DTB RPC version:   %016llX\n", tb.GetDtbRpcVersion());
+	char filename[256];
+	PAR_STRING(filename, 255);
+	if (UpdateDTB(filename))
+		printf("DTB download complete.\n"
+		       "FLASH write starts. LED 1..4 on\n"
+			   "Wait till LEDs goes off. Don't interrupt DTB power if LEDs are on!\n"
+		       "Restart the DTB.\n");
 	return true;
 }
 
-CMD_PROC(rpcuser)
-{
-	printf(" DTB RPC user version:   %016llX\n", tb.GetDtbRpcUserVersion());
-	return true;
-}
 
-CMD_PROC(rpcl)
-{
-	printf(" Local RPC version: %016llX\n", tb.GetLocalRpcVersion());
-	return true;
-}
-
-CMD_PROC(rpcuserl)
-{
-	printf(" Local RPC user version: %016llX\n", tb.GetLocalRpcUserVersion());
-	return true;
-}
-
-CMD_PROC(rpcts)
+CMD_PROC(info)
 {
 	string s;
-	tb.GetDtbRpcTimestamp(s);
-	printf(" DTB RPC timestamp: %s\n", s.c_str());
+	tb.GetInfo(s);
+	printf("--- DTB info ----------------------------\n%s"
+		   "-----------------------------------------\n", s.c_str());
 	return true;
 }
 
 CMD_PROC(ver)
 {
-	unsigned short v = tb.GetVersion();
-	printf(" DTB version: %i.%02i\n", int(v>>8), int(v%0xff));
+	string hw;
+	tb.GetHWVersion(hw);
+	int fw = tb.GetFWVersion();
+	int sw = tb.GetSWVersion();
+	printf("%s: FW=%i.%02i SW=%i.%02i\n", hw.c_str(), fw/256, fw%256, sw/256, sw%256);
 	return true;
 }
 
 CMD_PROC(version)
 {
-	string s;
-	tb.GetVersionString(s);
-	printf("DTB version: %s\n", s.c_str());
-	return true;
-}
-
-CMD_PROC(comment)
-{
-	string s;
-	tb.GetComment(s);
-	printf("DTB comment:\n%s\n", s.c_str());
+	string hw;
+	tb.GetHWVersion(hw);
+	int fw = tb.GetFWVersion();
+	int sw = tb.GetSWVersion();
+	printf("%s: FW=%i.%02i SW=%i.%02i\n", hw.c_str(), fw/256, fw%256, sw/256, sw%256);
 	return true;
 }
 
@@ -650,7 +706,7 @@ CMD_PROC(pgset)
 
 CMD_PROC(pgstop)
 {
-	tb.Pg_Disable();
+	tb.Pg_Stop();
 	DO_FLUSH
 	return true;
 }
@@ -685,8 +741,9 @@ CMD_PROC(dopen)
 {
 	int buffersize;
 	PAR_INT(buffersize, 0, 60000000);
-	bool res = tb.Daq_Open(buffersize);
-	if (!res) printf("error\n");
+	buffersize = tb.Daq_Open(buffersize);
+	printf("%i words allocated for data buffer\n", buffersize);
+	if (buffersize == 0) printf("error\n");
 	return true;
 }
 
@@ -697,12 +754,6 @@ CMD_PROC(dclose)
 	return true;
 }
 
-CMD_PROC(dclear)
-{
-	tb.Daq_Clear();
-	DO_FLUSH
-	return true;
-}
 
 CMD_PROC(dstart)
 {
@@ -728,10 +779,11 @@ CMD_PROC(dsize)
 
 CMD_PROC(dread)
 {
+	uint32_t words_remaining;
 	vector<uint16_t> data;
-	tb.Daq_GetData(data, 500);
+	tb.Daq_Read(data, words_remaining);
 	int size = data.size();
-	printf("#samples: %i\n", size);
+	printf("#samples: %i  remaining: %i\n", size, int(words_remaining));
 
 	for (int i=0; i<size; i++)
 	{
@@ -754,10 +806,11 @@ CMD_PROC(dread)
 
 CMD_PROC(dreada)
 {
+	uint32_t words_remaining;
 	vector<uint16_t> data;
-	tb.Daq_GetData(data, 500);
+	tb.Daq_Read(data, words_remaining);
 	int size = data.size();
-	printf("#samples: %i\n", size);
+	printf("#samples: %i remaining: %i\n", size, int(words_remaining));
 
 	for (int i=0; i<size; i++)
 	{
@@ -780,50 +833,344 @@ CMD_PROC(dreada)
 	return true;
 }
 
-CMD_PROC(scope)
+CMD_PROC(takedata)
 {
-	int gain;
-	PAR_INT(gain,1,4);
+	FILE *f = fopen("daqdata.bin", "wb");
+	if (f == 0)
+	{
+		printf("Could not open data file\n");
+		return true;
+	}
+
+	uint8_t status = 0;
+	uint32_t n;
+	vector<uint16_t> data;
+
+	unsigned int sum = 0;
+	double mean_n = 0.0;
+	double mean_size = 0.0;
+
+	clock_t t = clock();
+	unsigned int memsize = tb.Daq_Open(10000000);
+	tb.Daq_Start();
+	clock_t t_start = clock();
+	while (!keypressed())
+	{
+		// read data and status from DTB
+		status = tb.Daq_Read(data, n, 40000);
+
+		// make statistics
+		sum += data.size();
+		mean_n    = /* 0.2*mean_n    + 0.8* */ n;
+		mean_size = /* 0.2*mean_size + 0.8* */ data.size();
+
+		// write statistics every second
+//		printf(".");
+		if ((clock() - t) > CLOCKS_PER_SEC/4)
+		{
+			printf("%5.1f%%  %5.0f  %u\n", mean_n*100.0/memsize, mean_size, sum);
+			t = clock();
+		}
+
+		// write data to file
+		if (fwrite(data.data(), sizeof(uint16_t), data.size(), f) != data.size())
+		{ printf("\nFile write error"); break; }
+
+		// abort after overflow error
+//		if (((status & 1) == 0) && (n == 0)) break;
+		if (status & 0x6) break;
+
+//		tb.mDelay(5);
+	}
+	tb.Daq_Stop();
+	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC; 
+
+	tb.Daq_Close();
+
+	if (keypressed()) getchar();
+
+	printf("\n");
+	if      (status & 4) printf("FIFO overflow\n");
+	else if (status & 2) printf("Memory overflow\n");
+	printf("Data taking aborted\n%u samples in %0.1f s read (%0.0f samples/s)\n", sum, t_run, sum/t_run);
+
+	fclose(f);
+	return true;
+}
+
+
+
+#define DECBUFFERSIZE 2048
+
+class Decoder
+{
+	int printEvery;
+
+	int nReadout;
+	int nPixel;
+
+	FILE *f;
+	int nSamples;
+	uint16_t *samples;
+
+	int x, y, ph;
+	void Translate(unsigned long raw);
+public:
+    Decoder() : printEvery(0), nReadout(0), nPixel(0), f(0), nSamples(0), samples(0) {}
+	~Decoder() { Close(); }
+	bool Open(const char *filename);
+	void Close() { if (f) fclose(f); f = 0; delete[] samples; }
+	bool Sample(uint16_t sample);
+	void AnalyzeSamples();
+	void DumpSamples(int n);
+};
+
+bool Decoder::Open(const char *filename)
+{
+	samples = new uint16_t[DECBUFFERSIZE];
+	f = fopen(filename, "wt");
+	return f != 0;
+}
+
+void Decoder::Translate(unsigned long raw)
+{
+	ph = (raw & 0x0f) + ((raw >> 1) & 0xf0);
+	raw >>= 9;
+	int c =    (raw >> 12) & 7;
+	c = c*6 + ((raw >>  9) & 7);
+	int r =    (raw >>  6) & 7;
+	r = r*6 + ((raw >>  3) & 7);
+	r = r*6 + ( raw        & 7);
+	y = 80 - r/2;
+	x = 2*c + (r&1);
+}
+
+void Decoder::AnalyzeSamples()
+{
+	if (nSamples < 1) { nPixel = 0; return; }
+	fprintf(f, "%5i: %03X: ", nReadout, (unsigned int)(samples[0] & 0xfff));
+	nPixel = (nSamples-1)/2;
+	int pos = 1;
+	for (int i=0; i<nPixel; i++)
+	{
+		unsigned long raw = (samples[pos++] & 0xfff) << 12;
+		raw += samples[pos++] & 0xfff;
+		Translate(raw);
+		fprintf(f, " %2i", x);
+	}
+
+//	for (pos = 1; pos < nSamples; pos++) fprintf(f, " %03X", int(samples[pos]));
+	fprintf(f, "\n");
+
+}
+
+void Decoder::DumpSamples(int n)
+{
+	if (nSamples < n) n = nSamples;
+	for (int i=0; i<n; i++) fprintf(f, " %04X", (unsigned int)(samples[i]));
+	fprintf(f, " ... %04X\n", (unsigned int)(samples[nSamples-1]));
+}
+
+bool Decoder::Sample(uint16_t sample)
+{
+	if (sample & 0x8000) // start marker
+	{
+		if (nReadout && printEvery >= 1000)
+		{
+			AnalyzeSamples();
+			printEvery = 0;
+		} else printEvery++;
+		nReadout++;
+		nSamples = 0;
+	}
+	if (nSamples < DECBUFFERSIZE)
+	{
+		samples[nSamples++] = sample;
+		return true;
+	}
+	return false;
+}
+
+
+
+CMD_PROC(takedata2)
+{
+	Decoder dec;
+	if (!dec.Open("daqdata2.txt"))
+	{
+		printf("Could not open data file\n");
+		return true;
+	}
+
+	uint8_t status = 0;
+	uint32_t n;
+	vector<uint16_t> data;
+
+	unsigned int sum = 0;
+	double mean_n = 0.0;
+	double mean_size = 0.0;
+
+	clock_t t = clock();
+	unsigned long memsize = tb.Daq_Open(1000000);
+	tb.Daq_Select_Deser160(4);
+	tb.Daq_Start();
+	clock_t t_start = clock();
+	while (!keypressed())
+	{
+		// read data and status from DTB
+		status = tb.Daq_Read(data, n, 20000);
+
+		// make statistics
+		sum += data.size();
+		mean_n    = /* 0.2*mean_n    + 0.8* */ n;
+		mean_size = /* 0.2*mean_size + 0.8* */ data.size();
+
+		// write statistics every second
+//		printf(".");
+		if ((clock() - t) > CLOCKS_PER_SEC)
+		{
+			printf("%5.1f%%  %5.0f  %u\n", mean_n*100.0/memsize, mean_size, sum);
+			t = clock();
+		}
+
+		// decode file
+		for (unsigned int i=0; i<data.size(); i++) dec.Sample(data[i]);
+
+		// abort after overflow error
+		if (((status & 1) == 0) && (n == 0)) break;
+
+		tb.mDelay(5);
+	}
+	tb.Daq_Stop();
+	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC; 
+
+	tb.Daq_Close();
+
+	if (keypressed()) getchar();
+
+	printf("\nstatus: %02X ", int(status));
+	if      (status & 4) printf("FIFO overflow\n");
+	else if (status & 2) printf("Memory overflow\n");
+	printf("Data taking aborted\n%u samples in %0.1f s read (%0.0f samples/s)\n", sum, t_run, sum/t_run);
+
+	return true;
+}
+
+CMD_PROC(showclk)
+{
+	const int nSamples = 20;
+	const int gain = 1;
+//	PAR_INT(gain,1,4);
 
 	int i, k;
+	uint32_t buffersize;
 	vector<uint16_t> data[20];
 
-	tb.Pg_SetCmd( 0, PG_SYNC + 10);
-	tb.Pg_SetCmd( 1, PG_TRG  + 19);
-	tb.Pg_SetCmd( 2, PG_RESR + 19);
-	tb.Pg_SetCmd( 3, PG_REST + 19);
-	tb.Pg_SetCmd( 4, PG_CAL  + 19);
+	tb.Pg_Stop();
+	tb.Pg_SetCmd( 0, PG_SYNC +  5);
+	tb.Pg_SetCmd( 1, PG_CAL  +  6);
+	tb.Pg_SetCmd( 2, PG_TRG  +  6);
+	tb.Pg_SetCmd( 3, PG_RESR +  6);
+	tb.Pg_SetCmd( 4, PG_REST +  6);
 	tb.Pg_SetCmd( 5, PG_TOK);
 
-	tb.SignalProbeD1(15);
+	tb.SignalProbeD1(9);
 	tb.SignalProbeD2(17);
-	tb.SignalProbeA2(PROBEA_CTR);
-	tb.SignalProbeADC(PROBEA_CTR, gain-1);
+	tb.SignalProbeA2(PROBEA_CLK);
+	tb.SignalProbeADC(PROBEA_CLK, gain-1);
 
-	tb.Daq_ADC(100);
+	tb.Daq_Select_ADC(nSamples, 1, 1);
 	tb.uDelay(1000);
 	tb.Daq_Open(1024);
 	for (i=0; i<20; i++)
 	{
-		tb.Sig_SetDelay(SIG_CTR, 26-i);
+		tb.Sig_SetDelay(SIG_CLK, 26-i);
 		tb.uDelay(10);
-		tb.Daq_Clear();
 		tb.Daq_Start();
 		tb.Pg_Single();
 		tb.uDelay(1000);
 		tb.Daq_Stop();
-		tb.Daq_GetData(data[i], 1024);
-		if (data[i].size() != 100)
+		tb.Daq_Read(data[i], buffersize, 1024);
+		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
 			return true;
 		}
 	}
 	tb.Daq_Close();
-	tb.Daq_ADC(0);
 	tb.Flush();
 
-	FILE *f = fopen("X:\\developments\\adc\\adc.txt", "wt");
+	int n = 20*nSamples;
+	vector<double> values(n);
+	int x = 0;
+	for (k=0; k<nSamples; k++) for (i=0; i<20; i++)
+	{
+		int y = (data[i])[k] & 0x0fff;
+		if (y & 0x0800) y |= 0xfffff000;
+		values[x++] = y;
+	}
+	Scope("CLK", values);
+
+	return true;
+}
+
+CMD_PROC(showctr)
+{
+	const int nSamples = 60;
+	const int gain = 1;
+//	PAR_INT(gain,1,4);
+
+	int i, k;
+	uint32_t buffersize;
+	vector<uint16_t> data[20];
+
+	tb.Pg_Stop();
+	tb.Pg_SetCmd( 0, PG_SYNC +  5);
+	tb.Pg_SetCmd( 1, PG_CAL  +  6);
+	tb.Pg_SetCmd( 2, PG_TRG  +  6);
+	tb.Pg_SetCmd( 3, PG_RESR +  6);
+	tb.Pg_SetCmd( 4, PG_REST +  6);
+	tb.Pg_SetCmd( 5, PG_TOK);
+
+	tb.SignalProbeD1(9);
+	tb.SignalProbeD2(17);
+	tb.SignalProbeA2(PROBEA_CTR);
+	tb.SignalProbeADC(PROBEA_CTR, gain-1);
+
+	tb.Daq_Select_ADC(nSamples, 1, 1);
+	tb.uDelay(1000);
+	tb.Daq_Open(1024);
+	for (i=0; i<20; i++)
+	{
+		tb.Sig_SetDelay(SIG_CTR, 26-i);
+		tb.uDelay(10);
+		tb.Daq_Start();
+		tb.Pg_Single();
+		tb.uDelay(1000);
+		tb.Daq_Stop();
+		tb.Daq_Read(data[i], buffersize, 1024);
+		if (data[i].size() != nSamples)
+		{
+			printf("Data size %i: %i\n", i, int(data[i].size()));
+			return true;
+		}
+	}
+	tb.Daq_Close();
+	tb.Flush();
+
+	int n = 20*nSamples;
+	vector<double> values(n);
+	int x = 0;
+	for (k=0; k<nSamples; k++) for (i=0; i<20; i++)
+	{
+		int y = (data[i])[k] & 0x0fff;
+		if (y & 0x0800) y |= 0xfffff000;
+		values[x++] = y;
+	}
+	Scope("CTR", values);
+
+/*
+	FILE *f = fopen("X:\\developments\\adc\\data\\adc.txt", "wt");
 	if (!f) { printf("Could not open File!\n"); return true; }
 	double t = 0.0;
 	for (k=0; k<100; k++) for (i=0; i<20; i++)
@@ -834,32 +1181,82 @@ CMD_PROC(scope)
 		t += 1.25;
 	}
 	fclose(f);
+*/
+	return true;
+}
+
+
+CMD_PROC(showsda)
+{
+	const int nSamples = 52;
+	int i, k;
+	uint32_t buffersize;
+	vector<uint16_t> data[20];
+
+	tb.SignalProbeD1(9);
+	tb.SignalProbeD2(17);
+	tb.SignalProbeA2(PROBEA_SDA);
+	tb.SignalProbeADC(PROBEA_SDA, 0);
+
+	tb.Daq_Select_ADC(nSamples, 2, 7);
+	tb.uDelay(1000);
+	tb.Daq_Open(1024);
+	for (i=0; i<20; i++)
+	{
+		tb.Sig_SetDelay(SIG_SDA, 26-i);
+		tb.uDelay(10);
+		tb.Daq_Start();
+		tb.roc_Pix_Trim(12, 34, 5);
+		tb.uDelay(1000);
+		tb.Daq_Stop();
+		tb.Daq_Read(data[i], buffersize, 1024);
+		if (data[i].size() != nSamples)
+		{
+			printf("Data size %i: %i\n", i, int(data[i].size()));
+			return true;
+		}
+	}
+	tb.Daq_Close();
+	tb.Flush();
+
+	int n = 20*nSamples;
+	vector<double> values(n);
+	int x = 0;
+	for (k=0; k<nSamples; k++) for (i=0; i<20; i++)
+	{
+		int y = (data[i])[k] & 0x0fff;
+		if (y & 0x0800) y |= 0xfffff000;
+		values[x++] = y;
+	}
+	Scope("SDA", values);
 
 	return true;
 }
+
+
 
 
 CMD_PROC(adcena)
 {
 	int datasize;
 	PAR_INT(datasize, 1, 2047);
-	tb.Daq_ADC(datasize);
+	tb.Daq_Select_ADC(datasize, 1, 4, 6);
 	DO_FLUSH
 	return true;
 }
 
 CMD_PROC(adcdis)
 {
-	tb.Daq_ADC(0);
+	tb.Daq_Select_Deser160(2);
 	DO_FLUSH
 	return true;
 }
 
 CMD_PROC(deser)
 {
-	int enable_shift;
-	PAR_INT(enable_shift,0,15);
-	tb.Daq_Deser160((enable_shift & 0x8) != 0, enable_shift & 0x7);
+	int shift;
+	PAR_INT(shift,0,7);
+	tb.Daq_Select_Deser160(shift);
 	DO_FLUSH
 	return true;
 }
@@ -895,9 +1292,10 @@ void decoding_show(vector<uint16_t> *data)
 CMD_PROC(decoding)
 {
 	unsigned short t;
+	uint32_t buffersize;
 	vector<uint16_t> data[16];
 	tb.Pg_SetCmd(0, PG_TOK + 0);
-	tb.Daq_Deser160(true, 2);
+	tb.Daq_Select_Deser160(2);
 	tb.uDelay(10);
 	Log.section("decoding");
 	tb.Daq_Open(100);
@@ -908,12 +1306,11 @@ CMD_PROC(decoding)
 		tb.uDelay(10);
 		for (int i=0; i<16; i++)
 		{
-			tb.Daq_Clear();
 			tb.Daq_Start();
 			tb.Pg_Single();
 			tb.uDelay(200);
 			tb.Daq_Stop();
-			tb.Daq_GetData(data[i], 200);
+			tb.Daq_Read(data[i], buffersize, 200);
 		}
 		Log.printf("%3i ", int(t));
 		decoding_show(data);
@@ -1463,15 +1860,10 @@ void cmd()
 	CMD_REG(close,    "close                         close connection to testboard");
 	CMD_REG(welcome,  "welcome                       blinks with LEDs");
 	CMD_REG(setled,   "setled                        set atb LEDs"); //give 0-15 as parameter for four LEDs
-	CMD_REG(check,    "check                         checks RPC compatibility");
-	CMD_REG(rpc,      "rpc                           shows DTB RPC version");
-	CMD_REG(rpcuser,  "rpcuser                       shows DTB user RPC version");
-	CMD_REG(rpcl,     "rpcl                          shows local RPC version");
-	CMD_REG(rpcuserl, "rpcuserl                      shows local user RPC version");
-	CMD_REG(rpcts,    "rpcts                         shows DTB RPC timestamp");
+	CMD_REG(upgrade,  "upgrade <filename>            upgrade DTB");
 	CMD_REG(ver,      "ver                           shows DTB software version number");
 	CMD_REG(version,  "version                       shows DTB software version");
-	CMD_REG(comment,  "comment                       shows DTB comment");
+	CMD_REG(info,     "info                          shows detailed DTB info");
 	CMD_REG(boardid,  "boardid                       get board id");
 	CMD_REG(init,     "init                          inits the testboard");
 	CMD_REG(flush,    "flush                         flushes usb buffer");
@@ -1532,12 +1924,16 @@ void cmd()
 
 	CMD_REG(dopen,    "dopen <buffer size>           Open DAQ and allocate memory");
 	CMD_REG(dclose,   "dclose                        Close DAQ");
-	CMD_REG(dclear,   "dclear                        Clear DAQ memory");
 	CMD_REG(dstart,   "dstart                        Enable DAQ");
 	CMD_REG(dstop,    "dstop                         Disable DAQ");
 	CMD_REG(dsize,    "dsize                         Show DAQ buffer fill state");
 	CMD_REG(dread,    "dread                         Read Daq buffer and show as digital data");
 	CMD_REG(dreada,   "dreada                        Read Daq buffer and show as analog data");
+	CMD_REG(showclk,  "showclk                       show CLK signal");
+	CMD_REG(showctr,  "showctr                       show CTR signal");
+	CMD_REG(showsda,  "showsda                       show SDA signal");
+	CMD_REG(takedata, "takedata                      Continous DTB readout (to stop press any key)");
+	CMD_REG(takedata2,"takedata2                     Continous DTB readout and decoding");
 	CMD_REG(deser,    "deser <value>                 controls deser160");
 
 	CMD_REG(adcena,   "adcena                        enable ADC");
@@ -1577,7 +1973,7 @@ void cmd()
 			CMD_RUN(stdin);
 			return;
 		}
-		catch (RpcError e)
+		catch (CRpcError e)
 		{
 			e.What();
 		}

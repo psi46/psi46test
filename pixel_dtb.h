@@ -4,7 +4,7 @@
  *
  *  description: PSI46 testboard API for DTB
  *	author:      Beat Meier
- *	date:        22.4.2013
+ *	date:        15.7.2013
  *	rev:
  *
  *---------------------------------------------------------------------
@@ -12,31 +12,19 @@
 
 #pragma once
 
+// #define RPC_MULTITHREADING
 #include "rpc.h"
-//#include "pipe.h"
-#include "linux/usb.h"
+
+#ifdef _WIN32
+#include "pipe.h"
+#endif
+
+#include "usb.h"
 
 // size of ROC pixel array
 #define ROC_NUMROWS  80  // # rows
 #define ROC_NUMCOLS  52  // # columns
 #define ROC_NUMDCOLS 26  // # double columns (= columns/2)
-
-// delay cells
-#define SIGNAL_CLK      8
-#define SIGNAL_SDA      9
-#define SIGNAL_CTR     10
-#define SIGNAL_TIN     11
-#define SIGNAL_TOUT    12
-#define SIGNAL_RDA     12
-#define SIGNAL_TRGOUT  13
-
-// clock frequenz settings
-#define MHZ_1_25   5
-#define MHZ_2_5    4
-#define MHZ_5      3
-#define MHZ_10     2
-#define MHZ_20     1
-#define MHZ_40     0
 
 #define PIXMASK  0x80
 
@@ -71,44 +59,48 @@
 #define	WBC         0xFE
 #define	CtrlReg     0xFD
 
-// sources for clock stretch trigger
-#define STRETCH_AFTER_TIN  0
-#define STRETCH_AFTER_TRG  1
-#define STRETCH_AFTER_CAL  2
-#define STRETCH_AFTER_RES  3
-
-// constants for signal force command
-#define OVW_CLK   0x10
-#define OVW_SDA   0x20
-#define OVW_CTR   0x40
-#define OVW_TIN   0x80
-#define SET_CLK   0x01
-#define SET_SDA   0x02
-#define SET_CTR   0x04
-#define SET_TIN   0x08
 
 
 class CTestboard
 {
-	CRpcIo *rpc_io;
-//	CPipeClient pipe;
+	RPC_DEFS
+	RPC_THREAD
+
+#ifdef _WIN32
+	CPipeClient pipe;
+#endif
 	CUSB usb;
+
 public:
 	CRpcIo& GetIo() { return *rpc_io; }
 
-	CTestboard() : rpc_io(&usb) {}
-	~CTestboard() {}
+	CTestboard() { RPC_INIT rpc_io = &usb; }
+	~CTestboard() { RPC_EXIT }
 
 
-	// === DTB connection methods ==============================================
+	// === RPC ==============================================================
 
-//	bool OpenPipe(const char *name) { return pipe.Open(name); }
-//	void ClosePipe() { pipe.Close(); }
+	// Don't change the following two entries
+	RPC_EXPORT uint16_t GetRpcVersion();
+	RPC_EXPORT int32_t  GetRpcCallId(string &callName);
+
+	RPC_EXPORT void GetRpcTimestamp(stringR &ts);
+
+
+	// === DTB connection ====================================================
 
 	bool EnumFirst(unsigned int &nDevices) { return usb.EnumFirst(nDevices); };
 	bool EnumNext(char name[]) { return usb.EnumNext(name); }
+	bool Enum(char name[], unsigned int pos) { return usb.Enum(name, pos); }
+
 	bool Open(char name[], bool init=true); // opens a connection
 	void Close();				// closes the connection to the testboard
+
+#ifdef _WIN32
+	bool OpenPipe(const char *name) { return pipe.Open(name); }
+	void ClosePipe() { pipe.Close(); }
+#endif
+
 	bool IsConnected() { return usb.Connected(); }
 	const char * ConnectionError()
 	{ return usb.GetErrorMsg(usb.GetLastError()); }
@@ -117,56 +109,41 @@ public:
 	void Clear() { rpc_io->Clear(); }
 
 
-	// === DTB identification ==================================================
+	// === DTB identification ================================================
 
-	bool CheckCompatibility() { return GetLocalRpcVersion() == GetDtbRpcVersion(); }
-	bool CheckUserCompatibility() { return GetLocalRpcUserVersion() == GetDtbRpcUserVersion(); }
-	uint64_t GetLocalRpcVersion() { return rpc_MainVersion; }
-	uint64_t GetLocalRpcUserVersion() { return rpc_UserVersion; }
-	DTB_EXPORT(id) uint64_t GetDtbRpcVersion();
-	DTB_EXPORT(id) uint64_t GetDtbRpcUserVersion();
-	DTB_EXPORT(id) void GetDtbRpcTimestamp(stringR &ts);
-
-	DTB_EXPORT(id) uint16_t GetVersion();
-	DTB_EXPORT(id) void GetVersionString(stringR &x);
-	DTB_EXPORT(id) void GetComment(stringR &x);
-	DTB_EXPORT(id) uint8_t GetBoardId();	// reads the board number
+	RPC_EXPORT void GetInfo(stringR &info);
+	RPC_EXPORT uint16_t GetBoardId();
+	RPC_EXPORT void GetHWVersion(stringR &version);
+	RPC_EXPORT uint16_t GetFWVersion();
+	RPC_EXPORT uint16_t GetSWVersion();
 
 
-	// === DTB service =========================================================
+	// === DTB service ======================================================
 
-	DTB_EXPORT(service) uint16_t GetServiceVersion();
-	DTB_EXPORT(service) void Welcome();
-	DTB_EXPORT(service) void SetLed(uint8_t x);
-
-	DTB_EXPORT(service) uint32_t UpgradeStart();
-	DTB_EXPORT(service) uint32_t UpgradeData(uint32_t seq, string &data);
-	DTB_EXPORT(service) uint32_t UpgradeAbort();
-	DTB_EXPORT(service) uint32_t UpgradeExecute(uint32_t lastSeq, uint32_t errorNr);
-
-	//	DTB_EXPORT(service) void Bootstrap();
-
-	// === DTB1 functions ======================================================
-
-	DTB_EXPORT(dtb1) uint16_t GetDTB1Version();
-	DTB_EXPORT(dtb1) void Init();
+	// --- upgrade
+	RPC_EXPORT uint16_t UpgradeGetVersion();
+	RPC_EXPORT uint8_t  UpgradeStart(uint16_t version);
+	RPC_EXPORT uint8_t  UpgradeData(string &record);
+	RPC_EXPORT uint8_t  UpgradeError();
+	RPC_EXPORT void     UpgradeErrorMsg(stringR &msg);
+	RPC_EXPORT void     UpgradeExec(uint16_t recordCount);
 
 
-	// === Clock, Timing ====================================================
+	// === DTB functions ====================================================
 
-	DTB_EXPORT(dtb1) void cDelay(uint16_t clocks);
-	DTB_EXPORT(dtb1) void uDelay(uint16_t us);
+	RPC_EXPORT void Init();
+
+	RPC_EXPORT void Welcome();
+	RPC_EXPORT void SetLed(uint8_t x);
+
+
+	// --- Clock, Timing ----------------------------------------------------
+	RPC_EXPORT void cDelay(uint16_t clocks);
+	RPC_EXPORT void uDelay(uint16_t us);
 	void mDelay(uint16_t ms);
 
-//	DTB_EXPORT(dtb1) unsigned char isClockPresent();
-//	DTB_EXPORT(dtb1) void SetClock(unsigned char MHz);
-//	DTB_EXPORT(dtb1) void SetClockStretch(unsigned char src,
-//		unsigned short delay, unsigned short width);
-//	DTB_EXPORT(dtb1) void SetDelay(unsigned char signal, unsigned short ns);
 
-
-	// === Signal Delay =========================================================
-
+	// --- Signal Delay -----------------------------------------------------
 	#define SIG_CLK 0
 	#define SIG_CTR 1
 	#define SIG_SDA 2
@@ -176,16 +153,16 @@ public:
 	#define SIG_MODE_LO      1
 	#define SIG_MODE_HI      2
 
-	DTB_EXPORT(dtb1) void Sig_SetMode(uint8_t signal, uint8_t mode);
-	DTB_EXPORT(dtb1) void Sig_SetPRBS(uint8_t signal, uint8_t speed);
-	DTB_EXPORT(dtb1) void Sig_SetDelay(uint8_t signal, uint16_t delay, int8_t duty = 0);
-	DTB_EXPORT(dtb1) void Sig_SetLevel(uint8_t signal, uint8_t level);
-	DTB_EXPORT(dtb1) void Sig_SetOffset(uint8_t offset);
-	DTB_EXPORT(dtb1) void Sig_SetLVDS();
-	DTB_EXPORT(dtb1) void Sig_SetLCDS();
+	RPC_EXPORT void Sig_SetMode(uint8_t signal, uint8_t mode);
+	RPC_EXPORT void Sig_SetPRBS(uint8_t signal, uint8_t speed);
+	RPC_EXPORT void Sig_SetDelay(uint8_t signal, uint16_t delay, int8_t duty = 0);
+	RPC_EXPORT void Sig_SetLevel(uint8_t signal, uint8_t level);
+	RPC_EXPORT void Sig_SetOffset(uint8_t offset);
+	RPC_EXPORT void Sig_SetLVDS();
+	RPC_EXPORT void Sig_SetLCDS();
 
-	// === digital signal probe =============================================
 
+	// --- digital signal probe ---------------------------------------------
 	#define PROBE_OFF     0
 	#define PROBE_CLK     1
 	#define PROBE_SDA     2
@@ -200,12 +177,11 @@ public:
 	#define PROBE_CLKG   11
 	#define PROBE_CRC    12
 
-	DTB_EXPORT(dtb1) void SignalProbeD1(uint8_t signal);
-	DTB_EXPORT(dtb1) void SignalProbeD2(uint8_t signal);
+	RPC_EXPORT void SignalProbeD1(uint8_t signal);
+	RPC_EXPORT void SignalProbeD2(uint8_t signal);
 
 
-	// === analog signal probe =================================================
-
+	// --- analog signal probe ----------------------------------------------
 	#define PROBEA_TIN     0
 	#define PROBEA_SDATA1  1
 	#define PROBEA_SDATA2  2
@@ -220,25 +196,24 @@ public:
 	#define GAIN_3   2
 	#define GAIN_4   3
 
-	DTB_EXPORT(dtb1) void SignalProbeA1(uint8_t signal);
-	DTB_EXPORT(dtb1) void SignalProbeA2(uint8_t signal);
-	DTB_EXPORT(dtb1) void SignalProbeADC(uint8_t signal, uint8_t gain = 0);
+	RPC_EXPORT void SignalProbeA1(uint8_t signal);
+	RPC_EXPORT void SignalProbeA2(uint8_t signal);
+	RPC_EXPORT void SignalProbeADC(uint8_t signal, uint8_t gain = 0);
 
 
-	// === ROC/Module power VD/VA ===========================================
+	// --- ROC/Module power VD/VA -------------------------------------------
+	RPC_EXPORT void Pon();	// switch ROC power on
+	RPC_EXPORT void Poff();	// switch ROC power off
 
-	DTB_EXPORT(dtb1) void Pon();	// switch ROC power on
-	DTB_EXPORT(dtb1) void Poff();	// switch ROC power off
+	RPC_EXPORT void _SetVD(uint16_t mV);
+	RPC_EXPORT void _SetVA(uint16_t mV);
+	RPC_EXPORT void _SetID(uint16_t uA100);
+	RPC_EXPORT void _SetIA(uint16_t uA100);
 
-	DTB_EXPORT(dtb1) void _SetVD(uint16_t mV);
-	DTB_EXPORT(dtb1) void _SetVA(uint16_t mV);
-	DTB_EXPORT(dtb1) void _SetID(uint16_t uA100);
-	DTB_EXPORT(dtb1) void _SetIA(uint16_t uA100);
-
-	DTB_EXPORT(dtb1) uint16_t _GetVD();
-	DTB_EXPORT(dtb1) uint16_t _GetVA();
-	DTB_EXPORT(dtb1) uint16_t _GetID();
-	DTB_EXPORT(dtb1) uint16_t _GetIA();
+	RPC_EXPORT uint16_t _GetVD();
+	RPC_EXPORT uint16_t _GetVA();
+	RPC_EXPORT uint16_t _GetID();
+	RPC_EXPORT uint16_t _GetIA();
 
 	void SetVA(double V) { _SetVA(uint16_t(V*1000)); }  // set VA voltage
 	void SetVD(double V) { _SetVD(uint16_t(V*1000)); }  // set VD voltage
@@ -250,16 +225,15 @@ public:
 	double GetIA() { return _GetIA()/10000.0; }  // get VA current in A
 	double GetID() { return _GetID()/10000.0; }  // get VD current in A
 
-	DTB_EXPORT(dtb1) void HVon();
-	DTB_EXPORT(dtb1) void HVoff();
-	DTB_EXPORT(dtb1) void ResetOn();
-	DTB_EXPORT(dtb1) void ResetOff();
-	DTB_EXPORT(dtb1) uint8_t GetStatus();
-	DTB_EXPORT(dtb1) void SetRocAddress(uint8_t addr);
+	RPC_EXPORT void HVon();
+	RPC_EXPORT void HVoff();
+	RPC_EXPORT void ResetOn();
+	RPC_EXPORT void ResetOff();
+	RPC_EXPORT uint8_t GetStatus();
+	RPC_EXPORT void SetRocAddress(uint8_t addr);
 
 
-	// == pulse pattern generator ==============================================
-
+	// --- pulse pattern generator ------------------------------------------
 	#define PG_TOK   0x0100
 	#define PG_TRG   0x0200
 	#define PG_CAL   0x0400
@@ -267,103 +241,61 @@ public:
 	#define PG_REST  0x1000
 	#define PG_SYNC  0x2000
 
-	DTB_EXPORT(dtb1) void Pg_SetCmd(uint16_t addr, uint16_t cmd);
-//	DTB_EXPORT(dtb1) void Pg_SetCmdAll(vector<uint16_t> &cmd);
-	DTB_EXPORT(dtb1) void Pg_Disable();
-	DTB_EXPORT(dtb1) void Pg_Single();
-	DTB_EXPORT(dtb1) void Pg_Trigger();
-	DTB_EXPORT(dtb1) void Pg_Loop(uint16_t period);
+	RPC_EXPORT void Pg_SetCmd(uint16_t addr, uint16_t cmd);
+//	RPC_EXPORT void Pg_SetCmdAll(vector<uint16_t> &cmd);
+	RPC_EXPORT void Pg_Stop();
+	RPC_EXPORT void Pg_Single();
+	RPC_EXPORT void Pg_Trigger();
+	RPC_EXPORT void Pg_Loop(uint16_t period);
+
+	RPC_EXPORT uint16_t GetUser1Version();
 
 
-	// ======================================================================
+	// --- data aquisition --------------------------------------------------
+	RPC_EXPORT uint32_t Daq_Open(uint32_t buffersize = 10000000); // max # of samples
+	RPC_EXPORT void Daq_Close();
+	RPC_EXPORT void Daq_Start();
+	RPC_EXPORT void Daq_Stop();
+	RPC_EXPORT uint32_t Daq_GetSize();
+
+	RPC_EXPORT uint8_t Daq_Read(vectorR<uint16_t> &data,
+			 uint32_t &availsize, uint16_t blocksize = 16384);
+
+	RPC_EXPORT void Daq_Select_ADC(uint16_t blocksize, uint8_t source,
+			uint8_t start, uint8_t stop = 0);
+
+	RPC_EXPORT void Daq_Select_Deser160(uint8_t shift);
 
 
-//	DTB_EXPORT(dtb1) void HVon();	// switch HV relais on
-//	DTB_EXPORT(dtb1) void HVoff();	// switch HV relais off
-
-//	DTB_EXPORT(dtb1) void ResetOn();	// switch RESET-line to reset state (low)
-//	DTB_EXPORT(dtb1) void ResetOff();	// switch RESET-line to not reset state (high)
-
-
-//	DTB_EXPORT(dtb1) void ForceSignal(unsigned char pattern);
-
-//	DTB_EXPORT(dtb1) void I2cAddr(unsigned char id);		// set testboard I2C address
-
-	// === DTB2 functions ======================================================
-	DTB_EXPORT(dtb2) uint16_t GetDTB2Version();
-
-	// --- Wafer Test Adapter --------------------------------------------------
-
-//	DTB_EXPORT(dtb2) unsigned short _GetVD_Reg();    // regulated VD
-//	DTB_EXPORT(dtb2) unsigned short _GetVD_CAP();    // unregulated VD for contact test
-//	DTB_EXPORT(dtb2) unsigned short _GetVDAC_CAP();  // regulated VDAC
-
-//	double GetVD_Reg()   { return _GetVD_Reg()/1000.0; }    // regulated VD
-//	double GetVD_CAP()   { return _GetVD_CAP()/1000.0; }    // unregulated VD for contact test
-//	double GetVDAC_CAP() { return _GetVDAC_CAP()/1000.0; }  // regulated VDAC
-
-	// === ROC/module Communication ============================================
-	DTB_EXPORT(roc) uint16_t GetRocVersion();
-
+	// --- ROC/module Communication -----------------------------------------
 	// -- set the i2c address for the following commands
-	DTB_EXPORT(roc) void roc_I2cAddr(uint8_t id);
+	RPC_EXPORT void roc_I2cAddr(uint8_t id);
 
 	// -- sends "ClrCal" command to ROC
-	DTB_EXPORT(roc) void roc_ClrCal();
+	RPC_EXPORT void roc_ClrCal();
 
 	// -- sets a single (DAC) register
-	DTB_EXPORT(roc) void roc_SetDAC(uint8_t reg, uint8_t value);
+	RPC_EXPORT void roc_SetDAC(uint8_t reg, uint8_t value);
 
 	// -- set pixel bits (count <= 60)
 	//    M - - - 8 4 2 1
-	DTB_EXPORT(roc) void roc_Pix(uint8_t col, uint8_t row, uint8_t value);
+	RPC_EXPORT void roc_Pix(uint8_t col, uint8_t row, uint8_t value);
 
 	// -- trimm a single pixel (count < =60)
-	DTB_EXPORT(roc) void roc_Pix_Trim(uint8_t col, uint8_t row, uint8_t value);
+	RPC_EXPORT void roc_Pix_Trim(uint8_t col, uint8_t row, uint8_t value);
 
 	// -- mask a single pixel (count <= 60)
-	DTB_EXPORT(roc) void roc_Pix_Mask(uint8_t col, uint8_t row);
+	RPC_EXPORT void roc_Pix_Mask(uint8_t col, uint8_t row);
 
 	// -- set calibrate at specific column and row
-	DTB_EXPORT(roc) void roc_Pix_Cal(uint8_t col, uint8_t row, bool sensor_cal = false);
+	RPC_EXPORT void roc_Pix_Cal(uint8_t col, uint8_t row, bool sensor_cal = false);
 
 	// -- enable/disable a double column
-	DTB_EXPORT(roc) void roc_Col_Enable(uint8_t col, bool on);
+	RPC_EXPORT void roc_Col_Enable(uint8_t col, bool on);
 
 	// -- mask all pixels of a column and the coresponding double column
-	DTB_EXPORT(roc) void roc_Col_Mask(uint8_t col);
+	RPC_EXPORT void roc_Col_Mask(uint8_t col);
 
 	// -- mask all pixels and columns of the chip
-	DTB_EXPORT(roc) void roc_Chip_Mask();
-
-
-	// --- TBM -----------------------------------------------------------------
-
-//	DTB_EXPORT(roc) bool TBMPresent();
-
-//	DTB_EXPORT(roc) void tbm_Enable(bool on);
-
-//	DTB_EXPORT(roc) void tbm_Addr(unsigned char hub, unsigned char port);
-
-//	DTB_EXPORT(roc) void mod_Addr(unsigned char hub);
-
-//	DTB_EXPORT(roc) void tbm_Set(unsigned char reg, unsigned char value);
-
-//	DTB_EXPORT(roc) bool tbm_Get(unsigned char reg, unsigned char &value);
-
-//	DTB_EXPORT(roc) bool tbm_GetRaw(unsigned char reg, long &value);
-
-	// === User methods ========================================================
-	DTB_EXPORT(user1) uint16_t GetUser1Version();
-
-	DTB_EXPORT(user1) bool Daq_Open(uint32_t buffersize = 10000000); // max # of samples
-	DTB_EXPORT(user1) void Daq_Close();
-	DTB_EXPORT(user1) void Daq_Clear();
-	DTB_EXPORT(user1) void Daq_Start();
-	DTB_EXPORT(user1) void Daq_Stop();
-	DTB_EXPORT(user1) uint32_t Daq_GetSize();
-	DTB_EXPORT(user1) void Daq_GetData(vectorR<uint16_t> &data, uint16_t maxsize);
-
-	DTB_EXPORT(user1) void Daq_ADC(uint16_t datasize);
-	DTB_EXPORT(user1) void Daq_Deser160(bool enable, uint8_t shift);
+	RPC_EXPORT void roc_Chip_Mask();
 };

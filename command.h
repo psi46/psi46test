@@ -39,7 +39,7 @@ class CCmdLine
 	static const CSymbol symtable[];
 
 	static bool isAlpha(char ch)
-	{ return 'A'<=ch && ch<='Z' || 'a'<=ch && ch<='z'; }
+	{ return ('A'<=ch && ch<='Z') || ('a'<=ch && ch<='z'); }
 	static bool isNumber(char ch) { return '0'<=ch && ch<='9'; }
 	static bool isAlphaNum(char ch) { return isAlpha(ch) || isNumber(ch); }
 	static bool isWhitespace(char ch) { return ch==' ' || ch=='\t'; }

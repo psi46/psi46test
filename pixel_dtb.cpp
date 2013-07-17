@@ -11,6 +11,7 @@
 
 bool CTestboard::Open(char name[], bool init)
 {
+	rpc_Clear();
 	if (!usb.Open(name)) return false;
 
 	if (init) Init();
@@ -20,12 +21,13 @@ bool CTestboard::Open(char name[], bool init)
 
 void CTestboard::Close()
 {
-	if (usb.Connected()) Daq_Close();
+//	if (usb.Connected()) Daq_Close();
 	usb.Close();
+	rpc_Clear();
 }
 
 
-void CTestboard::mDelay(unsigned short ms)
+void CTestboard::mDelay(uint16_t ms)
 {
 	Flush();
 #ifdef _WIN32
