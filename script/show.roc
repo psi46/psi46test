@@ -1,0 +1,3 @@
+showclk
+showctr
+showsda

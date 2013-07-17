@@ -13,3 +13,5 @@
 dlltest
 psi46test_dll/
 *.tar.bz2
+*~
+*.o
