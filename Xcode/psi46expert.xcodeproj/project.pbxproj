@@ -1,0 +1,219 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXFileReference section */
+		A37E8FE9176A074700DE3007 /* Makefile */ = {isa = PBXFileReference; explicitFileType = sourcecode.make; fileEncoding = 4; name = Makefile; path = ../Makefile; sourceTree = "<group>"; };
+		A37E8FEA176A08AB00DE3007 /* psi46test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = psi46test.cpp; path = ../psi46test.cpp; sourceTree = "<group>"; };
+		A37E8FEB176A08AB00DE3007 /* psi46test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = psi46test.h; path = ../psi46test.h; sourceTree = "<group>"; };
+		A37E8FEF176A095C00DE3007 /* settings.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = settings.cpp; path = ../settings.cpp; sourceTree = "<group>"; };
+		A37E8FF0176A095C00DE3007 /* settings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = settings.h; path = ../settings.h; sourceTree = "<group>"; };
+		A37E8FF7176A0BCF00DE3007 /* rs232.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rs232.cpp; sourceTree = "<group>"; };
+		A37E8FF8176A0BCF00DE3007 /* usb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = usb.cpp; sourceTree = "<group>"; };
+		A37E8FF9176A0BCF00DE3007 /* usb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = usb.h; sourceTree = "<group>"; };
+		A3E7D2A8176EDF4700B47A96 /* psi46test.ini */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = psi46test.ini; path = ../psi46test.ini; sourceTree = "<group>"; };
+		A3F1F836176AE99F002A32F9 /* pixel_dtb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = pixel_dtb.cpp; path = ../pixel_dtb.cpp; sourceTree = "<group>"; };
+		A3F1F837176AE99F002A32F9 /* pixel_dtb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pixel_dtb.h; path = ../pixel_dtb.h; sourceTree = "<group>"; };
+		A3F1F838176AE9F1002A32F9 /* rpc_calls.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = rpc_calls.cpp; path = ../rpc_calls.cpp; sourceTree = "<group>"; };
+		A3F1F839176AEA07002A32F9 /* rpc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = rpc.cpp; path = ../rpc.cpp; sourceTree = "<group>"; };
+		A3F1F83A176AEA07002A32F9 /* rpc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rpc.h; path = ../rpc.h; sourceTree = "<group>"; };
+		A3F1F83B176AEE50002A32F9 /* protocol.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = protocol.cpp; path = ../protocol.cpp; sourceTree = "<group>"; };
+		A3F1F83C176AEE50002A32F9 /* protocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = protocol.h; path = ../protocol.h; sourceTree = "<group>"; };
+		A3F1F83D176AEF18002A32F9 /* cmd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cmd.cpp; path = ../cmd.cpp; sourceTree = "<group>"; };
+		A3F1F83E176AEFD9002A32F9 /* command.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = command.cpp; path = ../command.cpp; sourceTree = "<group>"; };
+		A3F1F83F176AEFD9002A32F9 /* command.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = command.h; path = ../command.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		A37E8FDE176A06F300DE3007 = {
+			isa = PBXGroup;
+			children = (
+				A3E7D2A8176EDF4700B47A96 /* psi46test.ini */,
+				A37E8FE9176A074700DE3007 /* Makefile */,
+				A37E8FEC176A08AD00DE3007 /* Sources */,
+			);
+			sourceTree = "<group>";
+		};
+		A37E8FEC176A08AD00DE3007 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A37E8FF1176A0BCF00DE3007 /* linux */,
+				A37E8FF0176A095C00DE3007 /* settings.h */,
+				A37E8FEF176A095C00DE3007 /* settings.cpp */,
+				A37E8FEB176A08AB00DE3007 /* psi46test.h */,
+				A37E8FEA176A08AB00DE3007 /* psi46test.cpp */,
+				A3F1F837176AE99F002A32F9 /* pixel_dtb.h */,
+				A3F1F836176AE99F002A32F9 /* pixel_dtb.cpp */,
+				A3F1F838176AE9F1002A32F9 /* rpc_calls.cpp */,
+				A3F1F83A176AEA07002A32F9 /* rpc.h */,
+				A3F1F839176AEA07002A32F9 /* rpc.cpp */,
+				A3F1F83C176AEE50002A32F9 /* protocol.h */,
+				A3F1F83B176AEE50002A32F9 /* protocol.cpp */,
+				A3F1F83D176AEF18002A32F9 /* cmd.cpp */,
+				A3F1F83F176AEFD9002A32F9 /* command.h */,
+				A3F1F83E176AEFD9002A32F9 /* command.cpp */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		A37E8FF1176A0BCF00DE3007 /* linux */ = {
+			isa = PBXGroup;
+			children = (
+				A37E8FF7176A0BCF00DE3007 /* rs232.cpp */,
+				A37E8FF8176A0BCF00DE3007 /* usb.cpp */,
+				A37E8FF9176A0BCF00DE3007 /* usb.h */,
+			);
+			name = linux;
+			path = ../linux;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		A37E8FE3176A06F300DE3007 /* psi46expert */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = A37E8FE6176A06F300DE3007 /* Build configuration list for PBXLegacyTarget "psi46expert" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = /Users/cn/Desktop/Testboard/psi46test_20130524;
+			dependencies = (
+			);
+			name = psi46expert;
+			passBuildSettingsInEnvironment = 1;
+			productName = psi46expert;
+		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXProject section */
+		A37E8FDF176A06F300DE3007 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = Christoph;
+			};
+			buildConfigurationList = A37E8FE2176A06F300DE3007 /* Build configuration list for PBXProject "psi46expert" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = A37E8FDE176A06F300DE3007;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A37E8FE3176A06F300DE3007 /* psi46expert */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		A37E8FE4176A06F300DE3007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A37E8FE5176A06F300DE3007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		A37E8FE7176A06F300DE3007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUGGING_SYMBOLS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		A37E8FE8176A06F300DE3007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A37E8FE2176A06F300DE3007 /* Build configuration list for PBXProject "psi46expert" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A37E8FE4176A06F300DE3007 /* Debug */,
+				A37E8FE5176A06F300DE3007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A37E8FE6176A06F300DE3007 /* Build configuration list for PBXLegacyTarget "psi46expert" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A37E8FE7176A06F300DE3007 /* Debug */,
+				A37E8FE8176A06F300DE3007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A37E8FDF176A06F300DE3007 /* Project object */;
+}
