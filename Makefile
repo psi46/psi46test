@@ -1,15 +1,21 @@
 .PHONY: all clean distclean
 
-OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o usb.o plot.o datastream.o analyzer.o
+UNAME := $(shell uname)
 
+OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o usb.o plot.o datastream.o analyzer.o
+#OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o linux/usb.o
+
+ifeq ($(UNAME), Darwin)
 #CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include
 # temporarily removed -Werror
 CXXFLAGS = -g -Os -Wall -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include
-#LINUX COMMAND:
-#CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include -pthread
 LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11
-#LINUX COMMAND
-#LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11 -pthread -lrt
+endif
+
+ifeq ($(UNAME), Linux)
+CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include -pthread
+LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11 -pthread -lrt
+endif
 
 #################
 # PATTERN RULES #
@@ -35,15 +41,16 @@ obj:
 bin:
 	@mkdir -p bin
 
-rpc_calls.cpp:
-	rpcgen pixel_dtb.h -hrpc_calls.cpp
+#rpc_calls.cpp:
+#	rpcgen pixel_dtb.h -hrpc_calls.cpp
 
-bin/psi46test: $(addprefix obj/,$(OBJS)) bin rpc_calls.cpp
+#bin/psi46test: $(addprefix obj/,$(OBJS)) bin rpc_calls.cpp
+bin/psi46test: $(addprefix obj/,$(OBJS)) bin
 	$(CXX) -o $@ $(addprefix obj/,$(OBJS)) $(LDFLAGS)
 
 clean:
 	rm -rf obj
-	rm -rf rpc_calls.cpp
+#	rm -rf rpc_calls.cpp
 
 distclean: clean
 	rm -rf bin
