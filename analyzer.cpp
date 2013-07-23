@@ -13,7 +13,7 @@ class CStore : public CAnalyzer
 CRocEvent* CStore::Read()
 {
 	CRocEvent *data = Get();
-	printf("%8u: %03X %4u:\n", data->eventNr, (unsigned int)(data->header), (unsigned int)(data->pixel.size()));
+	printf("%8u: %03X %4u:\n", (unsigned int)data->eventNr, (unsigned int)(data->header), (unsigned int)(data->pixel.size()));
 	return data;
 }
 

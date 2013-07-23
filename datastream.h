@@ -59,7 +59,7 @@ class CBinaryDTBSource : public CSource<uint16_t>
 	uint16_t Read() { return (pos < buffer.size()) ? lastSample = buffer[pos++] : FillBuffer(); }
 	uint16_t ReadLast() { return lastSample; }
 public:
-	CBinaryDTBSource(CTestboard &src) : tb(&src), pos(0), lastSample(0) { buffer.reserve(DTB_SOURCE_BLOCK_SIZE); }
+	CBinaryDTBSource(CTestboard &src) : tb(&src), lastSample(0), pos(0) { buffer.reserve(DTB_SOURCE_BLOCK_SIZE); }
 };
 
 
@@ -80,7 +80,7 @@ class CBinaryFileSource : public CSource<uint16_t>
 	uint16_t Read() { return (pos < size) ? lastSample = buffer[pos++] : FillBuffer(); }
 	uint16_t ReadLast() { return lastSample; }
 public:
-	CBinaryFileSource() : f(0), size(0), pos(0), lastSample(0) { buffer.reserve(FILE_SOURCE_BLOCK_SIZE); }
+	CBinaryFileSource() : f(0), lastSample(0), size(0), pos(0) { buffer.reserve(FILE_SOURCE_BLOCK_SIZE); }
 	~CBinaryFileSource() { Close(); }
 	bool Open(const char *filename) { return (f = fopen(filename, "rb")) != 0; }
 	void Close() { if (f) { fclose(f); f = 0; } }
