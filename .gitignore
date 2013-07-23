@@ -22,3 +22,5 @@ bin
 *.txt
 psi46test
 *.d
+rpcgen/rpcgen
+*.swp
