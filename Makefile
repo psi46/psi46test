@@ -6,9 +6,8 @@ OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o sett
 #OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o linux/usb.o
 
 ifeq ($(UNAME), Darwin)
-#CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include
 # temporarily removed -Werror
-CXXFLAGS = -g -Os -Wall -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include
+CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include
 LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11
 endif
 
@@ -45,7 +44,7 @@ bin:
 
 rpc_calls.cpp:
 	make -C rpcgen
-	$(RPCGEN) pixel_dtb.h -hrpc_calls.cpp
+	$(RPCGEN) pixel_dtb.h -hrpc_calls.cpp > rpcgen.log
 
 bin/psi46test: $(addprefix obj/,$(OBJS)) bin rpc_calls.cpp
 	$(CXX) -o $@ $(addprefix obj/,$(OBJS)) $(LDFLAGS)
