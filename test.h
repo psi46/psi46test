@@ -15,6 +15,7 @@
 #ifndef TEST_H
 #define TEST_H
 
+// wafertest
 
 void InitDAC(bool reset = false);
 void InitChip();
