@@ -1,0 +1,205 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName />
+    <SccLocalPath />
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>.\win32\Debug\</OutDir>
+    <IntDir>.\win32\Debug\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>$(BOOST_ROOT)\lib32;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(BOOST_ROOT);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>.\win32\Release\</OutDir>
+    <IntDir>.\win32\Release\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <LibraryPath>$(BOOST_ROOT)\lib32;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(BOOST_ROOT);$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <MinimalRebuild>true</MinimalRebuild>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;WAFERTESTER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\win32\Debug\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>.\win32\Debug\psi46test.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\win32\Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\win32\Debug\</ProgramDataBaseFileName>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Midl>
+      <TypeLibraryName>.\win32\Debug\psi46test.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0807</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\win32\Debug\psi46test.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\win32\Debug\psi46test.exe</OutputFile>
+      <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;perftimer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ROOTSYS)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;WAFERTESTER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>.\win32\Release\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>.\win32\Release\psi46test.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>.\win32\Release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\win32\Release\</ProgramDataBaseFileName>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+    <Midl>
+      <TypeLibraryName>.\win32\Release\psi46test.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0807</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>.\win32\Release\psi46test.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>.\win32\Release\psi46test.exe</OutputFile>
+      <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;perftimer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ROOTSYS)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <CustomBuildStep>
+      <Command>rpcgen pixel_dtb.h -hrpc_calls.cpp</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>rpc_calls.cpp</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>pixel_dtb.h</Inputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="analyzer.cpp" />
+    <ClCompile Include="chipdatabase.cpp" />
+    <ClCompile Include="cmd.cpp">
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">All</AssemblerOutput>
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>
+    </ClCompile>
+    <ClCompile Include="color.cpp" />
+    <ClCompile Include="command.cpp" />
+    <ClCompile Include="datastream.cpp" />
+    <ClCompile Include="defectlist.cpp" />
+    <ClCompile Include="error.cpp" />
+    <ClCompile Include="histo.cpp" />
+    <ClCompile Include="pipe.cpp" />
+    <ClCompile Include="pixelmap.cpp" />
+    <ClCompile Include="plot.cpp" />
+    <ClCompile Include="prober.cpp" />
+    <ClCompile Include="profiler.cpp" />
+    <ClCompile Include="protocol.cpp" />
+    <ClCompile Include="pixel_dtb.cpp" />
+    <ClCompile Include="ps.cpp" />
+    <ClCompile Include="psi46test.cpp" />
+    <ClCompile Include="rpc.cpp" />
+    <ClCompile Include="rpc_calls.cpp" />
+    <ClCompile Include="test_dig.cpp" />
+    <ClCompile Include="usb.cpp" />
+    <ClCompile Include="win32\rs232.cpp" />
+    <ClCompile Include="scanner.cpp" />
+    <ClCompile Include="settings.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="analyzer.h" />
+    <ClInclude Include="chipdatabase.h" />
+    <ClInclude Include="CImg.h" />
+    <ClInclude Include="color.h" />
+    <ClInclude Include="command.h" />
+    <ClInclude Include="datapipe.h" />
+    <ClInclude Include="datastream.h" />
+    <ClInclude Include="defectlist.h" />
+    <ClInclude Include="error.h" />
+    <ClInclude Include="htable.h" />
+    <ClInclude Include="perftimer.h" />
+    <ClInclude Include="pipe.h" />
+    <ClInclude Include="pixelmap.h" />
+    <ClInclude Include="plot.h" />
+    <ClInclude Include="prober.h" />
+    <ClInclude Include="profiler.h" />
+    <ClInclude Include="ps.h" />
+    <ClInclude Include="rpc.h" />
+    <ClInclude Include="rpc_error.h" />
+    <ClInclude Include="rpc_io.h" />
+    <ClInclude Include="usb.h" />
+    <ClInclude Include="win32\FTD2XX.H" />
+    <ClInclude Include="histo.h" />
+    <ClInclude Include="protocol.h" />
+    <ClInclude Include="pixel_dtb.h" />
+    <ClInclude Include="psi46test.h" />
+    <ClInclude Include="rs232.h" />
+    <ClInclude Include="scanner.h" />
+    <ClInclude Include="settings.h" />
+    <ClInclude Include="test.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

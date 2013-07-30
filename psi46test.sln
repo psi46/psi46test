@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psi46test", "psi46test.vcxproj", "{B616516B-A306-F790-7CF0-4B89B2E51720}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "psi46test_dll", "psi46test_dll\psi46test_dll.vcxproj", "{D9B7B750-6123-46C8-8B78-47EA348DFA8D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dlltest", "dlltest\dlltest.vcxproj", "{A21CE877-74A6-FB4C-71D0-4ECDC2F55F11}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B616516B-A306-F790-7CF0-4B89B2E51720}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B616516B-A306-F790-7CF0-4B89B2E51720}.Debug|Win32.Build.0 = Debug|Win32
+		{B616516B-A306-F790-7CF0-4B89B2E51720}.Release|Win32.ActiveCfg = Release|Win32
+		{B616516B-A306-F790-7CF0-4B89B2E51720}.Release|Win32.Build.0 = Release|Win32
+		{D9B7B750-6123-46C8-8B78-47EA348DFA8D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D9B7B750-6123-46C8-8B78-47EA348DFA8D}.Debug|Win32.Build.0 = Debug|Win32
+		{D9B7B750-6123-46C8-8B78-47EA348DFA8D}.Release|Win32.ActiveCfg = Release|Win32
+		{D9B7B750-6123-46C8-8B78-47EA348DFA8D}.Release|Win32.Build.0 = Release|Win32
+		{A21CE877-74A6-FB4C-71D0-4ECDC2F55F11}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A21CE877-74A6-FB4C-71D0-4ECDC2F55F11}.Debug|Win32.Build.0 = Debug|Win32
+		{A21CE877-74A6-FB4C-71D0-4ECDC2F55F11}.Release|Win32.ActiveCfg = Release|Win32
+		{A21CE877-74A6-FB4C-71D0-4ECDC2F55F11}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
