@@ -9,6 +9,10 @@
 #include "rpc_io.h"
 #include "rpc_error.h"
 
+#ifndef RPC_PROFILING
+#define RPC_PROFILING
+#endif
+
 #ifdef RPC_MULTITHREADING
 #include <boost/thread.hpp>
 #define RPC_THREAD boost::mutex m_sync;
@@ -38,10 +42,10 @@ extern const char rpc_timestamp[];
 	void rpc_Connect(CRpcIo &port) { rpc_io = &port; rpc_Clear(); } \
 	uint16_t rpc_GetCallId(uint16_t x) \
 	{ \
-	        string n(rpc_cmdName[x]); \
 		int id = rpc_cmdId[x]; \
 		if (id >= 0) return id; \
-		id = GetRpcCallId(n); \
+		string n(rpc_cmdName[x]); \
+		rpc_cmdId[x] = id = GetRpcCallId(n); \
 		if (id >= 0) return id; \
 		throw CRpcError(CRpcError::UNKNOWN_CMD); \
 	}
@@ -165,7 +169,7 @@ void rpc_Receive(CRpcIo &rpc_io, vector<T> &x)
 		throw CRpcError(CRpcError::WRONG_DATA_SIZE);
 	}
 	x.assign(msg.m_size/sizeof(T), 0);
-	rpc_io.Read(&(x[0]), msg.m_size);
+	if (x.size() != 0) rpc_io.Read(&(x[0]), msg.m_size);
 }
 
 
@@ -177,3 +181,7 @@ inline void rpc_Send(CRpcIo &rpc_io, const string &x)
 
 void rpc_Receive(CRpcIo &rpc_io, string &x);
 
+
+// === tools ================================================================
+
+void rpc_TranslateCallName(const string &in, string &out);

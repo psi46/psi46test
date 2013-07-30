@@ -18,10 +18,12 @@
 #include <fstream>
 #include "psi46test.h"
 #include "plot.h"
+#include "analyzer.h"
 
 #include "command.h"
+#include "defectlist.h"
+#include "rpc.h"
 
-#include <vector>
 
 using namespace std;
 
@@ -36,6 +38,11 @@ using namespace std;
 
 #define FIFOSIZE 8192
 
+//                   cable length:     5   48  prober 450 cm
+extern const int delayAdjust = 19; //  4    0    19    5
+extern const int deserAdjust =  5; //  4    4     5    6
+
+
 // =======================================================================
 //  connection, communication, startup commands
 // =======================================================================
@@ -45,7 +52,7 @@ CMD_PROC(scan)
 	CTestboard *tb = new CTestboard;
 
 	unsigned int nDev;
-	char name[64];
+	string name;
 
 	if (tb->EnumFirst(nDev))
 	{
@@ -56,7 +63,7 @@ CMD_PROC(scan)
 			if (tb->EnumNext(name))
 			{
 				printf("%2u: %s", i, name);
-				if (tb->Open(name,true))
+				if (tb->Open(&(name[0]),true))
 				{
 					try {
 						unsigned int bid = tb->GetBoardId();
@@ -114,6 +121,13 @@ CMD_PROC(setled)
 	return true;
 }
 
+CMD_PROC(log)
+{
+	char s[256];
+	PAR_STRINGEOL(s,255);
+	Log.printf("%s\n", s);
+	return true;
+}
 
 bool UpdateDTB(const char *filename)
 {
@@ -173,7 +187,7 @@ bool UpdateDTB(const char *filename)
 			printf("ERROR UPGRADE: %s!\n", msg.data());
 			return false;
 		}
-		
+	
 		// write EPCS FLASH
 		printf("DTB download complete.\n");
 		tb.mDelay(200);
@@ -182,6 +196,7 @@ bool UpdateDTB(const char *filename)
 			   "Wait till LEDs goes off.\n"
 		       "Restart the DTB.\n");
 		tb.UpgradeExec(recordCount);
+		tb.Flush();
 
 		return true;
 	}
@@ -195,21 +210,38 @@ CMD_PROC(upgrade)
 {
 	char filename[256];
 	PAR_STRING(filename, 255);
-	if (UpdateDTB(filename))
-		printf("DTB download complete.\n"
-		       "FLASH write starts. LED 1..4 on\n"
-			   "Wait till LEDs goes off. Don't interrupt DTB power if LEDs are on!\n"
-		       "Restart the DTB.\n");
+	UpdateDTB(filename);
 	return true;
 }
 
+CMD_PROC(rpcinfo)
+{
+	string name, call, ts;
+
+	tb.GetRpcTimestamp(ts);
+	int version = tb.GetRpcVersion();
+	int n = tb.GetRpcCallCount();
+
+	printf("--- DTB RPC info ----------------------------------------\n");
+	printf("RPC version:     %i.%i\n", version/256, version & 0xff);
+	printf("RPC timestamp:   %s\n", ts.c_str());
+	printf("Number of calls: %i\n", n);
+	printf("Function calls:\n");
+	for (int i = 0; i < n; i++)
+	{
+		tb.GetRpcCallName(i, name);
+		rpc_TranslateCallName(name, call);
+		printf("%5i: %s\n", i, call.c_str());
+	}
+	return true;
+}
 
 CMD_PROC(info)
 {
 	string s;
 	tb.GetInfo(s);
-	printf("--- DTB info ----------------------------\n%s"
-		   "-----------------------------------------\n", s.c_str());
+	printf("--- DTB info ------------------------------------\n%s"
+		   "-------------------------------------------------\n", s.c_str());
 	return true;
 }
 
@@ -779,7 +811,7 @@ CMD_PROC(dsize)
 
 CMD_PROC(dread)
 {
-	uint32_t words_remaining;
+	uint32_t words_remaining = 0;
 	vector<uint16_t> data;
 	tb.Daq_Read(data, words_remaining);
 	int size = data.size();
@@ -806,7 +838,7 @@ CMD_PROC(dread)
 
 CMD_PROC(dreada)
 {
-	uint32_t words_remaining;
+	uint32_t words_remaining = 0;
 	vector<uint16_t> data;
 	tb.Daq_Read(data, words_remaining);
 	int size = data.size();
@@ -857,7 +889,7 @@ CMD_PROC(takedata)
 	while (!keypressed())
 	{
 		// read data and status from DTB
-		status = tb.Daq_Read(data, n, 40000);
+		status = tb.Daq_Read(data, 40000, n);
 
 		// make statistics
 		sum += data.size();
@@ -1012,13 +1044,13 @@ CMD_PROC(takedata2)
 
 	clock_t t = clock();
 	unsigned long memsize = tb.Daq_Open(1000000);
-	tb.Daq_Select_Deser160(4);
+	tb.Daq_Select_Deser160(deserAdjust);
 	tb.Daq_Start();
 	clock_t t_start = clock();
 	while (!keypressed())
 	{
 		// read data and status from DTB
-		status = tb.Daq_Read(data, n, 20000);
+		status = tb.Daq_Read(data, 20000, n);
 
 		// make statistics
 		sum += data.size();
@@ -1063,7 +1095,6 @@ CMD_PROC(showclk)
 //	PAR_INT(gain,1,4);
 
 	int i, k;
-	uint32_t buffersize;
 	vector<uint16_t> data[20];
 
 	tb.Pg_Stop();
@@ -1090,7 +1121,7 @@ CMD_PROC(showclk)
 		tb.Pg_Single();
 		tb.uDelay(1000);
 		tb.Daq_Stop();
-		tb.Daq_Read(data[i], buffersize, 1024);
+		tb.Daq_Read(data[i], 1024);
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
@@ -1121,7 +1152,6 @@ CMD_PROC(showctr)
 //	PAR_INT(gain,1,4);
 
 	int i, k;
-	uint32_t buffersize;
 	vector<uint16_t> data[20];
 
 	tb.Pg_Stop();
@@ -1148,7 +1178,7 @@ CMD_PROC(showctr)
 		tb.Pg_Single();
 		tb.uDelay(1000);
 		tb.Daq_Stop();
-		tb.Daq_Read(data[i], buffersize, 1024);
+		tb.Daq_Read(data[i], 1024);
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
@@ -1190,7 +1220,6 @@ CMD_PROC(showsda)
 {
 	const int nSamples = 52;
 	int i, k;
-	uint32_t buffersize;
 	vector<uint16_t> data[20];
 
 	tb.SignalProbeD1(9);
@@ -1209,7 +1238,7 @@ CMD_PROC(showsda)
 		tb.roc_Pix_Trim(12, 34, 5);
 		tb.uDelay(1000);
 		tb.Daq_Stop();
-		tb.Daq_Read(data[i], buffersize, 1024);
+		tb.Daq_Read(data[i], 1024);
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
@@ -1292,7 +1321,6 @@ void decoding_show(vector<uint16_t> *data)
 CMD_PROC(decoding)
 {
 	unsigned short t;
-	uint32_t buffersize;
 	vector<uint16_t> data[16];
 	tb.Pg_SetCmd(0, PG_TOK + 0);
 	tb.Daq_Select_Deser160(2);
@@ -1310,7 +1338,7 @@ CMD_PROC(decoding)
 			tb.Pg_Single();
 			tb.uDelay(200);
 			tb.Daq_Stop();
-			tb.Daq_Read(data[i], buffersize, 200);
+			tb.Daq_Read(data[i], 200);
 		}
 		Log.printf("%3i ", int(t));
 		decoding_show(data);
@@ -1741,55 +1769,326 @@ CMD_PROC(mask)
 
 
 
+
 // =======================================================================
 //  experimential ROC test commands
 // =======================================================================
-/*
-void PrintScale(FILE *f, int min, int max)
+
+
+void PrintScale(int min, int max)
 {
 	int x;
-	fputs("     |", f);
-	for (x=min; x<max; x++) fprintf(f, "%i", (x/100)%10);
-	fputs("\n     |", f);
-	for (x=min; x<max; x++) fprintf(f, "%i", (x/10)%10);
-	fputs("\n     |", f);
-	for (x=min; x<max; x++) fprintf(f, "%i", x%10);
-	fputs("\n-----+", f);
-	for (x=min; x<max; x++) fputs("-", f);
-	fputs("\n", f);
+	Log.puts("     |");
+	for (x=min; x<=max; x++) Log.printf("%i", (x/100)%10);
+	Log.puts("\n     |");
+	for (x=min; x<=max; x++) Log.printf("%i", (x/10)%10);
+	Log.puts("\n     |");
+	for (x=min; x<=max; x++) Log.printf("%i", x%10);
+	Log.puts("\n-----+");
+	for (x=min; x<=max; x++) Log.puts("-");
+	Log.puts("\n");
 }
-*/
 
-// --- module test functions (Peter) -------------------------------------
-/*
-CMD_PROC(chipeff)
+void Scan1D(int vx, int xmin, int xmax)
 {
-	int x, y;
-	short trim[ROC_NUMROWS*ROC_NUMCOLS];
-	double res[ROC_NUMROWS*ROC_NUMCOLS];
+	int x, k;
+	vector<uint16_t> data;
 
-	for (x=0; x<ROC_NUMROWS*ROC_NUMCOLS; x++) trim[x] = 0;
-//	tb.ChipEfficiency(9,trim,res);
-
-	for (y=ROC_NUMROWS-1; y>=0; y--)
+	// --- take data
+	tb.Daq_Start();
+	for (x = xmin; x<=xmax; x++)
 	{
-		for (x=0; x<ROC_NUMCOLS; x++)
-			Log.printf("%i", res[x*ROC_NUMROWS + y]);
-		Log.puts("/n");
+		tb.roc_SetDAC(vx, x);
+		tb.uDelay(100);
+		for (k=0; k<10; k++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(5);
+		}
+	}
+	tb.Daq_Stop();
+	tb.Daq_Read(data, 10000);
+
+	// --- analyze data
+	int pos = 0, count;
+	int spos = 0;
+	char s[260];
+	PixelReadoutData pix;
+
+	try
+	{
+		for (x = xmin; x<=xmax; x++)
+		{
+			count = 0;
+			for (k=0; k<10; k++)
+			{
+				DecodePixel(data, pos, pix);
+				if (pix.n > 0) count++;
+			}
+			if (count == 0) s[spos++] = '.';
+			else if (count >= 10) s[spos++] = '*';
+			else s[spos++] = count + '0';
+		}
+	} catch (int) {}
+	s[spos] = 0;
+	Log.printf("%s\n", s);
+	Log.flush();
+}
+
+
+CMD_PROC(shmoo)
+{
+	int vx, xmin, xmax, vy, ymin, ymax;
+	PAR_INT(vx, 0, 0xff);
+	PAR_RANGE(xmin,xmax, 0,255);
+	PAR_INT(vy, 0, 0xff);
+	PAR_RANGE(ymin,ymax, 0,255);
+
+	int count = xmax-xmin;
+	if (count < 1 || count > 256) return true;
+
+	Log.section("SHMOO",false);
+	Log.printf("regX(%i)=%i:%i;  regY(%i)=%i:%i\n",
+		vx, xmin, xmax, vy, ymin, ymax);
+
+	tb.Daq_Open(50000);
+	tb.Daq_Select_Deser160(deserAdjust);
+
+	PrintScale(xmin, xmax);
+	for (int y=ymin; y<=ymax; y++)
+	{
+		tb.roc_SetDAC(vy,y);
+		tb.uDelay(100);
+		Log.printf("%5i|", y);
+		Scan1D(vx, xmin, xmax);
 	}
 
-	for (y=0; y<40; y++) printf("%i", int(res[y]));
-	puts("/n");
+	tb.Daq_Close();
 
 	return true;
 }
+
+
+
+
+CMD_PROC(phscan)
+{
+	int col, row;
+	PAR_INT(col, 0, 51)
+	PAR_INT(row, 0, 79)
+
+	const int vcalmin = 0;
+	const int vcalmax = 140;
+
+	// load settings
+//	tb.roc_SetDAC(CtrlReg,0x00); // 0x04
+
+	tb.Pg_Stop();
+	tb.Pg_SetCmd(0, PG_RESR + 15);
+	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(2, PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+
+	tb.roc_SetDAC(WBC,  15);
+
+	tb.Daq_Open(50000);
+	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Start();
+
+	// --- scan vcal
+	tb.roc_Col_Enable(col, true);
+	tb.roc_Pix_Trim(col, row, 15);
+	tb.roc_Pix_Cal (col, row, false);
+
+	for (int cal = vcalmin; cal < vcalmax; cal++)
+	{
+		tb.roc_SetDAC(Vcal, cal);
+		tb.uDelay(100);
+		for (int k=0; k<5; k++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(50);
+		}
+	}
+
+	tb.roc_Pix_Mask(col, row);
+	tb.roc_Col_Enable(col, false);
+	tb.roc_ClrCal();
+
+	tb.Daq_Stop();
+	vector<uint16_t> data;
+	tb.Daq_Read(data, 4000);
+	tb.Daq_Close();
+
+	// --- plot data
+	PixelReadoutData pix;
+	int pos = 0;
+	int dpos = 0;
+	vector<double> y(vcalmax-vcalmin, 0.0);
+	try
+	{
+		for (int cal = vcalmin; cal < vcalmax; cal++)
+		{
+			int cnt = 0;
+			double yi = 0.0;
+			for (int k=0; k<5; k++)
+			{
+				DecodePixel(data, pos, pix);
+				if (pix.n > 0) { yi += pix.p; cnt++; }
+			}
+			y[dpos++] = (cnt > 0) ? yi/cnt : 0.0;
+		}
+	} catch (int e)
+	{ 
+		printf("Read error %i\n", e);
+		if (data.size() > 5) for (int i=0; i<=5; i++) printf(" %04X", int(data[i]));
+		printf("\n");
+		return true;
+	}
+
+	PlotData("ADC scan", "Vcal", "ADC value", double(vcalmin), double(vcalmax), y);
+
+	return true;
+}
+
+
+CMD_PROC(deser160)
+{
+	tb.Daq_Open(1000);
+	tb.Pg_SetCmd(0, PG_TOK);
+
+	vector<uint16_t> data;
+
+	int x, y;
+	printf("      0     1     2     3     4     5     6     7\n");
+	for (y = 0; y < 20; y++)
+	{
+		printf("%2i:", y);
+		for (x = 0; x < 8; x++)
+		{
+			tb.Daq_Select_Deser160(x);
+			tb.Sig_SetDelay(SIG_CLK,  y);
+			tb.Sig_SetDelay(SIG_SDA,  y+15);
+			tb.Sig_SetDelay(SIG_CTR,  y);
+			tb.Sig_SetDelay(SIG_TIN,  y+5);
+			tb.uDelay(10);
+
+			tb.Daq_Start();
+			tb.Pg_Single();
+			tb.uDelay(10);
+			tb.Daq_Stop();
+			tb.Daq_Read(data, 100);
+	
+			if (data.size())
+			{
+				int h = data[0] & 0xffc;
+				if (h == 0x7f8)
+					printf(" <%03X>", int(data[0] & 0xffc));
+				else
+					printf("  %03X ", int(data[0] & 0xffc));
+			}
+			else printf("  ... ");
+		}
+		printf("\n");
+	}
+	tb.Daq_Close();
+	
+	return true;
+}
+
+
+/*
+0000 I2C data
+0001 I2C address
+0010 I2C pixel column
+0011 I2C pixel row
+
+1000 VD unreg
+1001 VA unreg
+1010 VA reg
+1100 IA
+
+{ rocaddr[3:0], sana, s[2:0], data[7:0] }
+
 */
+
+CMD_PROC(readback)
+{
+	int i;
+
+	tb.Daq_Open(100);
+	tb.Pg_Stop();
+	tb.Pg_SetCmd(0, PG_TOK);
+	tb.Daq_Select_Deser160(deserAdjust);
+
+	// --- take data
+	tb.Daq_Start();
+	for (i=0; i<36; i++)
+	{
+		tb.Pg_Single();
+		tb.uDelay(20);
+	}
+	tb.Daq_Stop();
+
+	// read out data
+	vector<uint16_t> data;
+	tb.Daq_Read(data, 40);
+	tb.Daq_Close();
+
+	//analyze data
+	int pos = 0;
+	PixelReadoutData pix;
+
+	unsigned int value = 0;
+	try
+	{
+		// find start bit
+		do
+		{
+			DecodePixel(data, pos, pix); 
+		} while ((pix.hdr & 2) == 0);
+
+		// read data
+		for (i=0; i<16; i++)
+		{
+			DecodePixel(data, pos, pix);
+			value = (value << 1) + (pix.hdr & 1);
+		}
+
+	} catch (int e)
+	{
+		printf("error %i (size=%i, pos=%i)\n", e, int(data.size()), pos);
+		return true;
+	}
+
+	int roc = (value >> 12) & 0xf;
+	int cmd = (value >>  8) & 0xf;
+	int x = value & 0xff;
+
+	printf("%04X: ", value);
+	switch (cmd)
+	{
+	case  0: printf("roc(%i).I2C_data = %02X\n", roc, x); break;
+	case  1: printf("roc(%i).I2C_addr = %02X\n", roc, x); break;
+	case  2: printf("roc(%i).col = %02X\n", roc, x); break;
+	case  3: printf("roc(%i).row = %02X\n", roc, x); break;
+	case  8: printf("roc(%i).VD_unreg = %02X\n", roc, x); break;
+	case  9: printf("roc(%i).VA_unreg = %02X\n", roc, x); break;
+	case 10: printf("roc(%i).VA_reg = %02X\n", roc, x); break;
+	case 12: printf("roc(%i).IA = %02X\n", roc, x); break;
+	default: printf("roc(%i) %04X\n", roc, value); break;
+	}
+
+	return true;
+}
+
+
 
 // =======================================================================
 //  chip/wafer test commands
 // =======================================================================
 
-/*
+
 int chipPos = 0;
 
 char chipPosChar[] = "ABCD";
@@ -1803,7 +2102,469 @@ void GetTimeStamp(char datetime[])
 	dt = localtime(&t);
 	strcpy(datetime, asctime(dt));
 }
-*/
+
+
+bool ReportWafer()
+{
+	char *msg;
+	Log.section("WAFER", false);
+
+	// ProductID
+	msg = prober.printf("GetProductID");
+	if (strlen(msg)<=3)
+	{
+		printf("missing wafer product id!\n");
+		Log.printf("productId?\n");
+		return false;
+	}
+	Log.printf("%s", msg+3);
+	strcpy(g_chipdata.productId, msg+3);
+
+	// WaferID
+	msg = prober.printf("GetWaferID");
+	if (strlen(msg)<=3)
+	{
+		printf(" missing wafer id!\n");
+		Log.printf(" waferId?\n");
+		return false;
+	}
+	Log.printf(" %s", msg+3);
+	strcpy(g_chipdata.waferId, msg+3);
+
+	// Wafer Number
+	int num;
+	msg = prober.printf("GetWaferNum");
+	if (strlen(msg)>3) if (sscanf(msg+3, "%i", &num) == 1)
+	{
+		Log.printf(" %i\n", num);
+		strcpy(g_chipdata.waferNr, msg+3);
+		return true;
+	}
+
+	printf(" missing wafer number!\n");
+	Log.printf(" wafernum?\n");
+	return false;
+}
+
+
+bool ReportChip(int &x, int &y)
+{
+	char *pos = prober.printf("ReadMapPosition");
+	int len = strlen(pos);
+	if (len<3) return false;
+	pos += 3;
+
+	float posx, posy;
+	if (sscanf(pos, "%i %i %f %f", &x, &y, &posx, &posy) != 4)
+	{
+		printf(" error reading chip information\n");
+		return false;
+	}
+	nEntry++;
+	printf("#%05i: %i%i%c -> ", nEntry, y, x, chipPosChar[chipPos]);
+	fflush(stdout);
+	Log.section("CHIP", false);
+	Log.printf(" %i %i %c %9.1f %9.1f\n",
+		x, y, chipPosChar[chipPos], posx, posy);
+	g_chipdata.mapX   = x;
+	g_chipdata.mapY   = y;
+	g_chipdata.mapPos = chipPos;
+	return true;
+}
+
+
+CMD_PROC(pr)
+{
+	char s[256];
+	PAR_STRINGEOL(s,250);
+
+	printf(" REQ %s\n", s);
+	char *answer = prober.printf("%s", s);
+	printf(" RSP %s\n", answer);
+	return true;
+}
+
+
+CMD_PROC(sep)
+{
+	prober.printf("MoveChuckSeparation");
+	return true;
+}
+
+
+CMD_PROC(contact)
+{
+	prober.printf("MoveChuckContact");
+	return true;
+}
+
+
+bool test_wafer()
+{
+	int x, y;
+
+	g_chipdata.Invalidate();
+
+	if (!ReportWafer()) return true;
+	if (!ReportChip(x,y)) return true;
+	g_chipdata.nEntry = nEntry;
+
+	GetTimeStamp(g_chipdata.startTime);
+	Log.timestamp("BEGIN");
+	tb.SetLed(0x10);
+	bool repeat;
+	int bin = test_roc_dig(repeat);
+	tb.SetLed(0x00);
+	tb.Flush();
+	GetTimeStamp(g_chipdata.endTime);
+	Log.timestamp("END");
+	Log.puts("\n");
+	Log.flush();
+	printf("%3i\n", bin);
+
+	printf(" RSP %s\n", prober.printf("BinMapDie %i", bin));
+
+	return true;
+}
+
+
+bool test_chip(char chipid[])
+{
+	nEntry++;
+
+	g_chipdata.Invalidate();
+	g_chipdata.nEntry = nEntry;
+	printf("#%05i: %s -> ", nEntry, chipid);
+	fflush(stdout);
+	Log.section("CHIP1", false);
+	Log.printf(" %s\n", chipid);
+	strcpy(g_chipdata.chipId, chipid);
+
+	GetTimeStamp(g_chipdata.startTime);
+	Log.timestamp("BEGIN");
+
+	tb.SetLed(0x10);
+	bool repeat;
+	int bin = test_roc_dig(repeat);
+	tb.SetLed(0x00);
+	tb.Flush();
+
+	GetTimeStamp(g_chipdata.endTime);
+	Log.timestamp("END");
+	Log.puts("\n");
+	Log.flush();
+
+	printf("%3i\n", bin);
+
+	return true;
+}
+
+
+CMD_PROC(test)
+{
+
+	if (settings.port_prober >= 0)
+	{
+		test_wafer();
+	}
+	else
+	{
+		char id[42];
+		PAR_STRINGEOL(id,40);
+		test_chip(id);
+	}
+
+//	FILE *f = fopen("g_chipdata.txt", "wt");
+//	if (f) { g_chipdata.Save(f);  fclose(f); }
+
+	return true;
+}
+
+
+#define CSX   8050
+#define CSY  10451
+
+const int CHIPOFFSET[4][4][2] =
+{	// from -> to  0           1           2           3
+	/*   0  */ { {   0,   0},{-CSX,   0},{   0,-CSY},{-CSX,-CSY} },
+	/*   1  */ { { CSX,   0},{   0,   0},{ CSX,-CSY},{   0,-CSY} },
+	/*   2  */ { {   0, CSY},{-CSX, CSY},{   0,   0},{-CSX,   0} },
+	/*   3  */ { { CSX, CSY},{   0, CSY},{ CSX,   0},{   0,   0} },
+};
+
+bool ChangeChipPos(int pos)
+{
+	int rsp;
+	char *answer = prober.printf("MoveChuckSeparation");
+	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
+	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
+
+	int x = CHIPOFFSET[chipPos][pos][0];
+	int y = CHIPOFFSET[chipPos][pos][1];
+
+	answer = prober.printf("MoveChuckPosition %i %i H", x, y);
+	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
+	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
+
+	answer = prober.printf("SetMapHome");
+	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
+	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
+
+	chipPos = pos;
+	return true;
+}
+
+
+CMD_PROC(chippos)
+{
+	char s[4];
+	PAR_STRING(s,2);
+	if (s[0] >= 'a') s[0] -= 'a' - 'A';
+	if (s[0] == 'B') return true; // chip B not existing
+
+	int i;
+	for (i=0; i<4; i++)
+	{
+		if (s[0] == chipPosChar[i])
+		{
+			ChangeChipPos(i);
+			return true;
+		}
+	}
+	return true;
+}
+
+
+CDefectList deflist[4];
+
+
+bool goto_def(int i)
+{
+	int x, y;
+	if (!deflist[chipPos].get(i, x, y)) return false;
+	char *answer = prober.printf("StepNextDie %i %i", x, y);
+
+	int rsp;
+	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
+	if (rsp!=0) printf(" RSP %s\n", answer);
+
+	return rsp == 0;
+}
+
+
+bool go_TestDefects()
+{
+	if (deflist[chipPos].size() == 0) return true;
+
+	printf(" Begin Defect Chip %c Test\n", chipPosChar[chipPos]);
+
+	// goto first position
+	int i = 0;
+	if (!goto_def(i)) return false;
+
+	prober.printf("MoveChuckContact");
+
+	do
+	{
+		int x, y;
+		g_chipdata.Invalidate();
+
+		if (!ReportChip(x,y)) break;
+		GetTimeStamp(g_chipdata.startTime);
+		Log.timestamp("BEGIN");
+		bool repeat;
+		int bin = test_roc_dig(repeat);
+		GetTimeStamp(g_chipdata.endTime);
+		Log.timestamp("END");
+		Log.puts("\n");
+		Log.flush();
+		printf("%3i\n", bin);
+		prober.printf("BinMapDie %i", bin);
+
+		if (keypressed())
+		{
+			printf(" wafer test interrupted!\n");
+			break;
+		}
+
+		tb.mDelay(100);
+		i++;
+	} while (goto_def(i));
+
+	prober.printf("MoveChuckSeparation");
+
+	return true;
+}
+
+
+bool TestSingleChip(int &bin, bool &repeat)
+{
+	int x, y;
+	g_chipdata.Invalidate();
+
+	if (!ReportChip(x,y)) return false;
+	GetTimeStamp(g_chipdata.startTime);
+	Log.timestamp("BEGIN");
+	tb.SetLed(0x10);
+	bin = test_roc_dig(repeat);
+	tb.SetLed(0x00);
+	tb.Flush();
+
+	//		if (0<bin && bin<13) deflist[chipPos].add(x,y);
+	GetTimeStamp(g_chipdata.endTime);
+	Log.timestamp("END");
+	Log.puts("\n");
+	Log.flush();
+	printf("%3i\n", bin);
+	return true;
+}
+
+
+bool go_TestChips()
+{
+	printf(" Begin Chip %c Test\n", chipPosChar[chipPos]);
+	prober.printf("MoveChuckContact");
+	tb.mDelay(200);
+
+	while (true)
+	{
+		int bin = 0;
+		bool repeat;
+		if (!TestSingleChip(bin,repeat)) break;
+
+		int nRep = settings.errorRep;
+		if (nRep > 0 && repeat)
+		{
+			prober.printf("BinMapDie %i", bin);
+			prober.printf("MoveChuckSeparation");
+			tb.mDelay(100);
+			prober.printf("MoveChuckContact");
+			tb.mDelay(200);
+			if (!TestSingleChip(bin,repeat)) break;
+			nRep--;
+		}
+
+		if (keypressed())
+		{
+			prober.printf("BinMapDie %i", bin);
+			printf(" wafer test interrupted!\n");
+			break;
+		}
+
+		// prober step
+		int rsp;
+		char *answer = prober.printf("BinStepDie %i", bin);
+		if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
+		if (rsp != 0) printf(" RSP %s\n", answer);
+		tb.mDelay(100);
+
+		// last chip ?
+		if (rsp == 0)   // ok -> next chip
+			continue;
+		if (rsp == 703) // end of wafer -> return
+		{
+			prober.printf("MoveChuckSeparation");
+			return true;
+		}
+
+		printf(" prober error! test stopped\n");
+		break;
+	}
+
+	prober.printf("MoveChuckSeparation");
+	return false;
+}
+
+
+CMD_PROC(go)
+{
+	static bool isRunning = false;
+
+	char s[12];
+	if (PAR_IS_STRING(s, 10))
+	{
+		if (strcmp(s,"init") == 0) { isRunning = false; }
+		else if (strcmp(s,"cont") == 0) { isRunning = true; }
+		else { printf(" illegal parameter");  return true; }
+	}
+
+	if (!isRunning)
+	{
+		ChangeChipPos(0);
+		for (int k=0; k<4; k++) deflist[k].clear();
+		prober.printf("StepFirstDie");
+		isRunning = true;
+	}
+
+	printf(" wafer test running\n");
+	if (!ReportWafer()) return true;
+
+	while (true)
+	{
+		// test chips
+		if (!go_TestChips()) break;
+
+		// test defect chips
+		prober.printf("StepFirstDie");
+		if (!go_TestDefects()) break;
+
+		// next chip position
+		if (chipPos < 3)
+		{
+			if (chipPos != 0) // exclude chip B (1)
+			{
+				if (!ChangeChipPos(chipPos+1)) break;
+			}
+			else
+			{
+				if (!ChangeChipPos(chipPos+2)) break;
+			}
+			char *answer = prober.printf("StepFirstDie");
+			int rsp;
+			if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
+			if (rsp != 0)
+			{
+				printf(" RSP %s\n", answer);
+				break;
+			}
+		}
+		else
+		{
+			ChangeChipPos(0);
+			isRunning = false;
+			break;
+		}
+	}
+	return true;
+}
+
+
+CMD_PROC(first)
+{
+	printf(" RSP %s\n", prober.printf("StepFirstDie"));
+	return true;
+}
+
+
+CMD_PROC(next)
+{
+	printf(" RSP %s\n", prober.printf("StepNextDie"));
+	return true;
+}
+
+
+CMD_PROC(goto)
+{
+	int x, y;
+	PAR_INT(x, -100, 100);
+	PAR_INT(y, -100, 100);
+
+	char *msg = prober.printf("StepNextDie %i %i", x, y);
+	printf(" RSP %s\n", msg);
+	return true;
+}
+
+
 
 
 // =======================================================================
@@ -1860,7 +2621,9 @@ void cmd()
 	CMD_REG(close,    "close                         close connection to testboard");
 	CMD_REG(welcome,  "welcome                       blinks with LEDs");
 	CMD_REG(setled,   "setled                        set atb LEDs"); //give 0-15 as parameter for four LEDs
+	CMD_REG(log,      "log <text>                    writes text to log file");
 	CMD_REG(upgrade,  "upgrade <filename>            upgrade DTB");
+	CMD_REG(rpcinfo,  "rpcinfo                       lists DTB functions");
 	CMD_REG(ver,      "ver                           shows DTB software version number");
 	CMD_REG(version,  "version                       shows DTB software version");
 	CMD_REG(info,     "info                          shows detailed DTB info");
@@ -1957,7 +2720,32 @@ void cmd()
 	CMD_REG(cald,     "cald                          clear calibrate");
 	CMD_REG(mask,     "mask                          mask all pixel and cols");
 
+	// --- experimental commands --------------------------------------------
 	CMD_REG(decoding, "decoding");
+	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");
+	CMD_REG(phscan,   "phscan                        ROC pulse height scan");
+	CMD_REG(readback, "readback                      read out ROC data");
+	CMD_REG(deser160, "deser160                      allign deser160");
+
+
+	// --- chip test command ---------------------------------------------
+	if (settings.port_prober >= 0)
+	CMD_REG(test,     "test                          run chip test");
+	else
+	CMD_REG(test,     "test <chip id>                run chip test");
+
+	if (settings.port_prober >= 0)
+	{
+	// --- prober commands -----------------------------------------------
+	CMD_REG(go,       "go init|cont                  start wafer test (press <cr> to stop)");
+	CMD_REG(pr,       "pr <command>                  send command to prober");
+	CMD_REG(sep,      "sep                           prober z-axis separation");
+	CMD_REG(contact,  "contact                       prober z-axis contact");
+	CMD_REG(first,    "first                         go to first die and clear wafer map");
+	CMD_REG(next,     "next                          go to next die");
+	CMD_REG(goto,     "goto                          go to specified die");
+	CMD_REG(chippos,  "chippos <ABCD>                move to chip A, B, C or D");
+	}
 
 	CMD_REG(h,        "h                             simple help");
 

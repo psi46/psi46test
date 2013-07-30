@@ -12,6 +12,9 @@
 
 #pragma once
 
+#include "profiler.h"
+#define RPC_PROFILING PROFILING
+
 // #define RPC_MULTITHREADING
 #include "rpc.h"
 
@@ -86,12 +89,14 @@ public:
 
 	RPC_EXPORT void GetRpcTimestamp(stringR &ts);
 
+	RPC_EXPORT int32_t GetRpcCallCount();
+	RPC_EXPORT bool    GetRpcCallName(int32_t id, stringR &callName);
 
 	// === DTB connection ====================================================
 
 	bool EnumFirst(unsigned int &nDevices) { return usb.EnumFirst(nDevices); };
-	bool EnumNext(char name[]) { return usb.EnumNext(name); }
-	bool Enum(char name[], unsigned int pos) { return usb.Enum(name, pos); }
+	bool EnumNext(string &name);
+	bool Enum(unsigned int pos, string &name);
 
 	bool Open(char name[], bool init=true); // opens a connection
 	void Close();				// closes the connection to the testboard
@@ -259,7 +264,10 @@ public:
 	RPC_EXPORT uint32_t Daq_GetSize();
 
 	RPC_EXPORT uint8_t Daq_Read(vectorR<uint16_t> &data,
-			 uint32_t &availsize, uint16_t blocksize = 16384);
+			 uint16_t blocksize = 16384);
+
+	RPC_EXPORT uint8_t Daq_Read(vectorR<uint16_t> &data,
+			uint16_t blocksize, uint32_t &availsize);
 
 	RPC_EXPORT void Daq_Select_ADC(uint16_t blocksize, uint8_t source,
 			uint8_t start, uint8_t stop = 0);
@@ -298,4 +306,9 @@ public:
 
 	// -- mask all pixels and columns of the chip
 	RPC_EXPORT void roc_Chip_Mask();
+
+
+// --- Wafer test functions
+	RPC_EXPORT bool testColPixel(uint8_t col, uint8_t trimbit, vectorR<uint8_t> &res);
+
 };

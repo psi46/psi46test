@@ -12,8 +12,13 @@
  * -------------------------------------------------------------
  */
 
-#include <string.h>
+#include <string>
+#include <vector>
 #include "psi46test.h"
+
+#include "profiler.h"
+
+using namespace std;
 
 
 // --- globals ---------------------------------------
@@ -21,75 +26,84 @@ int nEntry; // counts the chip tests
 
 CTestboard tb;
 CSettings settings;  // global settings
+CProber prober;
 CProtocol Log;
 
 
-char usbId[64];
+string usbId;
 
 bool FindDTB()
 {
+	string name;
+	vector<string> devList;
 	unsigned int nDev;
 	unsigned int nr;
-	if (tb.EnumFirst(nDev))
-	{
-		if (nDev == 0)
-		{
-			printf("No devices connected.\n");
-			return false;
-		}
 
-		if (nDev == 1)	// If only 1 connected device -> open it
-		{
-			if (!tb.EnumNext(usbId))
-			{
-				printf("Cannot read name of connected device\n");
-				return false;
-			}
-			return true;
-		}
-		
-		// If more than 1 connected device list them
-		printf("\nConnected devices:\n");
+	try
+	{
+		if (!tb.EnumFirst(nDev)) throw int(1);
 		for (nr=0; nr<nDev; nr++)
 		{
-			if (tb.EnumNext(usbId))
+			if (!tb.EnumNext(name)) throw int(2);
+			if (name.size() < 3) continue;
+			if (name.compare(0, 3, "DTB") == 0)	devList.push_back(name);
+		}
+	}
+	catch (int e)
+	{
+		switch (e)
+		{
+		case 1: printf("Cannot access the USB driver\n"); return false;
+		case 2: printf("Cannot read name of connected device\n"); return false;
+		default: return false;
+		}
+	}
+
+	if (devList.size() == 0)
+	{
+		printf("No devices connected.\n");
+		return false;
+	}
+
+	if (devList.size() == 1)
+	{
+		usbId = devList[0];
+		return true;
+	}
+
+	// If more than 1 connected device list them
+	printf("\nConnected devices:\n");
+	for (nr=0; nr<devList.size(); nr++)
+	{
+		printf("%2u: %s", nr, devList[nr].c_str());
+		if (tb.Open(&(devList[nr][0]), false))
+		{
+			try
 			{
-				printf("%2u: %s", nr, usbId);
-				if (tb.Open(usbId, false))
-				{
-					try
-					{
-						unsigned int bid = tb.GetBoardId();
-						printf("  BID=%2u\n", bid);
-						tb.Close();
-					}
-					catch (...)
-					{
-						printf("  Not identifiable\n");
-						tb.Close();
-					}
-				}
-				else printf(" - in use\n");	
+				unsigned int bid = tb.GetBoardId();
+				printf("  BID=%2u\n", bid);
 			}
-			else printf("Cannot read name of device\n");
+			catch (...)
+			{
+				printf("  Not identifiable\n");
+			}
+			tb.Close();
 		}
-		
-		printf("Please choose device (0-%u): ", (nDev-1));
-		char choice[8];
-		fgets(choice, 8, stdin);
-		sscanf (choice, "%d", &nr);
-		if (nr >= nDev)
-		{
-			nr = 0;
-			printf("No DTB opened\n");
-			return false;
-		}
-		if (!tb.Enum(usbId, nr))
-		{
-			printf("Cannot read name of device\n");
-			return false;
-		}
-	} else printf("Cannot access the USB driver\n");
+		else printf(" - in use\n");
+	}
+
+	printf("Please choose device (0-%u): ", (nDev-1));
+	char choice[8];
+	fgets(choice, 8, stdin);
+	sscanf (choice, "%d", &nr);
+	if (nr >= devList.size())
+	{
+		nr = 0;
+		printf("No DTB opened\n");
+		return false;
+	}
+
+	usbId = devList[nr];
 	return true;
 }
 
@@ -102,7 +116,7 @@ void help()
 }
 
 
-char filename[512];
+char filename[256];
 
 
 int main(int argc, char* argv[])
@@ -134,21 +148,22 @@ int main(int argc, char* argv[])
 	}
 
 	// --- open test board --------------------------------
-	Log.section("DTB", false);
+	Log.section("DTB");
 
-	char *name = FindDTB() ? usbId : settings.port_tb;
+	if (!FindDTB()) usbId = settings.port_tb;
 	try
 	{
-		if (tb.Open(name))
+		if (tb.Open(&(usbId[0])))
 		{
-			printf("\nBoard %s opened\n", usbId);
+			printf("\nBoard %s opened\n", usbId.c_str());
 			string info;
 			try
 			{
 				tb.GetInfo(info);
-				printf("---------------------------------------------\n"
+				printf("--- DTB info-------------------------------------\n"
 					   "%s"
-					   "---------------------------------------------\n", info.c_str());
+					   "-------------------------------------------------\n", info.c_str());
+				Log.puts(info.c_str());
 				tb.Welcome();
 				tb.Flush();
 			}
@@ -157,7 +172,7 @@ int main(int argc, char* argv[])
 				e.What();
 				printf("ERROR: DTB software version could not be identified, please update it!\n");
 				tb.Close();
-				printf("Connection to Board %s has been cancelled\n", name);
+				printf("Connection to Board %s has been cancelled\n", usbId.c_str());
 			}
 		}
 		else
@@ -167,7 +182,16 @@ int main(int argc, char* argv[])
 			printf("Connect testboard and try command 'scan' to find connected devices.\n");
 			printf("Make sure you have permission to access USB devices.\n");
 		}
-		Log.puts("\n");
+
+		// --- open prober ------------------------------------
+		if (settings.port_prober>=0)
+			if (!prober.open(settings.port_prober))
+			{
+				printf("Prober: could not open port %i\n",
+					settings.port_prober);
+				Log.puts("Prober: could not open port\n");
+				return 4;
+			}
 
 		Log.flush();
 
@@ -180,5 +204,6 @@ int main(int argc, char* argv[])
 	{
 		e.What();
 	}
+
 	return 0;
 }

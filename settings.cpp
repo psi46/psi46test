@@ -44,7 +44,7 @@ bool CSettings::read(const char filename[])
 
 	if (!read_string(port_tb,     20     )) goto read_error;
 	if (!read_string(path,       254     )) goto read_error;
-	if (!read_int(port_prober,    -1,   0)) goto read_error;
+	if (!read_int(port_prober,    -1,  99)) goto read_error;
 	if (!read_int(sensor,          0,   1)) goto read_error;
 	if (!read_int(clock,           0,  50)) goto read_error;
 	if (!read_int(errorRep,        0,   5)) goto read_error;

@@ -1,6 +1,7 @@
 // usb.cpp
 
 
+#include "profiler.h"
 #include "rpc_error.h"
 #include "usb.h"
 
@@ -104,7 +105,7 @@ void CUSB::Close()
 
 
 void CUSB::Write(const void *buffer, unsigned int bytesToWrite)
-{
+{ PROFILING
 	if (!isUSB_open) throw CRpcError(CRpcError::WRITE_ERROR);
 
 	DWORD k=0;
@@ -117,7 +118,7 @@ void CUSB::Write(const void *buffer, unsigned int bytesToWrite)
 
 
 void CUSB::Flush()
-{
+{ PROFILING
 	DWORD bytesWritten;
 	DWORD bytesToWrite = m_posW;
 	m_posW = 0;
@@ -134,7 +135,7 @@ void CUSB::Flush()
 
 
 bool CUSB::FillBuffer(DWORD minBytesToRead)
-{
+{ PROFILING
 	if (!isUSB_open) return false;
 
 	DWORD bytesAvailable, bytesToRead;
@@ -159,7 +160,7 @@ bool CUSB::FillBuffer(DWORD minBytesToRead)
 
 
 void CUSB::Read(void *buffer,  unsigned int bytesToRead)
-{
+{ PROFILING
 	if (!isUSB_open) throw CRpcError(CRpcError::READ_ERROR);
 
 	DWORD i;
@@ -189,7 +190,7 @@ void CUSB::Read(void *buffer,  unsigned int bytesToRead)
 
 
 void CUSB::Clear()
-{
+{ PROFILING
 	if (!isUSB_open) return;
 
 	ftStatus = FT_Purge(ftHandle, FT_PURGE_RX|FT_PURGE_TX);

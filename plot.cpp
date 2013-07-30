@@ -37,6 +37,23 @@ void Scope(const char *title, std::vector<double> &values)
 }
 
 
+void PlotData(const char *title, const char *xaxis, const char *yaxis,
+	double xmin, double xmax, std::vector<double> &values)
+{
+	CImg<double> y(values.data(), values.size());
+
+	const unsigned int plot_type = 1;
+	const unsigned int vertex_type = 0;
+
+	if (y.is_empty()) return;
+
+	CImgDisplay disp;
+	disp.assign(cimg_fitscreen(640,480,1),0,0).set_title(title);
+	show_graph(disp, y, plot_type, vertex_type, xaxis, xmin, xmax, yaxis);
+}
+
+
+
 //! Display 1d graph in an interactive window.
 /**
 	\param disp Display window.

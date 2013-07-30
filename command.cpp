@@ -329,6 +329,7 @@ bool CInterpreter::run(FILE *f, int iter)
 #endif
 		if (!cmdline.read(f)) break;
 		if (cmdline.getName()[0] == 0) continue;   // empty line
+		if (cmdline.getName()[0] == '-') continue; // comment
 		CCommand *p = cmdList.Find(cmdline.getName());
 		if (p) { p->m_exec(cmdline); }
 		else if (cmdline.isCmd("help")) help();

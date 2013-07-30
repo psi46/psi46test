@@ -8,6 +8,23 @@
 #include <iostream>
 #endif
 
+bool CTestboard::EnumNext(string &name)
+{
+	char s[64];
+	if (!usb.EnumNext(s)) return false;
+	name = s;
+	return true;
+}
+
+
+bool CTestboard::Enum(unsigned int pos, string &name)
+{
+	char s[64];
+	if (!usb.Enum(s, pos)) return false;
+	name = s;
+	return true;
+}
+
 
 bool CTestboard::Open(char name[], bool init)
 {

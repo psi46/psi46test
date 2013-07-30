@@ -40,7 +40,7 @@ uint16_t CBinaryDTBSource::FillBuffer()
 	pos = 0;
 	do
 	{
-		tb->Daq_Read(buffer, data_available, DTB_SOURCE_BLOCK_SIZE);
+		tb->Daq_Read(buffer, DTB_SOURCE_BLOCK_SIZE, data_available);
 		if (data_available < 100000)
 		{
 			if      (data_available > 1000) tb->mDelay(  5);
