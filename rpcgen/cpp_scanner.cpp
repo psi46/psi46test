@@ -2,8 +2,6 @@
 
 #include "stdafx.h"
 
-#include <cstring>
-
 
 void CppScanner::SkipWhitespace()
 {

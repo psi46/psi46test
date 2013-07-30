@@ -126,7 +126,7 @@ void GenerateServerCode(functList &fl, FILE *f)
 void GenerateServerCodeTrailer(functList &fl, FILE *f)
 {
 	// generate command dispatcher for DTB code
-	fprintf(f, "const uint16_t rpc_cmdListSize = %lu;\n\n", fl.size());
+	fprintf(f, "const uint16_t rpc_cmdListSize = %lu;\n\n", (unsigned int)(fl.size()));
 	fprintf(f,
 		"const CRpcCall rpc_cmdlist[] =\n{\n"
 	);
@@ -170,7 +170,7 @@ void GenerateClientEntry(FILE *f, unsigned int cmd, const char *fname, const cha
 
 	plist.WriteCDeclaration(f, fname);
 	fprintf(f,
-		"{\n"
+		"{ RPC_PROFILING\n"
 		"\tuint16_t rpc_clientCallId = rpc_GetCallId(%u);\n"
 		"\tRPC_THREAD_LOCK\n"
 		"\trpcMessage msg;\n"
