@@ -14,7 +14,6 @@ psi46test_dll/
 bin
 *.log
 *.bak
-*.txt
 psi46test
 *.d
 rpcgen/rpcgen
