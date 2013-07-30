@@ -5,7 +5,7 @@
  *  description: globals for PSI46V2 Wafer tester
  *
  *  author:      Beat Meier
- *  modified:    31.1.2007
+ *  modified:    30.7.2013
  *
  *  rev:
  *
@@ -18,8 +18,8 @@
 
 // ---------------------------------------------------
 #define TITLE        "PSI46V2 Wafer Tester"
-#define VERSION      "V1.0"
-#define TIMESTAMP    "26.07.2013"
+#define VERSION      "V1.1"
+#define TIMESTAMP    "30.07.2013"
 // ---------------------------------------------------
 
 #define VERSIONINFO TITLE " " VERSION " (" TIMESTAMP ")"
