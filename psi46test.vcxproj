@@ -87,7 +87,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OutputFile>.\win32\Debug\psi46test.exe</OutputFile>
-      <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;perftimer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ROOTSYS)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -124,7 +124,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Console</SubSystem>
       <OutputFile>.\win32\Release\psi46test.exe</OutputFile>
-      <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;perftimer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ROOTSYS)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
@@ -161,9 +161,9 @@
     <ClCompile Include="psi46test.cpp" />
     <ClCompile Include="rpc.cpp" />
     <ClCompile Include="rpc_calls.cpp" />
+    <ClCompile Include="rs232.cpp" />
     <ClCompile Include="test_dig.cpp" />
     <ClCompile Include="usb.cpp" />
-    <ClCompile Include="win32\rs232.cpp" />
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="settings.cpp" />
   </ItemGroup>

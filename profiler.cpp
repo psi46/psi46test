@@ -1,6 +1,8 @@
 
 // profiler.cpp
 
+#ifdef _WIN32
+
 #include <windows.h>
 #include <intrin.h>
 #include "profiler.h"
@@ -63,3 +65,6 @@ void Watchpoint::Report(const char *filename)
 			(*i)->name.c_str(), (*i)->n, double((*i)->t)/frequency);
 	}
 }
+
+#endif
+
