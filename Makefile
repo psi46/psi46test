@@ -2,7 +2,7 @@
 
 UNAME := $(shell uname)
 
-OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o usb.o plot.o datastream.o analyzer.o
+OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o usb.o plot.o datastream.o analyzer.o chipdatabase.o defectlist.o pixelmap.o prober.o ps.o linux/rs232.o
 
 ifeq ($(UNAME), Darwin)
 CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include
@@ -10,7 +10,8 @@ LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11
 endif
 
 ifeq ($(UNAME), Linux)
-CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include -pthread
+CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -I/usr/X11/include -pthread
+# CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include -pthread
 LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11 -pthread -lrt
 endif
 

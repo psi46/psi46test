@@ -39,8 +39,8 @@ using namespace std;
 #define FIFOSIZE 8192
 
 //                   cable length:     5   48  prober 450 cm
-extern const int delayAdjust = 19; //  4    0    19    5
-extern const int deserAdjust =  5; //  4    4     5    6
+extern const int delayAdjust =  4; //  4    0    19    5
+extern const int deserAdjust =  4; //  4    4     5    6
 
 
 // =======================================================================
@@ -62,7 +62,7 @@ CMD_PROC(scan)
 		{
 			if (tb->EnumNext(name))
 			{
-				printf("%2u: %s", i, name);
+				printf("%2u: %s", i, name.c_str());
 				if (tb->Open(&(name[0]),true))
 				{
 					try {
@@ -187,7 +187,7 @@ bool UpdateDTB(const char *filename)
 			printf("ERROR UPGRADE: %s!\n", msg.data());
 			return false;
 		}
-	
+
 		// write EPCS FLASH
 		printf("DTB download complete.\n");
 		tb.mDelay(200);
@@ -915,7 +915,7 @@ CMD_PROC(takedata)
 //		tb.mDelay(5);
 	}
 	tb.Daq_Stop();
-	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC; 
+	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC;
 
 	tb.Daq_Close();
 
@@ -1074,7 +1074,7 @@ CMD_PROC(takedata2)
 		tb.mDelay(5);
 	}
 	tb.Daq_Stop();
-	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC; 
+	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC;
 
 	tb.Daq_Close();
 
@@ -1090,11 +1090,11 @@ CMD_PROC(takedata2)
 
 CMD_PROC(showclk)
 {
-	const int nSamples = 20;
+	const unsigned int nSamples = 20;
 	const int gain = 1;
 //	PAR_INT(gain,1,4);
 
-	int i, k;
+	unsigned int i, k;
 	vector<uint16_t> data[20];
 
 	tb.Pg_Stop();
@@ -1147,11 +1147,11 @@ CMD_PROC(showclk)
 
 CMD_PROC(showctr)
 {
-	const int nSamples = 60;
+	const unsigned int nSamples = 60;
 	const int gain = 1;
 //	PAR_INT(gain,1,4);
 
-	int i, k;
+	unsigned int i, k;
 	vector<uint16_t> data[20];
 
 	tb.Pg_Stop();
@@ -1218,8 +1218,8 @@ CMD_PROC(showctr)
 
 CMD_PROC(showsda)
 {
-	const int nSamples = 52;
-	int i, k;
+	const unsigned int nSamples = 52;
+	unsigned int i, k;
 	vector<uint16_t> data[20];
 
 	tb.SignalProbeD1(9);
@@ -1427,7 +1427,7 @@ CMD_PROC(tbmget)
 	{
 		printf(" reg 0x%02X = %3i (0x%02X)\n", reg, (int)value, (int)value);
 	} else puts(" error\n");
-	
+
 	return true;
 }
 
@@ -1442,7 +1442,7 @@ CMD_PROC(tbmgetraw)
 			value & 0xff, (value>>19)&0x1f, (value>>16)&0x07,
 			(value>>8)&0xff, (value>>25)&0x1f, (value&0x1000)?'1':'0');
 	} else puts("error\n");
-	
+
 	return true;
 }
 
@@ -1507,7 +1507,7 @@ const char regline[] =
 
 CMD_PROC(tbmregs)
 {
-	const int reg[13] = 
+	const int reg[13] =
 	{
 		0xE1,0xE3,0xE5,0xE7,0xE9,
 		0xEB,0xED,0xEF,
@@ -1756,7 +1756,7 @@ CMD_PROC(cald)
 }
 
 CMD_PROC(mask)
-{ 
+{
 	for (int i=0; i<16; i++) if (roclist[i])
 	{
 		tb.roc_I2cAddr(i);
@@ -1939,7 +1939,7 @@ CMD_PROC(phscan)
 			y[dpos++] = (cnt > 0) ? yi/cnt : 0.0;
 		}
 	} catch (int e)
-	{ 
+	{
 		printf("Read error %i\n", e);
 		if (data.size() > 5) for (int i=0; i<=5; i++) printf(" %04X", int(data[i]));
 		printf("\n");
@@ -1978,7 +1978,7 @@ CMD_PROC(deser160)
 			tb.uDelay(10);
 			tb.Daq_Stop();
 			tb.Daq_Read(data, 100);
-	
+
 			if (data.size())
 			{
 				int h = data[0] & 0xffc;
@@ -1992,7 +1992,7 @@ CMD_PROC(deser160)
 		printf("\n");
 	}
 	tb.Daq_Close();
-	
+
 	return true;
 }
 
@@ -2045,7 +2045,7 @@ CMD_PROC(readback)
 		// find start bit
 		do
 		{
-			DecodePixel(data, pos, pix); 
+			DecodePixel(data, pos, pix);
 		} while ((pix.hdr & 2) == 0);
 
 		// read data
@@ -2065,18 +2065,18 @@ CMD_PROC(readback)
 	int cmd = (value >>  8) & 0xf;
 	int x = value & 0xff;
 
-	printf("%04X: ", value);
+	printf("%04X: roc[%i].", value, roc);
 	switch (cmd)
 	{
-	case  0: printf("roc(%i).I2C_data = %02X\n", roc, x); break;
-	case  1: printf("roc(%i).I2C_addr = %02X\n", roc, x); break;
-	case  2: printf("roc(%i).col = %02X\n", roc, x); break;
-	case  3: printf("roc(%i).row = %02X\n", roc, x); break;
-	case  8: printf("roc(%i).VD_unreg = %02X\n", roc, x); break;
-	case  9: printf("roc(%i).VA_unreg = %02X\n", roc, x); break;
-	case 10: printf("roc(%i).VA_reg = %02X\n", roc, x); break;
-	case 12: printf("roc(%i).IA = %02X\n", roc, x); break;
-	default: printf("roc(%i) %04X\n", roc, value); break;
+	case  0: printf("I2C_data = %02X\n", x); break;
+	case  1: printf("I2C_addr = %02X\n", x); break;
+	case  2: printf("col = %02X\n", x); break;
+	case  3: printf("row = %02X\n", x); break;
+	case  8: printf("VD_unreg = %02X\n", x); break;
+	case  9: printf("VA_unreg = %02X\n", x); break;
+	case 10: printf("VA_reg = %02X\n", x); break;
+	case 12: printf("IA = %02X\n", x); break;
+	default: printf("? = %04X\n", value); break;
 	}
 
 	return true;
@@ -2750,7 +2750,7 @@ void cmd()
 	CMD_REG(h,        "h                             simple help");
 
 	cmdHelp();
-	
+
 	cmd_intp.SetScriptPath(settings.path);
 
 	// command loop

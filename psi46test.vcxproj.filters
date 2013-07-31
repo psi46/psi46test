@@ -87,7 +87,7 @@
     <ClCompile Include="profiler.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
-    <ClCompile Include="rs232.cpp">
+    <ClCompile Include="win32\rs232.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
   </ItemGroup>
@@ -174,9 +174,6 @@
       <Filter>Header-Dateien</Filter>
     </ClInclude>
     <ClInclude Include="prober.h">
-      <Filter>Header-Dateien</Filter>
-    </ClInclude>
-    <ClInclude Include="perftimer.h">
       <Filter>Header-Dateien</Filter>
     </ClInclude>
     <ClInclude Include="profiler.h">

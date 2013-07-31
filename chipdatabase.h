@@ -31,7 +31,7 @@ class CDcol
 public:
 	void Init() { exist = false; }
 	bool IsValid() { return exist; }
-	bool SetValid(bool set) { exist = set; }
+	void SetValid(bool set) { exist = set; }
 	bool read(CScanner &Log);
 	int get(int col) { return dcol[col]; }
 	void set(int col, int value) { dcol[col] = value; }
@@ -76,7 +76,7 @@ protected:
 	static const char monthNames[12][4];
 	bool ConvertDate(char *xmlDate);
 public:
-	typedef enum 
+	typedef enum
 	{
 		FAIL5_BIN1   =  0,
 		FAIL5_BIN2   =  1,
@@ -146,7 +146,7 @@ public:
 	int logChipClass; // <0=not existing
 
 // --- abgeleitete Groessen ----------------------------------------------
-	void SetAoutOffset(double offset); 
+	void SetAoutOffset(double offset);
 
 	void Calculate();
 	void Pic();

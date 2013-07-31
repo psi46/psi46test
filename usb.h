@@ -13,8 +13,7 @@
 #include "windows.h"
 #include "win32\FTD2XX.h"
 #else
-// #include "linux/FTD2XX.h"
-#include <ftd2xx.h>
+#include "linux/ftd2xx.h"
 #endif
 
 #include "rpc_io.h"

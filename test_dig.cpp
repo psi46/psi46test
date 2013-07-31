@@ -456,21 +456,21 @@ void test_readback()
 	double ia = tb.GetIA()*1000.0;
 		
 	if(vdig_u == 0) return;
-	float cal = vd/vdig_u;
+	double cal = vd/vdig_u;
 
-	float vdig_u_V = cal*vdig_u;
+	double vdig_u_V = cal*vdig_u;
 	Log.printf("Vdig_u  %3i  %5.2lf  %5.2lf \n", vdig_u,  vdig_u_V, vd);
 
-    float vana_u_V = cal*vana_u;
+    double vana_u_V = cal*vana_u;
 	Log.printf("Vana_u  %3i  %5.2lf  %5.2lf\n",  vana_u,  vana_u_V, va);
 
-	float vana_r_V = cal/2*vana_r;
+	double vana_r_V = cal/2*vana_r;
 	Log.printf("Vana_r  %3i  %5.2lf \n",         vana_r,  vana_r_V);
 
-	float vbg_V = cal/2*vbg;
+	double vbg_V = cal/2*vbg;
 	Log.printf("Vbg     %3i  %5.2lf \n",         vbg,     vbg_V);
 
-	float iana_mA = cal*15.0*iana;
+	double iana_mA = cal*15.0*iana;
 	Log.printf("Iana    %3i  %5.1lf  %5.1lf\n",   iana,    iana_mA,  ia);
 
 }
@@ -623,7 +623,7 @@ void test_pixel()
 				}
 			}
 		}
-	} catch (int e) {}
+	} catch (int) {}
 
 	tb.roc_SetDAC(CtrlReg,0);
 }
@@ -695,7 +695,7 @@ void test_pulse_height1()
 			DecodePixel(data, pos, pix);
 			if (pix.n != 0)	g_chipdata.pixmap.SetPulseHeight1(col,row, pix.p);
 		}
-	} catch (int e) { return; }
+	} catch (int) { return; }
 	g_chipdata.pixmap.pulseHeight1Exist = true;
 }
 
@@ -759,7 +759,7 @@ void test_pulse_height2()
 			DecodePixel(data, pos, pix);
 			if (pix.n != 0)	g_chipdata.pixmap.SetPulseHeight2(col,row, pix.p);
 		}
-	} catch (int e) { return; }
+	} catch (int) { return; }
 	g_chipdata.pixmap.pulseHeight2Exist = true;
 }
 
@@ -902,7 +902,7 @@ unsigned char FindLevel()
 			do x++; while (!GetPixel(x) && x<100);
 			if (x>100) x=100;
 		}
-	} catch (int e) { x = 20;  return 200; }
+	} catch (int) { x = 20;  return 200; }
 
 	return x;
 }
@@ -993,14 +993,14 @@ int PixelFired(vector<uint16_t> x, int &pos)
 	unsigned int raw = 0;
 
 	// check header
-	if (pos >= x.size()) return -1; // missing data
+	if (pos >= int(x.size())) return -1; // missing data
 	if ((x[pos] & 0x8ffc) != 0x87f8) return -2; // wrong header
 	pos++;
 
-	if (pos >= x.size() || (x[pos] & 0x8000)) return 0; // empty data readout
+	if (pos >= int(x.size()) || (x[pos] & 0x8000)) return 0; // empty data readout
 
 	// read additional noisy pixel
-	while (!(pos >= x.size() || (x[pos] & 0x8000))) { pos++; }
+	while (!(pos >= int(x.size()) || (x[pos] & 0x8000))) { pos++; }
 
 	return 1;
 }

@@ -13,14 +13,14 @@ void CPixelMap::Init()
 	for (col=0; col<ROCNUMCOLS; col++) for (row=0; row<ROCNUMROWS; row++)
 	{
 		map[col][row] = 0; // dead pixel
-		pulseHeight[col][row] = 0; 
-		pulseHeight1[col][row] = 0; 
-		pulseHeight2[col][row] = 0; 
-		refLevel[col][row] = 0; 
-		level[col][row][0] = 0; 
-		level[col][row][1] = 0; 
-		level[col][row][2] = 0; 
-		level[col][row][3] = 0; 
+		pulseHeight[col][row] = 0;
+		pulseHeight1[col][row] = 0;
+		pulseHeight2[col][row] = 0;
+		refLevel[col][row] = 0;
+		level[col][row][0] = 0;
+		level[col][row][1] = 0;
+		level[col][row][2] = 0;
+		level[col][row][3] = 0;
 	}
 }
 
@@ -196,7 +196,6 @@ short CPixelMap::GetPulseHeight2(unsigned int x, unsigned int y)
 void CPixelMap::UpdateTrimDefects()
 {
 	int col, row;
-	unsigned int cnt = 0;
 
 	for (col=0; col<ROCNUMCOLS; col++)	for (row=0; row<ROCNUMROWS; row++)
 	{
@@ -378,7 +377,7 @@ bool CPixelMap::ReadLevel(CScanner &Log, unsigned int trimbit)
 		char *s = Log.getNextLine();
 		for (col=0; col<52; col++)
 			if (!Dec(&s, level[col][row][trimbit]))
-			{ 
+			{
 				printf("col %i row %i\n", row, col);
 				return false;
 			}
@@ -419,7 +418,7 @@ void CPixelMap::Print(CProtocol &prot)
 			else                    prot.printf(" %04X", map[col][row]);
 		prot.puts("\n");
 	}
-	
+
 }
 
 

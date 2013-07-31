@@ -105,11 +105,6 @@ void rpc_TranslateCallName(const string &in, string &out)
 {
 	out.clear();
 
-	const char* typeCNames[12] =
-	{
-		"void", "bool", "int8_t", "uint8_t", "int16_t", "uint16_t", "int32_t",
-		"uint32_t",	"int64_t", "uint64_t"
-	};
 	unsigned int size = in.rfind('$');
 	unsigned int pos = size;
 	try

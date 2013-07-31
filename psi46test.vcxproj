@@ -62,7 +62,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MinimalRebuild>true</MinimalRebuild>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;WAFERTESTER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;WIN32;_CONSOLE;WAFERTESTER;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\win32\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\win32\Debug\psi46test.pch</PrecompiledHeaderOutputFile>
       <ObjectFileName>.\win32\Debug\</ObjectFileName>
@@ -100,7 +100,7 @@
       <Optimization>MaxSpeed</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;WAFERTESTER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_CONSOLE;WAFERTESTER;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\win32\Release\</AssemblerListingLocation>
       <BrowseInformation>true</BrowseInformation>
       <PrecompiledHeaderOutputFile>.\win32\Release\psi46test.pch</PrecompiledHeaderOutputFile>
@@ -161,11 +161,11 @@
     <ClCompile Include="psi46test.cpp" />
     <ClCompile Include="rpc.cpp" />
     <ClCompile Include="rpc_calls.cpp" />
-    <ClCompile Include="rs232.cpp" />
     <ClCompile Include="test_dig.cpp" />
     <ClCompile Include="usb.cpp" />
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="settings.cpp" />
+    <ClCompile Include="win32\rs232.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="analyzer.h" />
@@ -178,7 +178,6 @@
     <ClInclude Include="defectlist.h" />
     <ClInclude Include="error.h" />
     <ClInclude Include="htable.h" />
-    <ClInclude Include="perftimer.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="pixelmap.h" />
     <ClInclude Include="plot.h" />

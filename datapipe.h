@@ -12,6 +12,8 @@ class CSource
 {
 	virtual T ReadLast() = 0;
 	virtual T Read() = 0;
+public:
+	virtual ~CSource() {}
 
 	template <class S> friend class CSink;
 };

@@ -55,7 +55,7 @@ void Watchpoint::Report(const char *filename)
 
 	std::list<Watchpoint*>::iterator i;
 
-	int width = 0;
+	unsigned int width = 0;
 	for (i = wplist->begin(); i != wplist->end(); i++)
 		if ((*i)->name.size() > width) width = (*i)->name.size();
 	if (width > 300) width = 200;

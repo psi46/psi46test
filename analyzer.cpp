@@ -24,21 +24,21 @@ void DecodePixel(const vector<uint16_t> &x, int &pos, PixelReadoutData &pix)
 	unsigned int raw = 0;
 
 	// check header
-	if (pos >= x.size()) throw int(1); // missing data
+	if (pos >= int(x.size())) throw int(1); // missing data
 	if ((x[pos] & 0x8ffc) != 0x87f8) throw int(2); // wrong header
 	pix.hdr = x[pos++] & 0xfff;
 
-	if (pos >= x.size() || (x[pos] & 0x8000)) return; // empty data readout
+	if (pos >= int(x.size()) || (x[pos] & 0x8000)) return; // empty data readout
 
 	// read first pixel
 	raw = (x[pos++] & 0xfff) << 12;
-	if (pos >= x.size() || (x[pos] & 0x8000)) throw int(3); // incomplete data
+	if (pos >= int(x.size()) || (x[pos] & 0x8000)) throw int(3); // incomplete data
 	raw += x[pos++] & 0xfff;
 	pix.n++;
 
 	// read additional noisy pixel
 	int cnt = 0;
-	while (!(pos >= x.size() || (x[pos] & 0x8000))) { pos++; cnt++; }
+	while (!(pos >= int(x.size()) || (x[pos] & 0x8000))) { pos++; cnt++; }
 	pix.n += cnt / 2;
 
 	pix.p = (raw & 0x0f) + ((raw >> 1) & 0xf0);

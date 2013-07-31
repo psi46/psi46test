@@ -78,7 +78,7 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
 
   const unsigned long siz = (unsigned long)data._width*data._height*data._depth, siz1 = cimg::max(1U,siz-1);
   const unsigned int old_normalization = disp.normalization();
-  
+
   disp.show().flush()._normalization = 0;
 
   double y0 = ymin, y1 = ymax, nxmin = xmin, nxmax = xmax;
@@ -114,7 +114,7 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
         }
       }
     }
-	else 
+	else
 	{
       bool go_in = false, go_out = false, go_left = false, go_right = false, go_up = false, go_down = false;
 
@@ -132,7 +132,7 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
       case cimg::keyPAD1 : go_left = true; go_down = true; key = 0; disp.set_key(); break;
       case cimg::keyPAD3 : go_right = true; go_down = true; key = 0; disp.set_key(); break;
       }
-      
+
 	  if (disp.wheel())
 	  {
         if (disp.is_keyCTRLLEFT() || disp.is_keyCTRLRIGHT()) go_out = !(go_in = disp.wheel()>0);
@@ -160,7 +160,7 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
           } else y0 = y1 = 0;
         }
       }
-      
+
 	  if (go_out)
 	  {
         if (x0>0 || x1<(int)siz1)
@@ -173,7 +173,7 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
           if (x1>=(int)siz) { x0-=(x1-siz1); x1 = (int)siz1; if (x0<0) x0 = 0; }
         }
       }
-      
+
 	  if (go_left)
 	  {
         const int delta = (x1-x0)/5, ndelta = delta?delta:1;
@@ -181,7 +181,7 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
         else { x1-=x0; x0 = 0; }
         go_left = false;
       }
-      
+
 	  if (go_right)
 	  {
         const int delta = (x1-x0)/5, ndelta = delta?delta:1;
@@ -189,7 +189,7 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
         else { x0+=(siz1-x1); x1 = siz1; }
         go_right = false;
       }
-      
+
 	  if (go_up)
 	  {
         const double delta = (y1-y0)/10, ndelta = delta?delta:1;

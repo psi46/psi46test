@@ -419,7 +419,7 @@ bool CChip::Read(CScanner &Log)
 		Log.getNextSection();
 	}
 
-	if (Log.isSection("PULSE")) 
+	if (Log.isSection("PULSE"))
 	{
 		Log.getNextLine();
 		if (!pixmap.ReadPulseHeight(Log)) ERROR_ABORT(ERROR_PH)
@@ -612,7 +612,7 @@ void CChip::Calculate()
 			{
 				double pm_col_diff = fabs(pm_col[col] - pm_col[col-1]);
 				if ((col==1) || (col==51)) pm_col_diff /= 3.0;
-				if (pm_col_diff > pm_col_max) pm_col_max = pm_col_diff; 
+				if (pm_col_diff > pm_col_max) pm_col_max = pm_col_diff;
 			}
 
 #define PMAX 15
@@ -705,8 +705,6 @@ void CChip::Calculate()
 	chipClass = pickClass = 3;
 
 	if (nPixDefect>4) CHIPFAIL(FAIL3_1PC)
-	
-	int pdiff = pmax-pmin;
 
 	if (pm    < 30.0 || 80.0 < pm)    CHIPFAIL(FAIL3_TMEAN)
 	if (pstd  <  0.5 ||  4.0 < pstd)  CHIPFAIL(FAIL3_TSTD)
@@ -738,16 +736,16 @@ void CChip::PrintFailString(FILE *f)
 	case FAIL_NOFAIL: return;
 
 	// --- class 5 -------------------------------------------------------
-	case FAIL5_BIN1: 
+	case FAIL5_BIN1:
 		fprintf(f,"shortcut"); break;
 
-	case FAIL5_BIN2: 
+	case FAIL5_BIN2:
 		fprintf(f,"Id < 5 mA"); break;
 
-	case FAIL5_BIN3: 
+	case FAIL5_BIN3:
 		fprintf(f,"no token"); break;
 
-	case FAIL5_BIN4: 
+	case FAIL5_BIN4:
 		fprintf(f,"I2C"); break;
 
 	case FAIL5_DEF:
@@ -1167,22 +1165,22 @@ bool CWaferDataBase::WriteXML_File(char path[], CChip &chip)
 		else if (chip.black.mean >  99.0) chip.black.mean =  99.0;
 	}
 
-	if      (chip.nPixDefect<0)        chip.nPixDefect = 0; 
+	if      (chip.nPixDefect<0)        chip.nPixDefect = 0;
 	else if (chip.nPixDefect>4160)     chip.nPixDefect = 4160;
 
-	if      (chip.nPixNoSignal<0)      chip.nPixNoSignal = 0; 
+	if      (chip.nPixNoSignal<0)      chip.nPixNoSignal = 0;
 	else if (chip.nPixNoSignal>4160)   chip.nPixNoSignal = 4160;
 
-	if      (chip.nPixUnmaskable<0)    chip.nPixUnmaskable = 0; 
+	if      (chip.nPixUnmaskable<0)    chip.nPixUnmaskable = 0;
 	else if (chip.nPixUnmaskable>4160) chip.nPixUnmaskable = 4160;
-	
-	if      (chip.nPixNoisy<0)         chip.nPixNoisy = 0; 
+
+	if      (chip.nPixNoisy<0)         chip.nPixNoisy = 0;
 	else if (chip.nPixNoisy>4160)      chip.nPixNoisy = 4160;
 
-	if      (chip.nPixNoTrim<0)        chip.nPixNoTrim = 0; 
+	if      (chip.nPixNoTrim<0)        chip.nPixNoTrim = 0;
 	else if (chip.nPixNoTrim>4160)     chip.nPixNoTrim = 4160;
 
-	if      (chip.nPixAddrDefect<0)    chip.nPixAddrDefect = 0; 
+	if      (chip.nPixAddrDefect<0)    chip.nPixAddrDefect = 0;
 	else if (chip.nPixAddrDefect>4160) chip.nPixAddrDefect = 4160;
 
 	if (chip.bin<0) chip.bin = 0; else if (chip.bin>99) chip.bin=99;
@@ -1206,7 +1204,7 @@ bool CWaferDataBase::WriteXML_File(char path[], CChip &chip)
 		"  </DATA>\n"
 		" </DATA_SET>\n"
 		"</ROOT>\n", f);
-	
+
 	fclose(f);
 	return true;
 }
