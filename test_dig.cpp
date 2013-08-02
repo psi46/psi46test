@@ -237,7 +237,6 @@ bool CalDelScan(int col, int row)
 	tb.Daq_Open(50000);
 	tb.Daq_Select_Deser160(deserAdjust);
 	tb.Daq_Start();
-//	tb.uDelay(100);
 	for (x = 0; x<=max_caldel; x++)
 	{
 		tb.roc_SetDAC(CalDel, x);
@@ -252,6 +251,9 @@ bool CalDelScan(int col, int row)
 	tb.Daq_Read(data, 10000);
 	tb.Daq_Close();
 
+	tb.roc_Pix_Mask(col, row);
+	tb.roc_ClrCal();
+	
 	// --- analyze data
 	int pos = 0, count;
 	string s;
@@ -794,6 +796,7 @@ void test_pulseheight()
 
 	tb.Daq_Open(50000);
 	tb.Daq_Select_Deser160(deserAdjust);
+	tb.uDelay(100);
 	tb.Daq_Start();
 	tb.uDelay(100);
 
@@ -822,7 +825,7 @@ void test_pulseheight()
 	tb.Daq_Stop();
 	tb.Daq_Read(data, 4000);
 	tb.Daq_Close();
-//	DumpData(data, 200);
+	DumpData(data, 200);
 
 	// --- plot data
 	PixelReadoutData pix;
@@ -1202,6 +1205,8 @@ int test_roc_dig(bool &repeat)
 		test_cleanup(bin);
 		return bin;
 	}
+
+	test_i2c();
 
  	switch (test_i2c())
 	{

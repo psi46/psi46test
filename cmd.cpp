@@ -1108,7 +1108,9 @@ CMD_PROC(showclk)
 	tb.SignalProbeD1(9);
 	tb.SignalProbeD2(17);
 	tb.SignalProbeA2(PROBEA_CLK);
+	tb.uDelay(10);
 	tb.SignalProbeADC(PROBEA_CLK, gain-1);
+	tb.uDelay(10);
 
 	tb.Daq_Select_ADC(nSamples, 1, 1);
 	tb.uDelay(1000);
@@ -1165,7 +1167,9 @@ CMD_PROC(showctr)
 	tb.SignalProbeD1(9);
 	tb.SignalProbeD2(17);
 	tb.SignalProbeA2(PROBEA_CTR);
+	tb.uDelay(10);
 	tb.SignalProbeADC(PROBEA_CTR, gain-1);
+	tb.uDelay(10);
 
 	tb.Daq_Select_ADC(nSamples, 1, 1);
 	tb.uDelay(1000);
@@ -1225,7 +1229,9 @@ CMD_PROC(showsda)
 	tb.SignalProbeD1(9);
 	tb.SignalProbeD2(17);
 	tb.SignalProbeA2(PROBEA_SDA);
+	tb.uDelay(10);
 	tb.SignalProbeADC(PROBEA_SDA, 0);
+	tb.uDelay(10);
 
 	tb.Daq_Select_ADC(nSamples, 2, 7);
 	tb.uDelay(1000);

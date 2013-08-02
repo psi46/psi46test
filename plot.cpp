@@ -3,7 +3,221 @@
 #include "CImg.h"
 using namespace cimg_library;
 
+#include <string>
 #include <vector>
+#include <list>
+
+
+// === data scope ===========================================================
+
+class CColor
+{
+	unsigned char rgb[3];
+public:
+	CColor() {}
+	CColor(unsigned char red, unsigned char green, unsigned char blue)
+	{ rgb[0] = red; rgb[1] = green; rgb[2] = blue; }
+	const unsigned char* Get() { return rgb; }
+};
+
+
+class CData
+{
+	double dt; // sample intervall [ns]
+	double tmax; // time span [ns]
+	CImg<double> data;
+
+	void Draw(CImg<unsigned char> &img);
+public:
+	std::string name;
+	CColor color;
+	double offsetY;
+
+	CData() : dt(0.0), tmax(0.0) {};
+	void Read(const std::vector<double> &values);
+	unsigned int Size() { return data.size(); }
+	void Crop(double t1, double t2);
+	void operator +=(const CData &data2);
+	void operator +=(double a) { data += a; }
+	void operator *=(double a) { data *= a; }
+	double GetTSpan() { return tmax; }
+	double GetTStep() { return dt; }
+	unsigned int GetNPoints() { return data.size(); }
+	CImg<double>& GetData() { return data; }
+	void SetSignalName(std::string &signalName) { name = signalName; }
+	void SetSignalName(const char *signalName) { name = signalName; }
+	const std::string& GetSignalName() { return name; }
+	void SetDrawingOptions(CColor col, double posY = 0.0) { color = col; offsetY = posY; }
+	void DrawGraph(CImg<unsigned char> &img, double minV, double maxV);
+};
+
+
+class CDataList
+{
+	unsigned int n;
+	CData *list[20];
+public:
+	CDataList() : n(0) {}
+	~CDataList();
+	void Add(CData *data) { if (n<20) list[n++] = data; else throw "Data list full"; }
+	CData* Get(unsigned int index) { if (index<n) return list[index]; else throw "Plot does not exist"; }
+	void Crop(double t1, double t2);
+	void Draw(CImg<unsigned char> &img, double minV, double maxV);
+	void Show(double minV, double maxV);
+};
+
+
+
+void CData::Read(const std::vector<double> &values)
+{
+	data.assign(values.data(), values.size());
+	dt = 1.25; // ns
+	tmax = dt*data.size();
+}
+
+
+void CData::Crop(double t1, double t2)
+{
+	int x0 = int(t1/dt);
+	int x1 = int(t2/dt);
+	int n  = data.size();
+
+	if (x0 < 0)  x0 = 0;  if (x0 >= n) x0 = n-1;
+	if (x1 < 0)  x1 = 0;  if (x1 >= n) x1 = n-1;
+
+	if (x1 <= x0) return;
+	data.crop(x0, x1);
+	tmax = dt*data.size();
+}
+
+
+void CData::operator +=(const CData &data2)
+{
+	if (dt != data2.dt || tmax != data2.tmax) throw "cannot add different data";
+	data += data2.data;	
+}
+
+
+void CData::DrawGraph(CImg<unsigned char> &img, double minV, double maxV)
+{
+	img.draw_graph(data, color.Get(), 1.0f, 1, 1, maxV - offsetY, minV - offsetY);
+}
+
+
+
+// === CDataList ============================================================
+
+CDataList::~CDataList()
+{
+	for (unsigned int i=0; i<n; i++) delete list[i];
+}
+
+
+void CDataList::Crop(double t1, double t2)
+{
+	for (unsigned int i=0; i<n; i++) list[i]->Crop(t1, t2);
+}
+
+
+void CDataList::Draw(CImg<unsigned char> &img, double minV, double maxV)
+{
+	const double gridV =  100.0;
+	const double gridT = 25.0; // ns
+
+	const unsigned char col_black[3] = {   0,   0,   0 };
+	const unsigned char col_gray[3]  = { 100, 180, 255 };
+
+	img.fill(255);
+	if (n == 0) return;
+
+	double maxT = list[0]->GetTSpan();
+	double gridX = img.width()/maxT; // pixel / ns
+	double gridY = img.height()/(maxV-minV);
+
+	// --- draw t-grid ---------------------------------------------------------
+	for (double t = 0.0; t < maxT; t += gridT)
+	{
+		int x = int(t*gridX + 0.5);
+		img.draw_line(x, 0, x, img.height()-20, col_gray, 1.0, 0x88888888 /* 0xCCCCCCCC */);
+	}
+
+	// --- draw v-grid ---------------------------------------------------------
+	for (double v = minV+gridV; v < maxV; v += gridV)
+	{
+		int y = int(((maxV-v)*gridY) + 0.5);
+		img.draw_line(0, y, img.width()-20, y, col_gray, 1.0, 0x88888888 /* 0xCCCCCCCC */);
+	}
+
+	// --- plots with zero line ------------------------------------------------
+	for (unsigned i=0; i<n; i++)
+	{
+		int y = int((maxV - list[i]->offsetY)*img.height()/(maxV-minV) + 0.5);
+		img.draw_line(0, y, img.width(), y, col_gray, 1.0, 0xffffffff /* 0xCCCCCCCC */);
+
+		list[i]->DrawGraph(img, minV, maxV);
+	}
+
+	// --- draw t-axis ---------------------------------------------------------
+	int axisY = img.height() - 20;
+	img.draw_line(0, axisY, img.width(), axisY, col_black, 1.0);
+	for (double t = 0.0; t < maxT; t += 2*gridT)
+	{
+		int x = int(t*gridX + 0.5);
+		img.draw_line(x, axisY-2, x, axisY+2, col_black, 1.0);
+		img.draw_text(x-10, axisY+4,  "%0.0f", col_black, 0, 1.0, 14, t);
+	}
+
+	// --- draw v-axis ---------------------------------------------------------
+	for (double v = minV+gridV; v < maxV; v += gridV)
+	{
+		int y = int(((maxV-v)*gridY) + 0.5);
+		img.draw_text(10, y-6, "%0.0f", col_black, 0, 1.0, 14, v);
+	}
+
+}
+
+
+void CDataList::Show(double minV, double maxV)
+{
+	CImg<unsigned char> visu(1000,600, 1,3,0);
+	Draw(visu, minV, maxV);
+	CImgDisplay draw_disp(visu, "DTB Scope");
+	while (!draw_disp.is_closed() && !draw_disp.is_keyESC())
+	{
+		draw_disp.wait();
+		if (draw_disp.is_resized())
+		{
+			draw_disp.resize(false);
+			visu.resize(draw_disp);
+			Draw(visu, minV, maxV);
+			visu.display(draw_disp);
+		}
+	}
+}
+
+
+// === end data scope =======================================================
+
+
+void Scope(const char *title, std::vector<double> &values)
+{
+	const CColor col1 ( 200,  40,  20 );
+
+	CDataList plot;
+	
+	CData *dat = new CData;
+	try
+	{
+		dat->SetSignalName(title);
+		dat->SetDrawingOptions(col1);
+		dat->Read(values);
+		plot.Add(dat);
+
+		plot.Show(-500, 500);
+	} catch (const char *) {};
+}
+
+
 
 
 void show_graph(CImg<double> &data, const char *const title=0,
@@ -17,8 +231,14 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
 	const char *const labelx=0, const double xmin=0, const double xmax=0,
 	const char *const labely=0, const double ymin=0, const double ymax=0);
 
+void show_graph2(CImgDisplay &disp, CImg<double> &data,
+	const unsigned int plot_type=1, const unsigned int vertex_type=1,
+	const char *const labelx=0, const double xmin=0, const double xmax=0,
+	const char *const labely=0, const double ymin=0, const double ymax=0);
 
-void Scope(const char *title, std::vector<double> &values)
+
+
+void Scope2(const char *title, std::vector<double> &values)
 {
 	CImg<double> y(values.data(), values.size());
 
@@ -206,4 +426,46 @@ void show_graph(CImgDisplay &disp, CImg<double> &data,
     }
   }
   disp._normalization = old_normalization;
+}
+
+
+void show_graph2(CImgDisplay &disp, CImg<double> &data,
+	const unsigned int plot_type, const unsigned int vertex_type,
+	const char *const labelx, const double xmin, const double xmax,
+	const char *const labely, const double ymin, const double ymax)
+{
+	if (data.is_empty()) return;
+
+	if (!disp) disp.assign(cimg_fitscreen(640,480,1),0,0).set_title("CImg<%s>", data.pixel_type());
+
+	const unsigned long siz = (unsigned long)data._width*data._height*data._depth, siz1 = cimg::max(1U,siz-1);
+	const unsigned int old_normalization = disp.normalization();
+
+	disp.show().flush()._normalization = 0;
+
+	double y0 = ymin, y1 = ymax, nxmin = xmin, nxmax = xmax;
+	if (nxmin==nxmax) { nxmin = 0; nxmax = siz1; }
+	int x0 = 0, x1 = data.width()*data.height()*data.depth() - 1, key = 0;
+
+
+
+
+	x0 = 0; x1 = data.width()*data.height()*data.depth()-1; y0 = ymin; y1 = ymax;
+
+	CImg<double> zoom(x1-x0+1,1,1,data.spectrum());
+	cimg_forC(data,c) zoom.get_shared_channel(c) = CImg<double>(data.data(x0,0,0,c),x1-x0+1,1,1,1,true);
+
+	if (y0==y1) { y0 = zoom.min_max(y1); const double dy = y1 - y0; y0-=dy/20; y1+=dy/20; }
+	if (y0==y1) { --y0; ++y1; }
+	const CImg<int> selection = zoom.get_select_graph(disp,plot_type,vertex_type,
+                                                       labelx,
+                                                       nxmin + x0*(nxmax-nxmin)/siz1,
+                                                       nxmin + x1*(nxmax-nxmin)/siz1,
+                                                       labely,y0,y1);
+
+	while (!disp.key() && !disp.is_closed())
+	{
+	    disp.wait();
+	}
+
 }
