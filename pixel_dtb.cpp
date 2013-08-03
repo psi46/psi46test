@@ -39,8 +39,8 @@ bool CTestboard::FindDTB(string &usbId)
 		for (nr=0; nr<nDev; nr++)
 		{
 			if (!EnumNext(name)) throw int(2);
-			if (name.size() < 3) continue;
-			if (name.compare(0, 3, "DTB") == 0)	devList.push_back(name);
+			if (name.size() < 4) continue;
+			if (name.compare(0, 4, "DTB_") == 0) devList.push_back(name);
 		}
 	}
 	catch (int e)

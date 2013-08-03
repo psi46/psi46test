@@ -50,37 +50,56 @@ extern const int deserAdjust =  4; //  4    4     5    6
 CMD_PROC(scan)
 {
 	CTestboard *tb = new CTestboard;
-
-	unsigned int nDev;
 	string name;
+	vector<string> devList;
+	unsigned int nDev, nr;
 
-	if (tb->EnumFirst(nDev))
+	try
 	{
-		if (nDev == 0) printf("No DTB connected.\n");
-		for (unsigned int i=0; i<nDev; i++)
+		if (!tb->EnumFirst(nDev)) throw int(1);
+		for (nr=0; nr<nDev; nr++)
 		{
-			if (tb->EnumNext(name))
-			{
-				printf("%2u: %s", i, name.c_str());
-				if (tb->Open(name,true))
-				{
-					try
-					{
-						unsigned int bid = tb->GetBoardId();
-						printf("  BID=%2u;", bid);
-						tb->Close();
-					}
-					catch (...)
-					{
-						printf(" -> DTB not identifiable\n");
-						tb->Close();
-					}
-				}
-				else printf(" - in use\n");
-			}
+			if (!tb->EnumNext(name)) throw int(2);
+			if (name.size() < 4) continue;
+			if (name.compare(0, 4, "DTB_") == 0) devList.push_back(name);
 		}
 	}
-	else puts("error\n");
+	catch (int e)
+	{
+		switch (e)
+		{
+		case 1: printf("Cannot access the USB driver\n"); break;
+		case 2: printf("Cannot read name of connected device\n"); break;
+		}
+		delete tb;
+		return true;
+	}
+
+	if (devList.size() == 0)
+	{
+		printf("no DTB connected\n");
+		return true;
+	}
+
+	for (nr = 0; nr < devList.size(); nr++)
+	try
+	{
+		printf("%10s: ", devList[nr].c_str());
+		if (!tb->Open(devList[nr],false))
+		{
+			printf("DTB in use\n");
+			continue;
+		}
+
+		unsigned int bid = tb->GetBoardId();
+		printf("DTB Id %u\n", bid);
+		tb->Close();
+	}
+	catch (...)
+	{
+		printf("DTB not identifiable\n");
+		tb->Close();
+	}
 
 	delete tb;
 
@@ -104,9 +123,10 @@ CMD_PROC(open)
 
 	if (!status)
 	{
-		printf("USB error: %s\n", tb.ConnectionError());
+		printf("USB error: %s\nCould not connect to DTB %s\n", tb.ConnectionError(), usbId.c_str());
 		return true;
 	}
+	printf("DTB %s opened\n", usbId.c_str());
 
 	string info;
 	tb.GetInfo(info);
