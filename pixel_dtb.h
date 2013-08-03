@@ -98,7 +98,8 @@ public:
 	bool EnumNext(string &name);
 	bool Enum(unsigned int pos, string &name);
 
-	bool Open(char name[], bool init=true); // opens a connection
+	bool FindDTB(string &usbId);
+	bool Open(string &name, bool init=true); // opens a connection
 	void Close();				// closes the connection to the testboard
 
 #ifdef _WIN32

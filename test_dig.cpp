@@ -1206,8 +1206,6 @@ int test_roc_dig(bool &repeat)
 		return bin;
 	}
 
-	test_i2c();
-
  	switch (test_i2c())
 	{
 	case ERROR_I2C:

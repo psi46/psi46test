@@ -56,22 +56,23 @@ CMD_PROC(scan)
 
 	if (tb->EnumFirst(nDev))
 	{
-		if (nDev == 0)
-			printf("No devices connected.\n");
+		if (nDev == 0) printf("No DTB connected.\n");
 		for (unsigned int i=0; i<nDev; i++)
 		{
 			if (tb->EnumNext(name))
 			{
 				printf("%2u: %s", i, name.c_str());
-				if (tb->Open(&(name[0]),true))
+				if (tb->Open(name,true))
 				{
-					try {
+					try
+					{
 						unsigned int bid = tb->GetBoardId();
 						printf("  BID=%2u;", bid);
 						tb->Close();
 					}
-					catch (...){
-						printf(" -> Device not identifiable\n");
+					catch (...)
+					{
+						printf(" -> DTB not identifiable\n");
 						tb->Close();
 					}
 				}
@@ -88,14 +89,31 @@ CMD_PROC(scan)
 
 CMD_PROC(open)
 {
-	char name[80];
-	PAR_STRING(name,79);
-	bool status;
-	status = tb.Open(name,false);
-	if (!status) {
-		printf("USB error: %s\n", tb.ConnectionError());
-		return false;
+	if (tb.IsConnected())
+	{
+		printf("Already connected to DTB.\n");
+		return true;
 	}
+
+	string usbId;
+	char name[80];
+	if (PAR_IS_STRING(name,79)) usbId = name;
+	else if (!tb.FindDTB(usbId)) return true;
+
+	bool status = tb.Open(usbId, false);
+
+	if (!status)
+	{
+		printf("USB error: %s\n", tb.ConnectionError());
+		return true;
+	}
+
+	string info;
+	tb.GetInfo(info);
+	printf("--- DTB info-------------------------------------\n"
+		   "%s"
+		   "-------------------------------------------------\n", info.c_str());
+
 	return true;
 }
 

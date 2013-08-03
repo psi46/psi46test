@@ -44,8 +44,8 @@ extern const char rpc_timestamp[];
 	{ \
 		int id = rpc_cmdId[x]; \
 		if (id >= 0) return id; \
-		string n(rpc_cmdName[x]); \
-		rpc_cmdId[x] = id = GetRpcCallId(n); \
+		string name(rpc_cmdName[x]); \
+		rpc_cmdId[x] = id = GetRpcCallId(name); \
 		if (id >= 0) return id; \
 		throw CRpcError(CRpcError::UNKNOWN_CMD); \
 	}
@@ -68,15 +68,6 @@ public:
 	~CBuffer() { delete[] p; }
 	uint8_t* operator&() { return p; }
 };
-
-
-// extern const int rpc_cmdListSize;
-
-// extern CRpcClientCall cmdList[];
-
-// int32_t rpc_GetRpcCommandId(string &cmdName, CRpcIo &rpc_io);
-
-// uint16_t GetCallId(int cmdIndex, CRpcIo &rpc_io);
 
 
 // === message ==============================================================

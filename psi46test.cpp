@@ -30,85 +30,6 @@ CProber prober;
 CProtocol Log;
 
 
-string usbId;
-
-bool FindDTB()
-{
-	string name;
-	vector<string> devList;
-	unsigned int nDev;
-	unsigned int nr;
-
-	try
-	{
-		if (!tb.EnumFirst(nDev)) throw int(1);
-		for (nr=0; nr<nDev; nr++)
-		{
-			if (!tb.EnumNext(name)) throw int(2);
-			if (name.size() < 3) continue;
-			if (name.compare(0, 3, "DTB") == 0)	devList.push_back(name);
-		}
-	}
-	catch (int e)
-	{
-		switch (e)
-		{
-		case 1: printf("Cannot access the USB driver\n"); return false;
-		case 2: printf("Cannot read name of connected device\n"); return false;
-		default: return false;
-		}
-	}
-
-	if (devList.size() == 0)
-	{
-		printf("No devices connected.\n");
-		return false;
-	}
-
-	if (devList.size() == 1)
-	{
-		usbId = devList[0];
-		return true;
-	}
-
-	// If more than 1 connected device list them
-	printf("\nConnected devices:\n");
-	for (nr=0; nr<devList.size(); nr++)
-	{
-		printf("%2u: %s", nr, devList[nr].c_str());
-		if (tb.Open(&(devList[nr][0]), false))
-		{
-			try
-			{
-				unsigned int bid = tb.GetBoardId();
-				printf("  BID=%2u\n", bid);
-			}
-			catch (...)
-			{
-				printf("  Not identifiable\n");
-			}
-			tb.Close();
-		}
-		else printf(" - in use\n");
-	}
-
-	printf("Please choose device (0-%u): ", (nDev-1));
-	char choice[8];
-	fgets(choice, 8, stdin);
-	sscanf (choice, "%d", &nr);
-	if (nr >= devList.size())
-	{
-		nr = 0;
-		printf("No DTB opened\n");
-		return false;
-	}
-
-	usbId = devList[nr];
-	return true;
-}
-
-
-// --- main ------------------------------------------
 
 void help()
 {
@@ -121,6 +42,8 @@ char filename[256];
 
 int main(int argc, char* argv[])
 {
+	string usbId;
+
 	printf(VERSIONINFO "\n");
 
 	if (argc != 2) { help(); return 1; }
@@ -150,10 +73,10 @@ int main(int argc, char* argv[])
 	// --- open test board --------------------------------
 	Log.section("DTB");
 
-	if (!FindDTB()) usbId = settings.port_tb;
 	try
 	{
-		if (tb.Open(&(usbId[0])))
+		if (!tb.FindDTB(usbId)) usbId = settings.port_tb;
+		if (tb.Open(usbId))
 		{
 			printf("\nBoard %s opened\n", usbId.c_str());
 			string info;
