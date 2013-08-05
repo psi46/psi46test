@@ -312,4 +312,7 @@ public:
 // --- Wafer test functions
 	RPC_EXPORT bool testColPixel(uint8_t col, uint8_t trimbit, vectorR<uint8_t> &res);
 
+	// Ethernet test functions
+	RPC_EXPORT void Ethernet_Send(string &message);
+	RPC_EXPORT uint32_t Ethernet_RecvPackets();
 };

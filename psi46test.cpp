@@ -75,8 +75,8 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		if (!tb.FindDTB(usbId)) usbId = settings.port_tb;
-		if (tb.Open(usbId))
+		if (!tb.FindDTB(usbId)) {}
+		else if (tb.Open(usbId))
 		{
 			printf("\nDTB %s opened\n", usbId.c_str());
 			string info;

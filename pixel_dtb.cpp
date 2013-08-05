@@ -38,7 +38,7 @@ bool CTestboard::FindDTB(string &usbId)
 		if (!EnumFirst(nDev)) throw int(1);
 		for (nr=0; nr<nDev; nr++)
 		{
-			if (!EnumNext(name)) throw int(2);
+			if (!EnumNext(name)) continue;
 			if (name.size() < 4) continue;
 			if (name.compare(0, 4, "DTB_") == 0) devList.push_back(name);
 		}
@@ -48,7 +48,6 @@ bool CTestboard::FindDTB(string &usbId)
 		switch (e)
 		{
 		case 1: printf("Cannot access the USB driver\n"); return false;
-		case 2: printf("Cannot read name of connected device\n"); return false;
 		default: return false;
 		}
 	}

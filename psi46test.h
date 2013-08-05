@@ -18,8 +18,8 @@
 
 // ---------------------------------------------------
 #define TITLE        "PSI46V2 Wafer Tester"
-#define VERSION      "V1.1"
-#define TIMESTAMP    "30.07.2013"
+#define VERSION      "V1.2"
+#define TIMESTAMP    "05.08.2013"
 // ---------------------------------------------------
 
 #define VERSIONINFO TITLE " " VERSION " (" TIMESTAMP ")"
