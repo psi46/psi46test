@@ -1,7 +1,7 @@
 // cpp_scanner.cpp
 
 #include "stdafx.h"
-
+#include <cstring>
 
 void CppScanner::SkipWhitespace()
 {
