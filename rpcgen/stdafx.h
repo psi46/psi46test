@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <ctime>
 #include <fstream>
-#include <string>
+#include <cstring>
 #include <list>
 
 #include "file.h"
