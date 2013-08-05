@@ -1058,11 +1058,11 @@ CMD_PROC(takedata2)
 
 CMD_PROC(showclk)
 {
-	const int nSamples = 20;
+	const unsigned int nSamples = 20;
 	const int gain = 1;
 //	PAR_INT(gain,1,4);
 
-	int i, k;
+	unsigned int i, k;
 	uint32_t buffersize;
 	vector<uint16_t> data[20];
 
@@ -1116,11 +1116,11 @@ CMD_PROC(showclk)
 
 CMD_PROC(showctr)
 {
-	const int nSamples = 60;
+	const unsigned int nSamples = 60;
 	const int gain = 1;
 //	PAR_INT(gain,1,4);
 
-	int i, k;
+	unsigned int i, k;
 	uint32_t buffersize;
 	vector<uint16_t> data[20];
 
@@ -1188,8 +1188,8 @@ CMD_PROC(showctr)
 
 CMD_PROC(showsda)
 {
-	const int nSamples = 52;
-	int i, k;
+	const unsigned int nSamples = 52;
+	unsigned int i, k;
 	uint32_t buffersize;
 	vector<uint16_t> data[20];
 

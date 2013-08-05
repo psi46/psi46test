@@ -76,7 +76,13 @@ bool FindDTB()
 		
 		printf("Please choose device (0-%u): ", (nDev-1));
 		char choice[8];
-		fgets(choice, 8, stdin);
+
+		if(fgets(choice, 8, stdin) == NULL)
+		{
+		       printf("No DTB opened\n");
+		       return false;
+		}
+
 		sscanf (choice, "%d", &nr);
 		if (nr >= nDev)
 		{
