@@ -406,8 +406,6 @@ void CPixelMap::HistoDiff(unsigned int trimbit, CHistogram &h)
 */
 
 
-#ifdef WAFERTESTER
-
 void CPixelMap::Print(CProtocol &prot)
 {
 	int col, row;
@@ -519,5 +517,4 @@ void CPixelMap::PrintLevel(unsigned int trimbit, CProtocol &prot)
 	}
 }
 
-#endif
 
