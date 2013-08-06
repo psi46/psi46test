@@ -439,13 +439,13 @@ void show_graph2(CImgDisplay &disp, CImg<double> &data,
 	if (!disp) disp.assign(cimg_fitscreen(640,480,1),0,0).set_title("CImg<%s>", data.pixel_type());
 
 	const unsigned long siz = (unsigned long)data._width*data._height*data._depth, siz1 = cimg::max(1U,siz-1);
-	const unsigned int old_normalization = disp.normalization();
+	disp.normalization();
 
 	disp.show().flush()._normalization = 0;
 
 	double y0 = ymin, y1 = ymax, nxmin = xmin, nxmax = xmax;
 	if (nxmin==nxmax) { nxmin = 0; nxmax = siz1; }
-	int x0 = 0, x1 = data.width()*data.height()*data.depth() - 1, key = 0;
+	int x0 = 0, x1 = data.width()*data.height()*data.depth() - 1;
 
 
 
