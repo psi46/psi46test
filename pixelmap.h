@@ -6,11 +6,8 @@
 // #include "grlog.h"
 #include "scanner.h"
 
-#ifdef WAFERTESTER
 #include "protocol.h"
-#endif
 
-// #include "parser.h"
 
 struct CParser;
 
@@ -26,8 +23,6 @@ struct CParser;
 	13      wrong pixel address code
 
 */
-
-// #include "protocol.h"
 
 #define ROCNUMROWS  80
 #define ROCNUMCOLS  52
@@ -108,16 +103,12 @@ public:
 //	void Histo(CHistogram &h);
 //	void HistoDiff(unsigned int trimbit, CHistogram &h);
 
-#ifdef WAFERTESTER
 	void Print(CProtocol &prot);
 	void PrintPulseHeight(CProtocol &prot);
 	void PrintPulseHeight1(CProtocol &prot);
 	void PrintPulseHeight2(CProtocol &prot);
 	void PrintRefLevel(CProtocol &prot);
 	void PrintLevel(unsigned int trimbit, CProtocol &prot);
-#endif
 };
 
-
 #endif
-

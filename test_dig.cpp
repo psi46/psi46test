@@ -276,16 +276,16 @@ bool CalDelScan(int col, int row)
 		}
 	} catch (int e) { printf("\nERROR %i @ %i\n", e, int(s.size())); return false; }
 
-	int x1, x2, xdiff, xmean;
+	unsigned int x1, x2, xdiff, xmean;
 	x1 = s.find("********");
 	if (x1 == string::npos) return false;
 	x2 = x1+1;
-	while (x2 < int(s.size()-1) && s[x2] == '*') x2++;
+	while (x2 < (s.size()-1) && s[x2] == '*') x2++;
 	xdiff = x2 - x1;
 	xmean = (x1 + x2)/2;
 	
 	Log.section("CALDELSCAN", false);
-	Log.printf("%i %i %i\n%s\n", col, row, xmean, s.c_str());
+	Log.printf("%i %i %u\n%s\n", col, row, xmean, s.c_str());
 	g_chipdata.InitCalDel = xmean;
 	return true;
 }
@@ -993,8 +993,6 @@ int test_PUCs(bool forceDefTest = false)
 
 int PixelFired(vector<uint16_t> x, int &pos)
 {
-	unsigned int raw = 0;
-
 	// check header
 	if (pos >= int(x.size())) return -1; // missing data
 	if ((x[pos] & 0x8ffc) != 0x87f8) return -2; // wrong header
