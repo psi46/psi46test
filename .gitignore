@@ -1,3 +1,5 @@
+*.suo
+*.vcxproj.user
 *.dep
 *.ncb
 *.opt
