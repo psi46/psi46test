@@ -58,15 +58,14 @@ bool CCmdLine::read(FILE *f)
 #else
 	if (isInteractive())
 	{
-		fputc('>', stdout);
-		if (fgets(s, CMDLINELENGTH, f) == NULL) return false;
-	}
-	else
-	{
 		char * line = readline("> ");
 		strncpy(s, line, CMDLINELENGTH);
 		add_history(s);
 		free(line);
+	}
+	else
+	{
+		if (fgets(s, CMDLINELENGTH, f) == NULL) return false;
 	}
 #endif
 
