@@ -10,7 +10,7 @@ LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11
 endif
 
 ifeq ($(UNAME), Linux)
-CXXFLAGS = -g -O0 -Wall -I/usr/local/include -I/usr/X11/include -pthread
+CXXFLAGS = -g -Os -Wall -I/usr/local/include -I/usr/X11/include -pthread
 # CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include -pthread
 LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11 -pthread -lrt
 endif
