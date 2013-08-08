@@ -52,13 +52,21 @@ bool keypressed()
 
 bool CCmdLine::read(FILE *f)
 {
-#ifdef _WIN32	
+#ifdef _WIN32
+	if (isInteractive()) fputc('>', stdout);
 	if (fgets(s, CMDLINELENGTH, f) == NULL) return false;
 #else
-	char * line = readline("> ");
-	strncpy(s, line, CMDLINELENGTH);
-	add_history(s);
-	free(line);
+	if (isInteractive())
+	{
+		char * line = readline("> ");
+		strncpy(s, line, CMDLINELENGTH);
+		add_history(s);
+		free(line);
+	}
+	else
+	{
+		if (fgets(s, CMDLINELENGTH, f) == NULL) return false;
+	}
 #endif
 
 	int i = 0;
@@ -324,9 +332,6 @@ bool CInterpreter::run(FILE *f, int iter)
 	cmdline.setInteractive(interactive);
 	while (true)
 	{
-#if _WIN32
-		if (cmdline.isInteractive()) fputc('>', stdout);
-#endif
 		if (!cmdline.read(f)) break;
 		if (cmdline.getName()[0] == 0) continue;   // empty line
 		if (cmdline.getName()[0] == '-') continue; // comment
