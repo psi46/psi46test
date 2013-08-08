@@ -162,7 +162,9 @@
     <ClCompile Include="rpc.cpp" />
     <ClCompile Include="rpc_calls.cpp" />
     <ClCompile Include="test_dig.cpp" />
-    <ClCompile Include="usb.cpp" />
+    <ClCompile Include="usb.cpp">
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>
+    </ClCompile>
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="settings.cpp" />
     <ClCompile Include="win32\rs232.cpp" />
