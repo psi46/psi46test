@@ -6,7 +6,7 @@
 bool CSettings::read_int(int &value, int min, int max)
 {
 	char s[200];
-	fgets(s, 198, f);
+	if(fgets(s, 198, f) == NULL) return false;
 	if (s == NULL) return false;
 
 	int v;
@@ -21,7 +21,7 @@ bool CSettings::read_int(int &value, int min, int max)
 bool CSettings::read_string(char string[], int size)
 {
 	char s[256];
-	fgets(s, 254, f);
+	if(fgets(s, 254, f) == NULL) return false;
 	if (s == NULL) return false;
 
 	int i = 0;

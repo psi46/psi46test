@@ -43,11 +43,10 @@ char filename[256];
 int main(int argc, char* argv[])
 {
 	string usbId;
-
 	printf(VERSIONINFO "\n");
 
 	if (argc != 2) { help(); return 1; }
-	strncpy(filename, argv[1], 508);
+	strncpy(filename, argv[1], sizeof(filename));
 
 	// --- load settings ----------------------------------
 	if (!settings.read("psi46test.ini"))
