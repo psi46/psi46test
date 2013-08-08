@@ -37,7 +37,7 @@ void help()
 }
 
 
-char filename[256];
+char filename[512];
 
 
 int main(int argc, char* argv[])
