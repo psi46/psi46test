@@ -58,7 +58,7 @@ char* CProber::read(int ms)
 }
 
 
-char* CProber::printf(char *fmt, ...)
+char* CProber::printf(const char *fmt, ...)
 {
 	if (!isOpen()) return readback;
 

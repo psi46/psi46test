@@ -30,7 +30,7 @@ public:
 	bool open (int portNr);
 	void close ();
 	~CProber() { close(); }
-	char* printf(char *fmt, ...);
+	char* printf(const char *fmt, ...);
 	char* getLastResponse() { return readback; }
 };
 
