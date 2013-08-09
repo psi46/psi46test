@@ -121,6 +121,7 @@ int main(int argc, char* argv[])
 		nEntry = 0;
 
 		cmd();
+		tb.Close();
 	}
 	catch (CRpcError e)
 	{
