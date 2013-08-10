@@ -2,7 +2,7 @@
 
 UNAME := $(shell uname)
 
-OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o usb.o plot.o datastream.o analyzer.o chipdatabase.o defectlist.o pixelmap.o prober.o ps.o linux/rs232.o color.o error.o histo.o profiler.o scanner.o test_dig.o
+OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o usb.o plot.o datastream.o analyzer.o chipdatabase.o defectlist.o pixelmap.o prober.o ps.o linux/rs232.o color.o error.o histo.o profiler.o scanner.o test_dig.o rpc_error.o
 
 ifeq ($(UNAME), Darwin)
 CXXFLAGS = -g -Os -Wall -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include

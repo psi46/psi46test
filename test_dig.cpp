@@ -825,7 +825,7 @@ void test_pulseheight()
 	tb.Daq_Stop();
 	tb.Daq_Read(data, 4000);
 	tb.Daq_Close();
-	DumpData(data, 200);
+//	DumpData(data, 200);
 
 	// --- plot data
 	PixelReadoutData pix;

@@ -48,7 +48,8 @@ extern const char rpc_timestamp[];
 		rpc_cmdId[x] = id = GetRpcCallId(name); \
 		if (id >= 0) return id; \
 		throw CRpcError(CRpcError::UNKNOWN_CMD); \
-	}
+	} \
+	friend class CRpcError;
 
 #define RPC_INIT rpc_io = &RpcIoNull; rpc_cmdId = new int[rpc_cmdListSize]; rpc_Clear();
 

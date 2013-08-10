@@ -161,6 +161,7 @@
     <ClCompile Include="psi46test.cpp" />
     <ClCompile Include="rpc.cpp" />
     <ClCompile Include="rpc_calls.cpp" />
+    <ClCompile Include="rpc_error.cpp" />
     <ClCompile Include="test_dig.cpp" />
     <ClCompile Include="usb.cpp">
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>

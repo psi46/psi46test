@@ -108,7 +108,7 @@ void CDataType::WriteRecvPar(FILE *f)
 	if (retByteCount)
 	{
 		if (IsReturn())
-			fprintf(f, "\t%s rpc_par0 = msg.Get_%s();\n", GetCTypeName(), GetTypeName());
+			fprintf(f, "\trpc_par0 = msg.Get_%s();\n", GetTypeName());
 		else
 			fprintf(f, "\trpc_par%u = msg.Get_%s();\n", id, GetTypeName());
 	}

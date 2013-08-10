@@ -130,7 +130,7 @@ void CUSB::Flush()
 	ftStatus = FT_Write(ftHandle, m_bufferW, bytesToWrite, &bytesWritten);
 
 	if (ftStatus != FT_OK) throw CRpcError(CRpcError::WRITE_ERROR);
-	if ((bytesWritten & 0xFFFFFFFF) != bytesToWrite) { ftStatus = FT_IO_ERROR; throw CRpcError(CRpcError::WRITE_ERROR); }
+	if (bytesWritten != bytesToWrite) { ftStatus = FT_IO_ERROR; throw CRpcError(CRpcError::WRITE_ERROR); }
 }
 
 

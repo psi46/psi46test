@@ -162,7 +162,7 @@ void GenerateServerCodeTrailer(functList &fl, FILE *f)
 
 void GenerateClientEntry(FILE *f, unsigned int cmd, const char *fname, const char *parameter)
 {
-	string cmdId = string("rpc__") + fname + "$" + parameter;
+//	string cmdName = string(fname) + "$" + parameter;
 
 	// read parameter list
 	CParameterList plist;
@@ -170,7 +170,11 @@ void GenerateClientEntry(FILE *f, unsigned int cmd, const char *fname, const cha
 
 	plist.WriteCDeclaration(f, fname);
 	fprintf(f,
-		"{ RPC_PROFILING\n"
+		"{ RPC_PROFILING\n");
+	if (plist.begin()->HasRetValue())
+		fprintf(f, "\t%s rpc_par0;\n", plist.begin()->GetCTypeName());
+	fprintf(f,
+		"\ttry {\n"
 		"\tuint16_t rpc_clientCallId = rpc_GetCallId(%u);\n"
 		"\tRPC_THREAD_LOCK\n"
 		"\trpcMessage msg;\n"
@@ -192,6 +196,7 @@ void GenerateClientEntry(FILE *f, unsigned int cmd, const char *fname, const cha
 		plist.WriteAllRecvDat(f);
 	}
 	fprintf(f, "\tRPC_THREAD_UNLOCK\n");
+	fprintf(f, "\t} catch (CRpcError &e) { e.SetFunction(%u); throw; };\n", cmd);
 	if (plist.begin()->HasRetValue())
 		fputs("\treturn rpc_par0;\n", f);
 	fputs("}\n\n", f);

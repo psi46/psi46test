@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 				tb.Welcome();
 				tb.Flush();
 			}
-			catch(CRpcError e)
+			catch(CRpcError &e)
 			{
 				e.What();
 				printf("ERROR: DTB software version could not be identified, please update it!\n");
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
 
 		cmd();
 	}
-	catch (CRpcError e)
+	catch (CRpcError &e)
 	{
 		e.What();
 	}
