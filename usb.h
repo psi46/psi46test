@@ -47,7 +47,7 @@ public:
 		ftHandle = 0; ftStatus = 0;
 		enumPos = enumCount = 0;
 	}
-	~CUSB() { Close(); }
+	~CUSB() { /* Close(); */ }
 	int GetLastError() { return ftStatus; }
 	static const char* GetErrorMsg(int error);
 	bool EnumFirst(unsigned int &nDevices);
