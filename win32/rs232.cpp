@@ -16,7 +16,7 @@ int rs232_open(int portNr, int baud, char parity,
 
 	HANDLE hComm;
 	char comport[8];
-	sprintf(comport,"COM%i",portNr+1);
+	sprintf(comport,"COM%i",portNr);
 	hComm = CreateFile(comport, GENERIC_READ | GENERIC_WRITE,
 				0,					// exclusive-access
 				NULL,				// no security attributes
