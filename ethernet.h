@@ -8,38 +8,42 @@
 #ifndef ETHERNET_H
 #define ETHERNET_H
 
+#include<deque>
+#include<string>
 #include "rpc_io.h"
 
-#define RX_BUFFER_SIZE 2048
-#define TX_BUFFER_SIZE 2048
+
+#define RX_FRAME_SIZE 2048
+#define TX_FRAME_SIZE 2048
 
 #define MAX_TX_DATA 1500
-#define TX_DATA_OFFSET 14
+#define ETH_DATA_OFFSET 14
 
 class Ethernet : public CRpcIo
 {
+	void init_tx_frame();
+	void init_connection(std::string eth_if);
+
+	int s;
+	unsigned char      rx_frame[RX_FRAME_SIZE];
+	std::deque<unsigned char>    rx_buffer;
+	unsigned char      tx_frame[TX_FRAME_SIZE];
+	unsigned char      dst_addr[6];
+	unsigned char      src_addr[6];
+	
+	unsigned int       tx_payload_size;//data in tx buffer minus header(14 bytes)
+	bool                is_open;
 public:
 	Ethernet();
-	virtual ~Ethernet();
+	Ethernet(std::string interface);
+	~Ethernet();
 
 	void Write(const void *buffer, unsigned int size);
 	void Flush();
 	void Clear();
 	void Read(void *buffer, unsigned int size);
+	void Close();
 	bool IsOpen();
-	
-private:
-	void init_tx_buffer();
-
-	int s;
-	unsigned char rx_buffer[RX_BUFFER_SIZE];
-	unsigned char tx_buffer[TX_BUFFER_SIZE];
-	unsigned char dst_addr[6];
-	unsigned char src_addr[6];
-	
-	unsigned int tx_buffer_size;//data in tx buffer minus header(14 bytes)
-	unsigned int rx_buffer_size;//data in rx buffer
-	bool is_open;
 };
 
 #endif

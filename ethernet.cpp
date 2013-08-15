@@ -8,12 +8,11 @@
 #include "ethernet.h"
 
 #include<cstdio> //for printf
-#include<cstdlib> //for exit(0);
 
-#include<string.h> //memset
 #include<errno.h> //For errno - the error number
+#include<string.h>
 
-#include<sys/socket.h>    //for socket ofcourse
+#include<sys/socket.h>
 #include<sys/ioctl.h>
 
 #include<unistd.h>
@@ -23,16 +22,72 @@
 #include<net/if.h>
 
 
-Ethernet::Ethernet(string interface) {
-	is_open = false;
-	for(int i =0; i < RX_BUFFER_SIZE; i++){
-		rx_buffer[i] = 0;
-	}	
-	for(int i =0; i < TX_BUFFER_SIZE; i++){
-		tx_buffer[i] = 0;
+Ethernet::Ethernet(){
+	std::string eth_if("eth0");
+	init_connection(eth_if);
+}
+Ethernet::Ethernet(std::string interface) {
+	init_connection(interface);
+}
+
+Ethernet::~Ethernet(){}
+
+void Ethernet::Write(const void *buffer, unsigned int size){
+	for(unsigned int i = 0 ; i < size; i++){
+		if(tx_payload_size == MAX_TX_DATA){
+			Flush();
+		}
+		tx_frame[ETH_DATA_OFFSET + tx_payload_size] = ((char*)buffer)[i];
+		tx_payload_size++;
 	}
-	rx_buffer_size = 0;
-	tx_buffer_size = 0;
+}
+void Ethernet::Flush(){
+	tx_frame[12] = tx_payload_size >> 8;
+	tx_frame[13] = tx_payload_size;
+	write(s,tx_frame,tx_payload_size + ETH_DATA_OFFSET);
+	tx_payload_size = 0;
+}
+void Ethernet::Clear(){
+	tx_payload_size = 0;
+	rx_buffer.clear();
+}
+void Ethernet::Read(void *buffer, unsigned int size){
+	for(unsigned int i = 0; i < size; i++){
+		if(!rx_buffer.empty()){
+			((unsigned char*)buffer)[i] = rx_buffer.front();
+			rx_buffer.pop_front();
+		} else{
+				size_t bytesRead = read(s,rx_frame,RX_FRAME_SIZE);
+				if(!bytesRead) printf("ZERO BYTES READ!!!");
+				if(bytesRead < 0){
+					perror("Error reading from ethernet");
+					throw CRpcError(CRpcError::READ_ERROR);
+				}
+				unsigned int rx_payload_size = rx_frame[12];
+				rx_payload_size = (rx_payload_size << 8) | rx_frame[13];
+				for(int j =0; j < rx_payload_size;j++){
+					rx_buffer.push_back(rx_frame[j + ETH_DATA_OFFSET]);
+				}
+				i--;
+		}
+	}
+}
+
+
+void Ethernet::Close(){
+	close(s);
+}
+
+void Ethernet::init_connection(std::string interface){
+	rx_buffer.resize(0);
+	is_open = false;
+	for(int i =0; i < RX_FRAME_SIZE; i++){
+		rx_frame[i] = 0;
+	}	
+	for(int i =0; i < TX_FRAME_SIZE; i++){
+		tx_frame[i] = 0;
+	}
+	tx_payload_size = 0;
 	
 	//Create a raw socket
     s = socket (AF_PACKET, SOCK_RAW, ETH_P_ALL);
@@ -61,32 +116,11 @@ Ethernet::Ethernet(string interface) {
         perror("problem configuring socket"); return;
     }
     is_open = true;
+    
+    init_tx_frame();
 }
 
-Ethernet::~Ethernet(){
-	close(s);
-}
-
-void Ethernet::Write(const void *buffer, unsigned int size){
-	for(unsigned int i = 0 ; i < size; i++){
-		if(tx_buffer_size == MAX_TX_DATA){
-			Flush();
-		}
-		tx_buffer[TX_DATA_OFFSET + txPayloadSize] = ((char*)buffer)[i];
-		tx_buffer_size++;
-	}
-}
-void Ethernet::Flush(){
-	write(s,tx_buffer,tx_buffer_size + TX_DATA_OFFSET);
-}
-void Ethernet::Clear(){
-
-}
-void Ethernet::Read(void *buffer, unsigned int size){
-	
-}
-
-void Ethernet::init_tx_buffer(){
+void Ethernet::init_tx_frame(){
 	
 	//TODO: find MACs dynamically
 	dst_addr[0] = 0xFF;
@@ -96,15 +130,15 @@ void Ethernet::init_tx_buffer(){
 	dst_addr[4] = 0xFF;
 	dst_addr[5] = 0xFF;
 	
-	src_addr[0] = 0x00 
-	src_addr[1] = 0x90 
-	src_addr[2] = 0xf5 
-	src_addr[3] = 0xc3 
-	src_addr[4] = 0xba 
-	src_addr[5] = 0x7f 
+	src_addr[0] = 0x00;
+	src_addr[1] = 0x90;
+	src_addr[2] = 0xf5;
+	src_addr[3] = 0xc3;
+	src_addr[4] = 0xba;
+	src_addr[5] = 0x7f;
 	for(int i = 0; i < 6; i++){
-		tx_buffer[i] = dst_addr[i];
-		tx_buffer[i+6] = src_addr[i];
+		tx_frame[i] = dst_addr[i];
+		tx_frame[i+6] = src_addr[i];
 	}
 }
 
