@@ -121,7 +121,7 @@ void rpc_TranslateCallName(const string &in, string &out)
 				pos++; if (pos >= in.size()) throw int(2);
 			}
 
-			char *type;
+			const char *type;
 			switch (in[pos])
 			{
 				case 'v': type = "void";     break;

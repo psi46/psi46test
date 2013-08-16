@@ -7,7 +7,7 @@
 // === CFile =============================================================
 
 
-bool CFile::open(char filename[])
+bool CFile::open(const char filename[])
 {
 	init();
 	buffer = new char[FILEBUFFERSIZE];
@@ -48,7 +48,7 @@ void CFile::close()
 
 // === CScanner ==========================================================
 
-bool CScanner::open(char filename[])
+bool CScanner::open(const char filename[])
 {
 	if (m_logf.open(filename)) { getNextSection(); return true; }
 	return false;
@@ -84,7 +84,7 @@ char* CScanner::getNextSection()
 }
 
 
-bool CScanner::getNextSection(char name[])
+bool CScanner::getNextSection(const char name[])
 {
 	do
 	{
@@ -97,7 +97,7 @@ bool CScanner::getNextSection(char name[])
 }
 
 
-bool CScanner::getNextSection(char name[], char stop[])
+bool CScanner::getNextSection(const char name[], const char stop[])
 {
 	if (strcmp(m_Section,stop) == 0) return strcmp(name,stop) == 0;
 	do

@@ -48,7 +48,7 @@ struct CAnalogLevel
 	int    max;
 	void Init() { exist = false; }
 	bool Read(CScanner &Log);
-	void Save(char name[], FILE *f);
+	void Save(const char name[], FILE *f);
 };
 
 
