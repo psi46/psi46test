@@ -14,6 +14,7 @@
 
 #include "profiler.h"
 #define RPC_PROFILING PROFILING
+#define USE_ETHERNET
 
 // #define RPC_MULTITHREADING
 #include "rpc.h"
@@ -23,6 +24,7 @@
 #endif
 
 #include "usb.h"
+#include "ethernet.h"
 
 // size of ROC pixel array
 #define ROC_NUMROWS  80  // # rows
@@ -73,11 +75,16 @@ class CTestboard
 	CPipeClient pipe;
 #endif
 	CUSB usb;
+	Ethernet ethernet;
 
 public:
 	CRpcIo& GetIo() { return *rpc_io; }
 
+#ifdef USE_ETHERNET
+	CTestboard() { RPC_INIT rpc_io = &ethernet; }
+#else
 	CTestboard() { RPC_INIT rpc_io = &usb; }
+#endif
 	~CTestboard() { RPC_EXIT }
 
 

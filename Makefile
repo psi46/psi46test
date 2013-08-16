@@ -2,7 +2,7 @@
 
 UNAME := $(shell uname)
 
-OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o usb.o plot.o datastream.o analyzer.o chipdatabase.o defectlist.o pixelmap.o prober.o ps.o linux/rs232.o color.o error.o histo.o profiler.o scanner.o test_dig.o rpc_error.o
+OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o settings.o usb.o plot.o datastream.o analyzer.o chipdatabase.o defectlist.o pixelmap.o prober.o ps.o linux/rs232.o color.o error.o histo.o profiler.o scanner.o test_dig.o rpc_error.o ethernet.o
 
 ifeq ($(UNAME), Darwin)
 CXXFLAGS = -g -Os -Wall -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include
@@ -43,7 +43,7 @@ bin:
 
 rpc_calls.cpp:
 	make -C rpcgen
-	$(RPCGEN) pixel_dtb.h -hrpc_calls.cpp > rpcgen.log
+	$(RPCGEN) pixel_dtb.h -hrpc_calls.cpp -drpc_responses.cpp > rpcgen.log
 
 bin/psi46test: $(addprefix obj/,$(OBJS)) bin rpc_calls.cpp
 	$(CXX) -o $@ $(addprefix obj/,$(OBJS)) $(LDFLAGS)
