@@ -182,5 +182,8 @@
     <ClInclude Include="profiler.h">
       <Filter>Header-Dateien</Filter>
     </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

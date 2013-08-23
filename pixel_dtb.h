@@ -13,10 +13,9 @@
 #pragma once
 
 #include "profiler.h"
-#define RPC_PROFILING PROFILING
 
-// #define RPC_MULTITHREADING
 #include "rpc.h"
+#include "config.h"
 
 #ifdef _WIN32
 #include "pipe.h"

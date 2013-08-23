@@ -3,11 +3,6 @@
 #include "datastream.h"
 #include "protocol.h"
 
-#ifdef _WIN32
-#define QWFMT "%15I64u"  // !!! only for windows
-#else
-#define QWFMT "%15llu"   // !!! probably works for Linux
-#endif
 
 // === Data structures ======================================================
 

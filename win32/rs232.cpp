@@ -98,7 +98,7 @@ int rs232_exit(int fd)
 }
 
 
-int rs232_write(int fd, char *data, int size)
+int rs232_write(int fd, const char *data, int size)
 {
 	if (fd == -1) return 0;
 	unsigned long bytesWritten;

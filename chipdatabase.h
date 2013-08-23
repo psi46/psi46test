@@ -4,6 +4,7 @@
 #define CHIPDATABASE_H
 
 #include <string.h>
+#include "config.h"
 #include "error.h"
 #include "pixelmap.h"
 

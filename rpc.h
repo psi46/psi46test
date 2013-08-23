@@ -6,14 +6,17 @@
 #include <vector>
 #include <stdint.h>
 
+#include "config.h"
 #include "rpc_io.h"
 #include "rpc_error.h"
 
-#ifndef RPC_PROFILING
+#ifdef ENABLE_RPC_PROFILING
+#define RPC_PROFILING PROFILING
+#else
 #define RPC_PROFILING
 #endif
 
-#ifdef RPC_MULTITHREADING
+#ifdef ENABLE_MULTITHREADING
 #include <boost/thread.hpp>
 #define RPC_THREAD boost::mutex m_sync;
 #define RPC_THREAD_LOCK boost::lock_guard<boost::mutex> lock(m_sync);

@@ -15,6 +15,8 @@
 #ifndef TEST_H
 #define TEST_H
 
+#include "config.h"
+
 
 void InitDAC(bool reset = false);
 void InitChip();
