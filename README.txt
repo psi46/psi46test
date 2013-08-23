@@ -44,7 +44,7 @@ Linux/Darwin (Mac OS X):
 
      If the path is missing, edit your ~/.bashrc file and append
 
-	export LD_LIBRARY_PATH:$LD_LIBRARY_PATH:/usr/local/lib
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
      Newly opened shells will then have the LD_LIBRARY_PATH environment
      variable set correctly.
