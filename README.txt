@@ -87,3 +87,16 @@ Linux/Darwin (Mac OS X):
 
 	psi46test <logfilename>
 
+Common issues
+-------------
+
+  * Some Ubuntu installations miss header. When you call make the compiler
+    will complain. You can install them with
+
+    sudo apt-get isntall libreadline-dev libx11-dev
+
+
+  * Some Ubuntu installations show take over of the device by ehci_hcd. 
+    Blacklisting doesn't help. Currently we are stuck. If anybody found
+    a solution, please let us know and update this file.
+
