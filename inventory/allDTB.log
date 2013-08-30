@@ -262,3 +262,15 @@ MAC address: 40D855118025
 Hostname:    pixelDTB037
 Comment:     
 [CLOSE] Fri Aug 30 17:19:03 2013
+[OPEN] Fri Aug 30 17:45:13 2013
+[VERSION] PSI46V2 ROC/Wafer Tester V1.3 (23.08.2013)
+[DTB]
+Board id:    22
+HW version:  DTB1.2
+FW version:  1.1
+SW version:  1.7
+USB id:      DTB_WRE4TS
+MAC address: 40D855118016
+Hostname:    pixelDTB022
+Comment:     
+[CLOSE] Fri Aug 30 17:47:33 2013

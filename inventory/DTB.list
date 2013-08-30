@@ -1,24 +1,28 @@
-id  HWver   FWver SWver USB id     MAC address       hostname     comments
---- ------- ----- ----- ---------- ----------------- ------------ ---------------------------------------
-  9  DTB1.1   1.1   1.7 DTB_WQSUMF 40:D8:55:11:80:09  pixelDTB009 Prototype
- 16  DTB1.2   1.1   1.7 DTB_WR8LGD 40:D8:55:11:80:10  pixelDTB016 CMOS Buffer inserted by ETH
- 25  DTB1.2   1.1   1.7 DTB_WRE8QZ 40:D8:55:11:80:19  pixelDTB025 
- 26  DTB1.2   1.1   1.7 DTB_WRECOM 40:D8:55:11:80:1A  pixelDTB026 CMOS Buffer inserted by ETH, early delivery to UNL
- 28  DTB1.2   1.1   1.7 DTB_WREEXI 40:D8:55:11:80:1C  pixelDTB028 
- 29  DTB1.2   1.1   1.7 DTB_WREGK0 40:D8:55:11:80:1D  pixelDTB029 
- 30  DTB1.2   1.1   1.7 DTB_WREHUL 40:D8:55:11:80:1E  pixelDTB030 
- 33  DTB1.2   1.1   1.7 DTB_WREKRL 40:D8:55:11:80:21  pixelDTB033 
- 35  DTB1.2   1.1   1.7 DTB_WRENKE 40:D8:55:11:80:23  pixelDTB035 
- 37  DTB1.2   1.1   1.7 DTB_WRMIFT 40:D8:55:11:80:25  pixelDTB037 
- 41  DTB1.2   1.1   1.7 DTB_WRMLUE 40:D8:55:11:80:29  pixelDTB041 
- 43  DTB1.2   1.1   1.7 DTB_WRMNMR 40:D8:55:11:80:2B  pixelDTB043 
- 44  DTB1.2   1.1   1.7 DTB_WRMOQG 40:D8:55:11:80:2C  pixelDTB044 
- 47  DTB1.2   1.1   1.7 DTB_WRMS4N 40:D8:55:11:80:2F  pixelDTB047 
- 48  DTB1.2   1.1   1.7 DTB_WRMT3D 40:D8:55:11:80:30  pixelDTB048 
- 50  DTB1.2   1.1   1.7 DTB_WRMW2V 40:D8:55:11:80:32  pixelDTB050 
- 52  DTB1.2   1.1   1.7 DTB_WRMYK0 40:D8:55:11:80:34  pixelDTB052 
- 56  DTB1.2   1.1   1.7 DTB_WRPPWX 40:D8:55:11:80:38  pixelDTB056 
- 57  DTB1.2   1.1   1.7 DTB_WRPQJV 40:D8:55:11:80:39  pixelDTB057 
- 58  DTB1.2   1.1   1.7 DTB_WRPRHI 40:D8:55:11:80:3A  pixelDTB058 
- 61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 
- 64  DTB1.2   1.1   1.7 DTB_WRQ0UZ 40:D8:55:11:80:40  pixelDTB064 
+id  HWver   FWver SWver USB id     MAC address        hostname    location comments
+--- ------- ----- ----- ---------- -----------------  ----------- -------- -------------------------------------------------------------------------------------------------------
+  8  DTB1.1             DTB_WQSTXY 40:D8:55:11:80:08  pixelDTB008 UNL      Prototype 2 - compatible; LVDS translator chip defunct, for testing purposes only. Property of PSI 
+  9  DTB1.1   1.1   1.7 DTB_WQSUMF 40:D8:55:11:80:09  pixelDTB009 UNL      Prototype, CMOS Buffer inserted by PSI
+ 16  DTB1.2   1.1   1.7 DTB_WR8LGD 40:D8:55:11:80:10  pixelDTB016 UNLstock CMOS Buffer inserted by ETH
+ 19  DTB1.2   1.1   1.7 DTB_WRBVG4 40:D8:55:11:80:13  pixelDTB019 FNAL     CMOS Buffer inserted by ETH, early delivery to FNAL
+ 21  DTB1.2   1.1   1.7 DTB_WRE2WB 40:D8:55:11:80:15  pixelDTB021 FNAL     CMOS Buffer inserted by ETH, early delivery to FNAL
+ 22  DTB1.2   1.1   1.7 DTB_WRE4TS 40:D8:55:11:80:16  pixelDTB022 UNL      CMOS Buffer inserted by ETH, early delivery to UNL
+ 25  DTB1.2   1.1   1.7 DTB_WRE8QZ 40:D8:55:11:80:19  pixelDTB025 UNLstock
+ 26  DTB1.2   1.1   1.7 DTB_WRECOM 40:D8:55:11:80:1A  pixelDTB026 UNL      CMOS Buffer inserted by ETH, early delivery to UNL
+ 28  DTB1.2   1.1   1.7 DTB_WREEXI 40:D8:55:11:80:1C  pixelDTB028 UNLstock
+ 29  DTB1.2   1.1   1.7 DTB_WREGK0 40:D8:55:11:80:1D  pixelDTB029 UNLstock
+ 30  DTB1.2   1.1   1.7 DTB_WREHUL 40:D8:55:11:80:1E  pixelDTB030 UNLstock
+ 33  DTB1.2   1.1   1.7 DTB_WREKRL 40:D8:55:11:80:21  pixelDTB033 UNLstock
+ 35  DTB1.2   1.1   1.7 DTB_WRENKE 40:D8:55:11:80:23  pixelDTB035 UNLstock
+ 37  DTB1.2   1.1   1.7 DTB_WRMIFT 40:D8:55:11:80:25  pixelDTB037 UNLstock
+ 41  DTB1.2   1.1   1.7 DTB_WRMLUE 40:D8:55:11:80:29  pixelDTB041 UNLstock
+ 43  DTB1.2   1.1   1.7 DTB_WRMNMR 40:D8:55:11:80:2B  pixelDTB043 UNLstock
+ 44  DTB1.2   1.1   1.7 DTB_WRMOQG 40:D8:55:11:80:2C  pixelDTB044 UNLstock
+ 47  DTB1.2   1.1   1.7 DTB_WRMS4N 40:D8:55:11:80:2F  pixelDTB047 UNLstock
+ 48  DTB1.2   1.1   1.7 DTB_WRMT3D 40:D8:55:11:80:30  pixelDTB048 UNLstock
+ 50  DTB1.2   1.1   1.7 DTB_WRMW2V 40:D8:55:11:80:32  pixelDTB050 UNLstock
+ 52  DTB1.2   1.1   1.7 DTB_WRMYK0 40:D8:55:11:80:34  pixelDTB052 UNLstock
+ 56  DTB1.2   1.1   1.7 DTB_WRPPWX 40:D8:55:11:80:38  pixelDTB056 UNLstock
+ 57  DTB1.2   1.1   1.7 DTB_WRPQJV 40:D8:55:11:80:39  pixelDTB057 UNLstock
+ 58  DTB1.2   1.1   1.7 DTB_WRPRHI 40:D8:55:11:80:3A  pixelDTB058 UNLstock
+ 61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 UNLstock
+ 64  DTB1.2   1.1   1.7 DTB_WRQ0UZ 40:D8:55:11:80:40  pixelDTB064 UNLstock
