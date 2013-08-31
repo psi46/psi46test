@@ -13,7 +13,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
  30  DTB1.2   1.1   1.7 DTB_WREHUL 40:D8:55:11:80:1E  pixelDTB030 UNLstock
  33  DTB1.2   1.1   1.7 DTB_WREKRL 40:D8:55:11:80:21  pixelDTB033 UNLstock
  35  DTB1.2   1.1   1.7 DTB_WRENKE 40:D8:55:11:80:23  pixelDTB035 UNLstock
- 37  DTB1.2   1.1   1.7 DTB_WRMIFT 40:D8:55:11:80:25  pixelDTB037 UNLstock
+ 37  DTB1.2   1.1   1.7 DTB_WRMIFT 40:D8:55:11:80:25  pixelDTB037 UNLstock SDcard empty on delivery, initialized and ok now
  41  DTB1.2   1.1   1.7 DTB_WRMLUE 40:D8:55:11:80:29  pixelDTB041 UNLstock
  43  DTB1.2   1.1   1.7 DTB_WRMNMR 40:D8:55:11:80:2B  pixelDTB043 UNLstock
  44  DTB1.2   1.1   1.7 DTB_WRMOQG 40:D8:55:11:80:2C  pixelDTB044 UNLstock
