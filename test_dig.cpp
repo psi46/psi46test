@@ -420,7 +420,7 @@ int test_i2c()
 	{
 		if (mask != res[i])
 		{	// i2c error
-			for (k=0; k<16; k++) Log.printf("%01X %01X %04X\n", i, k, res[k]);
+			for (k=0; k<16; k++) Log.printf("%04X\n", res[k]);
 			return (res[0]&0x0001) ? ERROR_I2C : ERROR_I2C0;
 		}
 	}
