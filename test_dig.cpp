@@ -5,6 +5,12 @@
 #include "analyzer.h"
 
 #include "profiler.h"
+#include <iostream>
+#include <iomanip>
+
+using std::cout;
+using std::endl;
+using std::setw;
 
 
 #define VCAL_TEST          20  // 20 50 60 (high range) pixel alive test
@@ -391,12 +397,15 @@ int test_i2c()
 	tb.Daq_Open(1000);
 	try
 	{
+	    cout << endl;
 		for (i=0; i<16; i++)
 		{
+			cout << setw(2) << i << ": ";
 			tb.SetRocAddress(i);
 			tb.uDelay(400);
 			for (k=0, mask=1; k<16; k++, mask<<=1)
-				if (Check_Prog(k)) res[i] |= mask;
+				if (Check_Prog(k)) { res[i] |= mask; cout << "1 "; } else { cout << ". "; }
+			cout << endl;
 		}
 	} catch (int e) { error = e; }
 	tb.Daq_Close();
@@ -411,7 +420,7 @@ int test_i2c()
 	{
 		if (mask != res[i])
 		{	// i2c error
-			for (k=0; k<16; k++) Log.printf("%04X\n", res[k]);
+			for (k=0; k<16; k++) Log.printf("%01X %01X %04X\n", i, k, res[k]);
 			return (res[0]&0x0001) ? ERROR_I2C : ERROR_I2C0;
 		}
 	}
