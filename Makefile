@@ -51,6 +51,7 @@ bin/psi46test: $(addprefix obj/,$(OBJS)) bin rpc_calls.cpp
 clean:
 	rm -rf obj
 	rm -rf rpc_calls.cpp
+	make clean -C rpcgen
 
 distclean: clean
 	rm -rf bin
