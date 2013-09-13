@@ -85,7 +85,11 @@ Linux/Darwin (Mac OS X):
 
   6. Run
 
-	psi46test <logfilename>
+	bin/psi46test <logfilename>
+
+     <logfilename> is just a name of your choice for the logfile that 
+     psi64test is going to write to. It is recreated every time anew, i.e.
+     it overwrites any old one with the same name.
 
 Common issues
 -------------
@@ -93,10 +97,26 @@ Common issues
   * Some Ubuntu installations miss header. When you call make the compiler
     will complain. You can install them with
 
-    sudo apt-get isntall libreadline-dev libx11-dev
+    sudo apt-get install libreadline-dev libx11-dev
 
 
   * Some Ubuntu installations show take over of the device by ehci_hcd. 
     Blacklisting doesn't help. Currently we are stuck. If anybody found
     a solution, please let us know and update this file.
 
+  * If you are on Mac OS 10.8:
+    You must install X11 ( http://support.apple.com/kb/HT5293 ) and create
+    a symbolic link
+    
+	ln -s /opt/X11/include/X11 /usr/local/include/X11 
+
+  * If you are on Mac OS 10.7 (or lower):
+    make sure you have the most recent version of Xcode and gcc installed.
+    See
+    
+	http://woss.name/2012/01/24/how-to-install-a-working-set-of-compilers-on-mac-os-x-10-7-lion/
+	
+    for instructions.
+
+  * If you are on Max OS 10.6:
+    If you managed to make it work, let us know. We did not.
