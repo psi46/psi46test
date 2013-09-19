@@ -97,12 +97,18 @@ Common issues
   * Some Ubuntu installations miss header. When you call make the compiler
     will complain. You can install them with
 
-    sudo apt-get install libreadline-dev libx11-dev
+	sudo apt-get install libreadline-dev libx11-dev
 
 
   * Some Ubuntu installations show take over of the device by ehci_hcd. 
     Blacklisting doesn't help. Currently we are stuck. If anybody found
     a solution, please let us know and update this file.
+
+  * On Ubuntu 12.04 at least one user report says that you will need to add
+
+	-ltermcap
+
+    to the variable LDFLAGS in the Makefile (in the Linux case, not Darwin).
 
   * If you are on Mac OS 10.8:
     You must install X11 ( http://support.apple.com/kb/HT5293 ) and create
@@ -120,3 +126,8 @@ Common issues
 
   * If you are on Max OS 10.6:
     If you managed to make it work, let us know. We did not.
+
+  * Some older compilers complain about -Wno-logical-op-parentheses in the
+    invocation of the C++ compiler. Just remove this in the Makefile and
+    it should work.
+
