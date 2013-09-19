@@ -106,7 +106,7 @@ public:
 	void Check(uint16_t cmd, uint8_t size)
 	{
 		if (m_cmd != cmd) throw CRpcError(CRpcError::UNKNOWN_CMD);
-		if (m_size != m_size) throw CRpcError(CRpcError::CMD_PAR_SIZE);
+		if (m_size != size) throw CRpcError(CRpcError::CMD_PAR_SIZE);
 		return;
 	}
 	void CheckSize(uint8_t size) { if (m_size != size) throw CRpcError(CRpcError::CMD_PAR_SIZE); }
