@@ -90,7 +90,7 @@ bool CUSB::Open(char serialNumber[])
 	ftStatus = FT_SetBitMode(ftHandle, 0xFF, 0x40);
 	if (ftStatus != FT_OK) return false;
 
-	FT_SetTimeouts(ftHandle,1000,1000);
+	FT_SetTimeouts(ftHandle,2000,1000);
 	isUSB_open = true;
 	return true;
 }
