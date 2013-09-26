@@ -23,18 +23,18 @@ Linux/Darwin (Mac OS X):
 
   1. Compile the software by typing
 
-	 make 
+	   `make` 
 
 
   2. If your environment variable PATH contains /usr/local/bin, skip to the
      next step. You can find out if you type
 
-	 echo $PATH
+	 `echo $PATH`
 
      If the path is not in the variable then edit your ~/.bashrc file and
      append
 
-	 export PATH=$PATH:/usr/local/bin
+	 `export PATH=$PATH:/usr/local/bin`
 
      Newly opened shells will then have the PATH environment variable set
      correctly.
@@ -43,11 +43,11 @@ Linux/Darwin (Mac OS X):
   3. If your environment variable LD_LIBRARY_PATH contains /usr/local/lib,
      skip to the next step. You can find out by typing
 
-	echo $LD_LIBRARY_PATH
+	`echo $LD_LIBRARY_PATH`
 
      If the path is missing, edit your ~/.bashrc file and append
 
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+	`export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib`
 
      Newly opened shells will then have the LD_LIBRARY_PATH environment
      variable set correctly.
@@ -59,7 +59,7 @@ Linux/Darwin (Mac OS X):
      /etc/udev/rules.d/10-testboard.rules (needs sudo) or edit it, if the
      file already exists. Add the line
 
-	SUBSYSTEM == "usb", ATTR{manufacturer}=="PSI", GROUP="usb", MODE="0664"
+	`SUBSYSTEM == "usb", ATTR{manufacturer}=="PSI", GROUP="usb", MODE="0664"`
 
      and it should work now.
 
@@ -70,7 +70,7 @@ Linux/Darwin (Mac OS X):
      check first if this is really the case. Disconnect and reconnect 
      the testboard. Then issue
 
-	dmesg | tail -20
+	`dmesg | tail -20`
 
      If you see that the driver ftdi_sio gets loaded and a serial usb 
      interface has been established for your testboard, then you lost.
@@ -88,7 +88,7 @@ Linux/Darwin (Mac OS X):
 
   6. Run
 
-	bin/psi46test <logfilename>
+	`bin/psi46test <logfilename>`
 
      <logfilename> is just a name of your choice for the logfile that 
      psi64test is going to write to. It is recreated every time anew, i.e.
@@ -100,7 +100,7 @@ Common issues
   * Some Ubuntu installations miss header. When you call make the compiler
     will complain. You can install them with
 
-	sudo apt-get install libreadline-dev libx11-dev
+	`sudo apt-get install libreadline-dev libx11-dev`
 
 
   * Some Ubuntu installations show take over of the device by ehci_hcd. 
@@ -109,15 +109,15 @@ Common issues
 
   * On Ubuntu 12.04 at least one user report says that you will need to add
 
-	-ltermcap
+	`-ltermcap`
 
     to the variable LDFLAGS in the Makefile (in the Linux case, not Darwin).
 
   * If you are on Mac OS 10.8:
-    You must install X11 ( http://support.apple.com/kb/HT5293 ) and create
+    You must install X11 (http://support.apple.com/kb/HT5293) and create
     a symbolic link
     
-	ln -s /opt/X11/include/X11 /usr/local/include/X11 
+	`ln -s /opt/X11/include/X11 /usr/local/include/X11`
 
   * If you are on Mac OS 10.7 (or lower):
     make sure you have the most recent version of Xcode and gcc installed.
