@@ -23,7 +23,7 @@ Linux/Darwin (Mac OS X):
 
   1. Compile the software by typing
 
-	make
+	`make`
 
 
   2. If your environment variable PATH contains /usr/local/bin, skip to the
