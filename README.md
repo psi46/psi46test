@@ -23,18 +23,18 @@ Linux/Darwin (Mac OS X):
 
   1. Compile the software by typing
 
-	`make`
+	 make 
 
 
   2. If your environment variable PATH contains /usr/local/bin, skip to the
      next step. You can find out if you type
 
-	echo $PATH
+	 echo $PATH
 
      If the path is not in the variable then edit your ~/.bashrc file and
      append
 
-	export PATH=$PATH:/usr/local/bin
+	 export PATH=$PATH:/usr/local/bin
 
      Newly opened shells will then have the PATH environment variable set
      correctly.
