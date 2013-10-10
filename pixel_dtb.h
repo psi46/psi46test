@@ -307,6 +307,26 @@ public:
 	// -- mask all pixels and columns of the chip
 	RPC_EXPORT void roc_Chip_Mask();
 
+	// --- TBM --------------------------------------------------------------
+
+	// -- Enables the use of a TBM
+	RPC_EXPORT void tbm_Enable(bool on);
+
+	// -- Selects hub and port to be used, disables module abstraction layer
+	RPC_EXPORT void tbm_Addr(unsigned char hub, unsigned char port);
+
+	// -- Selects hub. Port is selected according to barrel module layout convention
+	RPC_EXPORT void mod_Addr(unsigned char hub);
+
+	// -- Sends I2C commands to the selected address
+	RPC_EXPORT void tbm_Set(unsigned char reg, unsigned char value);
+
+	// -- Reads back the register via I2C
+	RPC_EXPORT bool tbm_Get(unsigned char reg, unsigned char &value);
+
+	// -- Reads back uninterpreted data, gives raw bit pattern. For debugging purposes if tbm_Get failes with error
+	RPC_EXPORT bool tbm_GetRaw(unsigned char reg, long &value);
+
 
 // --- Wafer test functions
 	RPC_EXPORT bool testColPixel(uint8_t col, uint8_t trimbit, vectorR<uint8_t> &res);
