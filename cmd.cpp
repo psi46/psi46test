@@ -1478,7 +1478,7 @@ CMD_PROC(tbmget)
 CMD_PROC(tbmgetraw)
 {
 	int reg;
-	long value;
+	uint32_t value;
 	PAR_INT(reg,0,255);
 	if (tb.tbm_GetRaw(reg,value))
 	{

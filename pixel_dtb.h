@@ -313,19 +313,19 @@ public:
 	RPC_EXPORT void tbm_Enable(bool on);
 
 	// -- Selects hub and port to be used, disables module abstraction layer
-	RPC_EXPORT void tbm_Addr(unsigned char hub, unsigned char port);
+	RPC_EXPORT void tbm_Addr(uint8_t hub, uint8_t port);
 
 	// -- Selects hub. Port is selected according to barrel module layout convention
-	RPC_EXPORT void mod_Addr(unsigned char hub);
+	RPC_EXPORT void mod_Addr(uint8_t hub);
 
 	// -- Sends I2C commands to the selected address
-	RPC_EXPORT void tbm_Set(unsigned char reg, unsigned char value);
+	RPC_EXPORT void tbm_Set(uint8_t reg, uint8_t value);
 
 	// -- Reads back the register via I2C
-	RPC_EXPORT bool tbm_Get(unsigned char reg, unsigned char &value);
+	RPC_EXPORT bool tbm_Get(uint8_t reg, uint8_t &value);
 
 	// -- Reads back uninterpreted data, gives raw bit pattern. For debugging purposes if tbm_Get failes with error
-	RPC_EXPORT bool tbm_GetRaw(unsigned char reg, long &value);
+	RPC_EXPORT bool tbm_GetRaw(uint8_t reg, uint32_t &value);
 
 
 // --- Wafer test functions
