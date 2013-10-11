@@ -24,3 +24,4 @@
 
 // #define ENABLE_MULTITHREADING
 
+#define ETHERNET_INTERFACE "eth0"

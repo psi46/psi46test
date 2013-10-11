@@ -22,6 +22,7 @@
 #endif
 
 #include "usb.h"
+#include "ethernet.h"
 
 // size of ROC pixel array
 #define ROC_NUMROWS  80  // # rows
@@ -71,12 +72,13 @@ class CTestboard
 #ifdef _WIN32
 	CPipeClient pipe;
 #endif
-	CUSB usb;
+	CUSB *usb;
+	CEthernet *ethernet;
 
 public:
 	CRpcIo& GetIo() { return *rpc_io; }
 
-	CTestboard() { RPC_INIT rpc_io = &usb; }
+	CTestboard() { RPC_INIT}
 	~CTestboard() { RPC_EXIT }
 
 
@@ -93,22 +95,24 @@ public:
 
 	// === DTB connection ====================================================
 
-	bool EnumFirst(unsigned int &nDevices) { return usb.EnumFirst(nDevices); };
-	bool EnumNext(string &name);
-	bool Enum(unsigned int pos, string &name);
+	bool EnumFirst(unsigned int &nDevices, CRpcIo* io);
+	bool EnumNext(string &name, CRpcIo* io);
+	bool Enum(unsigned int pos, string &name, CRpcIo* io);
 
-	bool FindDTB(string &usbId);
-	bool Open(string &name, bool init=true); // opens a connection
-	void Close();				// closes the connection to the testboard
+	bool FindDTB(string &rpcId);
+	bool Open(string &rpcId, bool init, CRpcIo* io);// opens a connection
+	bool Open(string &name, bool init=true); //uses current rpc_io
+	void Close(CRpcIo* io);				// closes the connection to the testboard
+	void Close();				// uses current rpc_io
 
 #ifdef _WIN32
 	bool OpenPipe(const char *name) { return pipe.Open(name); }
 	void ClosePipe() { pipe.Close(); }
 #endif
 
-	bool IsConnected() { return usb.Connected(); }
+	bool IsConnected() { return rpc_io->Connected(); }
 	const char * ConnectionError()
-	{ return usb.GetErrorMsg(usb.GetLastError()); }
+	{ return rpc_io->GetErrorMsg(rpc_io->GetLastError()); }
 
 	void Flush() { rpc_io->Flush(); }
 	void Clear() { rpc_io->Clear(); }

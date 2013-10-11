@@ -3,8 +3,6 @@
 #pragma once
 
 #include <stdio.h>
-#include <string>
-
 
 class CRpcError
 {
@@ -26,6 +24,11 @@ public:
 		NO_DATA_MSG,
 		NO_CMD_MSG,
 		UNKNOWN_CMD,
+		
+		ETH_ERROR,
+		USB_ERROR,
+		IF_INIT_ERROR,
+		
 		UNDEF
 	} error;
 	int functionId;
