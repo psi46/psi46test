@@ -21,3 +21,4 @@ psi46test
 rpcgen/rpcgen
 *.swp
 rpc_calls.cpp
+rpc_responses.cpp

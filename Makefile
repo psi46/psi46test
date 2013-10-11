@@ -42,7 +42,7 @@ bin:
 
 rpc_calls.cpp:
 	make -C rpcgen
-	$(RPCGEN) pixel_dtb.h -hrpc_calls.cpp > rpcgen.log
+	$(RPCGEN) pixel_dtb.h -hrpc_calls.cpp -drpc_responses.cpp > rpcgen.log
 
 bin/psi46test: $(addprefix obj/,$(OBJS)) bin rpc_calls.cpp
 	$(CXX) -o $@ $(addprefix obj/,$(OBJS)) $(LDFLAGS)
