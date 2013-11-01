@@ -17,9 +17,9 @@ public:
   void close() { if (isOpen()) { addTrailer(); fclose(psf); psf=NULL; } }
   CPostscript() { psf=NULL; nPages=0; }
   ~CPostscript() { close(); }
-  void puts(char s[]) { if (isOpen()) fputs(s,psf); }
-  void printf(char fmt[], ...);
-  bool putTempl(char filename[]);
+  void puts(const char s[]) { if (isOpen()) fputs(s,psf); }
+  void printf(const char fmt[], ...);
+  bool putTempl(const char filename[]);
   void addPage();
   int getPageNr() { return nPages; }
 };

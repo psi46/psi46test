@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "config.h"
 
 	
 // --- CFile -------------------------------------------------------------
@@ -23,7 +24,7 @@ class CFile
 public:
 	CFile() { init(); }
 	~CFile() { close(); }
-	bool open(char filename[]);
+	bool open(const char filename[]);
 	bool rewind();
 	char getNextChar()
 	{
@@ -53,14 +54,14 @@ class CScanner
 	char m_Section[MAXSECTIONLEN+1];
 	char m_Line[MAXLINELEN+1];
 public:
-	bool open(char filename[]);
+	bool open(const char filename[]);
 	bool rewind();
 	void close();
 	~CScanner() { close(); }
 	char* getNextSection();
-	bool getNextSection(char name[]);
-	bool getNextSection(char name[], char stop[]);
-	bool isSection(char name[]) { return strcmp(m_Section,name) == 0; }
+	bool getNextSection(const char name[]);
+	bool getNextSection(const char name[], const char stop[]);
+	bool isSection(const char name[]) { return strcmp(m_Section,name) == 0; }
 
 	char* getNextLine();
 	char* getLine() { return m_Line; }

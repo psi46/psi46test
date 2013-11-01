@@ -13,7 +13,7 @@ bool CPostscript::open(char filename[])
 }
 
 
-void CPostscript::printf(char fmt[], ...)
+void CPostscript::printf(const char fmt[], ...)
 {
 	if (!isOpen()) return;
 	va_list va;
@@ -23,7 +23,7 @@ void CPostscript::printf(char fmt[], ...)
 }
 
 
-bool CPostscript::putTempl(char filename[])
+bool CPostscript::putTempl(const char filename[])
 {
 	if (!isOpen()) return false;
 	char *buffer = new char[1024];

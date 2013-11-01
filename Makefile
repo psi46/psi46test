@@ -6,13 +6,12 @@ OBJS = cmd.o command.o pixel_dtb.o protocol.o psi46test.o rpc.o rpc_calls.o sett
 
 ifeq ($(UNAME), Darwin)
 CXXFLAGS = -g -Os -Wall -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include
-LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11
+LDFLAGS = -lftd2xx -lreadline -lpcap -L/usr/local/lib -L/usr/X11/lib -lX11
 endif
 
 ifeq ($(UNAME), Linux)
 CXXFLAGS = -g -Os -Wall -I/usr/local/include -I/usr/X11/include -pthread
-# CXXFLAGS = -g -Os -Wall -Werror -I/usr/local/include -Wno-logical-op-parentheses -I/usr/X11/include -pthread
-LDFLAGS = -lftd2xx -lreadline -L/usr/local/lib -L/usr/X11/lib -lX11 -pthread -lrt
+LDFLAGS = -lftd2xx -lreadline -lpcap -L/usr/local/lib -L/usr/X11/lib -lX11 -pthread -lrt
 endif
 
 RPCGEN = ./rpcgen/rpcgen
@@ -51,6 +50,7 @@ bin/psi46test: $(addprefix obj/,$(OBJS)) bin rpc_calls.cpp
 clean:
 	rm -rf obj
 	rm -rf rpc_calls.cpp
+	make clean -C rpcgen
 
 distclean: clean
 	rm -rf bin

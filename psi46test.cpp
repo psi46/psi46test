@@ -42,7 +42,7 @@ char filename[512];
 
 int main(int argc, char* argv[])
 {
-	string usbId;
+	string rpcId;
 	printf(VERSIONINFO "\n");
 
 	if (argc != 2) { help(); return 1; }
@@ -74,10 +74,10 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		if (!tb.FindDTB(usbId)) {}
-		else if (tb.Open(usbId))
+		if (!tb.FindDTB(rpcId)) {}
+		else if (tb.Open(rpcId))
 		{
-			printf("\nDTB %s opened\n", usbId.c_str());
+			printf("\nDTB opened");
 			string info;
 			try
 			{
@@ -94,15 +94,15 @@ int main(int argc, char* argv[])
 				e.What();
 				printf("ERROR: DTB software version could not be identified, please update it!\n");
 				tb.Close();
-				printf("Connection to Board %s has been cancelled\n", usbId.c_str());
+				printf("Connection to Board %s has been cancelled\n", rpcId.c_str());
 			}
 		}
 		else
 		{
-			printf("USB error: %s\n", tb.ConnectionError());
+			printf("Connectivity error: %s\n", tb.ConnectionError());
 			printf("ATB: could not open port to device %s\n", settings.port_tb);
 			printf("Connect testboard and try command 'scan' to find connected devices.\n");
-			printf("Make sure you have permission to access USB devices.\n");
+			printf("Make sure you have permission to access USB/Ethernet devices.\n");
 		}
 
 		// --- open prober ------------------------------------
@@ -121,12 +121,11 @@ int main(int argc, char* argv[])
 		nEntry = 0;
 
 		cmd();
-		tb.Close();
 	}
 	catch (CRpcError &e)
 	{
 		e.What();
 	}
-
+    tb.Close();
 	return 0;
 }

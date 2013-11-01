@@ -12,9 +12,9 @@ int rs232_write(int fd, char *data, int size);
 
 int rs232_read(int fd, char *str, int size, int timeout);
 
-int rs232_puts(int fd, char *str);
+int rs232_puts(int fd, const char *str);
 
-int rs232_gets(int fd, char *str, int size, char *pattern, int timeout);
+int rs232_gets(int fd, char *str, int size, const char *pattern, int timeout);
 
 void rs232_clearRx(int fd);
 

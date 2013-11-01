@@ -123,7 +123,7 @@ int i;
 
 /*----------------------------------------------------------------------------*/
 
-int rs232_puts(int fd, char *str)
+int rs232_puts(int fd, const char *str)
 {
 int i;
 
@@ -143,7 +143,7 @@ int i;
 
 /*----------------------------------------------------------------------------*/
 
-int rs232_gets(int fd, char *str, int size, char *pattern, int timeout)
+int rs232_gets(int fd, char *str, int size, const char *pattern, int timeout)
 {
 	int    i, l;
 	struct timeb start, now;

@@ -136,7 +136,7 @@ bool CAnalogLevel::Read(CScanner &Log)
 }
 
 
-void CAnalogLevel::Save(char name[], FILE *f)
+void CAnalogLevel::Save(const char name[], FILE *f)
 {
 	fprintf(f,"%s: exist=%s", name, exist?"true ":"false\n");
 	if (exist) fprintf(f,"n=%i mean=%0.1f stdev=%0.1f min=%i max=%i\n",

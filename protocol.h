@@ -16,6 +16,7 @@
 #define PROTOCOL_H
 
 #include <stdio.h>
+#include <string>
 
 
 class CProtocol
@@ -31,6 +32,7 @@ public:
 	void section(const char s[], bool crlf = true);
 	void section(const char s[], const char par[]);
 	void puts(const char s[]);
+	void puts(const std::string s);
 	void printf(const char *fmt, ...);
 	void flush();
 	FILE* File() { return f; }

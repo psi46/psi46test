@@ -4,6 +4,7 @@
 #define CHIPDATABASE_H
 
 #include <string.h>
+#include "config.h"
 #include "error.h"
 #include "pixelmap.h"
 
@@ -48,7 +49,7 @@ struct CAnalogLevel
 	int    max;
 	void Init() { exist = false; }
 	bool Read(CScanner &Log);
-	void Save(char name[], FILE *f);
+	void Save(const char name[], FILE *f);
 };
 
 

@@ -6,6 +6,7 @@
 #include <list>
 #include <vector>
 
+#include "config.h"
 #include "psi46test.h"
 #include "datapipe.h"
 #include "protocol.h"

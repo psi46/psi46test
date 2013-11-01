@@ -1,0 +1,24 @@
+This is a brief log of the changes applied to the master branch
+
+Version 1.7.1 - Sep 19, 2013
+============================
+
+This is a minor release with small bugfixes and some feature enhancements:
+
+- The README.txt file received some updates
+  - Fixed typos in some commands given there
+  - Added some observations gathered to help people to get it compiled
+  - Make clear that Max OS 10.6 and lower might not work
+    (if you manage to do this, let us know)
+
+- Result of I2C test was printed in case of failure only. Now printout with any outcome and in the shape of an easy to understand 16x16 matrix.
+
+- 'make clean' cleans the rpcgen directory as well
+
+- protocol.h now supports std::string
+
+- Command deser160 received an *experimental* feature to adjust for proper daleys when using a longer SCSI cable.
+  Invoke deser160 will try to determine the correct delay values and sets them anew.
+  Limitations: The function is reported to not always work. This is under investigation.
+
+

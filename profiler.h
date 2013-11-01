@@ -4,13 +4,16 @@
 
 #include <string>
 #include <list>
+#include "config.h"
 
 // MSVC: __FUNCTION__ __FUNCDNAME__ __FUNCSIG__
 // GCC:  __func__     __FUNCTION__  __PRETT_FUNCTION__
 
-#define PROFILING // profiler disabled
-// #define PROFILING static Watchpoint profiler_watchpoint(__FUNCTION__); AutoCounter profiler_counter(profiler_watchpoint);
-
+#ifdef ENABLE_PROFILING
+#define PROFILING static Watchpoint profiler_watchpoint(__FUNCTION__); AutoCounter profiler_counter(profiler_watchpoint);
+#else
+#define PROFILING
+#endif
 
 #ifdef _WIN32
 

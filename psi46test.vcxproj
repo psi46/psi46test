@@ -176,6 +176,7 @@
     <ClInclude Include="CImg.h" />
     <ClInclude Include="color.h" />
     <ClInclude Include="command.h" />
+    <ClInclude Include="config.h" />
     <ClInclude Include="datapipe.h" />
     <ClInclude Include="datastream.h" />
     <ClInclude Include="defectlist.h" />

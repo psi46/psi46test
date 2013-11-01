@@ -88,6 +88,12 @@ void CProtocol::puts(const char s[])
 	fputs(s, f);
 }
 
+void CProtocol::puts(const std::string s)
+{
+	if (f == NULL) return;
+	fputs(s.c_str(), f);
+}
+
 
 void CProtocol::printf(const char *fmt, ...)
 {

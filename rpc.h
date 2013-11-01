@@ -6,14 +6,17 @@
 #include <vector>
 #include <stdint.h>
 
+#include "config.h"
 #include "rpc_io.h"
 #include "rpc_error.h"
 
-#ifndef RPC_PROFILING
+#ifdef ENABLE_RPC_PROFILING
+#define RPC_PROFILING PROFILING
+#else
 #define RPC_PROFILING
 #endif
 
-#ifdef RPC_MULTITHREADING
+#ifdef ENABLE_MULTITHREADING
 #include <boost/thread.hpp>
 #define RPC_THREAD boost::mutex m_sync;
 #define RPC_THREAD_LOCK boost::lock_guard<boost::mutex> lock(m_sync);
@@ -103,7 +106,7 @@ public:
 	void Check(uint16_t cmd, uint8_t size)
 	{
 		if (m_cmd != cmd) throw CRpcError(CRpcError::UNKNOWN_CMD);
-		if (m_size != m_size) throw CRpcError(CRpcError::CMD_PAR_SIZE);
+		if (m_size != size) throw CRpcError(CRpcError::CMD_PAR_SIZE);
 		return;
 	}
 	void CheckSize(uint8_t size) { if (m_size != size) throw CRpcError(CRpcError::CMD_PAR_SIZE); }

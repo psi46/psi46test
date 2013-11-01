@@ -36,8 +36,12 @@ const char* CUSB::GetErrorMsg(int error)
 
 bool CUSB::EnumFirst(unsigned int &nDevices)
 {
+	try{
 	ftStatus = FT_ListDevices(&enumCount,
 		NULL,FT_LIST_NUMBER_ONLY|FT_OPEN_BY_SERIAL_NUMBER);
+	} catch(int e){
+		throw CRpcError(CRpcError::IF_INIT_ERROR);
+	}
 	if (ftStatus != FT_OK)
 	{
 		nDevices = enumCount = enumPos = 0;
@@ -90,7 +94,7 @@ bool CUSB::Open(char serialNumber[])
 	ftStatus = FT_SetBitMode(ftHandle, 0xFF, 0x40);
 	if (ftStatus != FT_OK) return false;
 
-	FT_SetTimeouts(ftHandle,1000,1000);
+	FT_SetTimeouts(ftHandle,2000,1000);
 	isUSB_open = true;
 	return true;
 }
@@ -100,7 +104,7 @@ void CUSB::Close()
 {
 	if (!isUSB_open) return;
 	FT_Close(ftHandle);
-	isUSB_open = 0;
+	isUSB_open = false;
 }
 
 

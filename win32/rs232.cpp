@@ -98,7 +98,7 @@ int rs232_exit(int fd)
 }
 
 
-int rs232_write(int fd, char *data, int size)
+int rs232_write(int fd, const char *data, int size)
 {
 	if (fd == -1) return 0;
 	unsigned long bytesWritten;
@@ -108,13 +108,13 @@ int rs232_write(int fd, char *data, int size)
 }
 
 
-int rs232_puts(int fd, char *str)
+int rs232_puts(int fd, const char *str)
 {
 	return rs232_write(fd,str,strlen(str));
 }
 
 
-int rs232_gets(int fd, char *str, int size, char *pattern, int timeout)
+int rs232_gets(int fd, char *str, int size, const char *pattern, int timeout)
 {
 	int l;
 	unsigned long i;

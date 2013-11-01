@@ -16,6 +16,7 @@
 #include <math.h>
 #include <time.h>
 #include <fstream>
+#include <utility>
 #include "psi46test.h"
 #include "plot.h"
 #include "analyzer.h"
@@ -39,8 +40,8 @@ using namespace std;
 #define FIFOSIZE 8192
 
 //                   cable length:     5   48  prober 450 cm
-extern const int delayAdjust =  4; //  4    0    19    5
-extern const int deserAdjust =  4; //  4    4     5    6
+extern int delayAdjust =  4; //  4    0    19    5
+extern int deserAdjust =  4; //  4    4     5    6
 
 
 // =======================================================================
@@ -49,61 +50,8 @@ extern const int deserAdjust =  4; //  4    4     5    6
 
 CMD_PROC(scan)
 {
-	CTestboard *tb = new CTestboard;
-	string name;
-	vector<string> devList;
-	unsigned int nDev, nr;
-
-	try
-	{
-		if (!tb->EnumFirst(nDev)) throw int(1);
-		for (nr=0; nr<nDev; nr++)
-		{
-			if (!tb->EnumNext(name)) throw int(2);
-			if (name.size() < 4) continue;
-			if (name.compare(0, 4, "DTB_") == 0) devList.push_back(name);
-		}
-	}
-	catch (int e)
-	{
-		switch (e)
-		{
-		case 1: printf("Cannot access the USB driver\n"); break;
-		case 2: printf("Cannot read name of connected device\n"); break;
-		}
-		delete tb;
-		return true;
-	}
-
-	if (devList.size() == 0)
-	{
-		printf("no DTB connected\n");
-		return true;
-	}
-
-	for (nr = 0; nr < devList.size(); nr++)
-	try
-	{
-		printf("%10s: ", devList[nr].c_str());
-		if (!tb->Open(devList[nr],false))
-		{
-			printf("DTB in use\n");
-			continue;
-		}
-
-		unsigned int bid = tb->GetBoardId();
-		printf("DTB Id %u\n", bid);
-		tb->Close();
-	}
-	catch (...)
-	{
-		printf("DTB not identifiable\n");
-		tb->Close();
-	}
-
-	delete tb;
-
-	return true;
+	string nothing;
+	return tb.FindDTB(nothing);
 }
 
 CMD_PROC(open)
@@ -2020,6 +1968,8 @@ CMD_PROC(deser160)
 
 	vector<uint16_t> data;
 
+	vector<std::pair<int,int> > goodvalues;
+
 	int x, y;
 	printf("      0     1     2     3     4     5     6     7\n");
 	for (y = 0; y < 20; y++)
@@ -2044,7 +1994,10 @@ CMD_PROC(deser160)
 			{
 				int h = data[0] & 0xffc;
 				if (h == 0x7f8)
+				{
 					printf(" <%03X>", int(data[0] & 0xffc));
+					goodvalues.push_back(std::make_pair(y,x));
+				}
 				else
 					printf("  %03X ", int(data[0] & 0xffc));
 			}
@@ -2053,6 +2006,21 @@ CMD_PROC(deser160)
 		printf("\n");
 	}
 	tb.Daq_Close();
+	printf("Old values: %i %i\n", delayAdjust, deserAdjust);
+	if (goodvalues.size() == 0)
+	{
+	    printf("No value found where header could be read back - no adjustments made.\n");
+	    return true;
+	}
+	printf("Good values are:\n");
+	for (std::vector<std::pair<int,int> >::const_iterator it = goodvalues.begin(); it != goodvalues.end(); it++)
+	{
+	    printf("%i %i\n", it->first, it->second);
+	}
+	const int select = floor( 0.5*goodvalues.size() - .5);
+	delayAdjust = goodvalues[select].first;
+	deserAdjust = goodvalues[select].second;
+	printf("New values: %i %i\n", delayAdjust, deserAdjust);
 
 	return true;
 }

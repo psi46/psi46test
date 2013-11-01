@@ -4,6 +4,7 @@
 #define SETTINGS_H
 
 #include <stdio.h>
+#include "config.h"
 
 
 #define NUMSETTING 3

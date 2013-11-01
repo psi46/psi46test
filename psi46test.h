@@ -15,16 +15,7 @@
 #ifndef PSI46TEST_H
 #define PSI46TEST_H
 
-
-// ---------------------------------------------------
-#define TITLE        "PSI46V2 ROC/Wafer Tester"
-#define VERSION      "V1.3"
-#define TIMESTAMP    "07.08.2013"
-// ---------------------------------------------------
-
-#define VERSIONINFO TITLE " " VERSION " (" TIMESTAMP ")"
-
-
+#include "config.h"
 #include "pixel_dtb.h"
 #include "settings.h"
 #include "prober.h"
@@ -32,6 +23,8 @@
 #include "pixelmap.h"
 #include "test.h"
 #include "chipdatabase.h"
+
+#define VERSIONINFO TITLE " " VERSION " (" TIMESTAMP ")"
 
 
 // global variables
@@ -44,8 +37,8 @@ extern CProtocol Log;  // log file
 
 extern CChip g_chipdata;
 
-extern const int delayAdjust;
-extern const int deserAdjust;
+extern int delayAdjust;
+extern int deserAdjust;
 
 
 void cmd();
