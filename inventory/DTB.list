@@ -20,7 +20,9 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
  47  DTB1.2   1.1   1.7 DTB_WRMS4N 40:D8:55:11:80:2F  pixelDTB047 Purdue
  48  DTB1.2   1.1   1.7 DTB_WRMT3D 40:D8:55:11:80:30  pixelDTB048 Purdue
  50  DTB1.2   1.1   1.7 DTB_WRMW2V 40:D8:55:11:80:32  pixelDTB050 Purdue
+ 51  DTB1.2   1.1   1.7 DTB_WRMXDL 40:D8:55:11:80:33  pixelDTB051 Rice/TIF
  52  DTB1.2   1.1   1.7 DTB_WRMYK0 40:D8:55:11:80:34  pixelDTB052 UNLstock
+ 54  DTB1.2   1.1   1.7 DTB_WRNOOS 40:D8:55:11:80:36  pixelDTB054 Rice/TIF
  56  DTB1.2   1.1   1.7 DTB_WRPPWX 40:D8:55:11:80:38  pixelDTB056 UNLstock
  57  DTB1.2   1.1   1.7 DTB_WRPQJV 40:D8:55:11:80:39  pixelDTB057 UNLstock
  58  DTB1.2   1.1   1.7 DTB_WRPRHI 40:D8:55:11:80:3A  pixelDTB058 UNLstock
