@@ -253,7 +253,7 @@ public:
 	RPC_EXPORT void Pg_Trigger();
 	RPC_EXPORT void Pg_Loop(uint16_t period);
 
-	RPC_EXPORT uint16_t GetUser1Version();
+	//RPC_EXPORT uint16_t GetUser1Version();
 
 
 	// --- data aquisition --------------------------------------------------
@@ -332,6 +332,6 @@ public:
 	RPC_EXPORT bool testColPixel(uint8_t col, uint8_t trimbit, vectorR<uint8_t> &res);
 
 	// Ethernet test functions
-	RPC_EXPORT void Ethernet_Send(string &message);
-	RPC_EXPORT uint32_t Ethernet_RecvPackets();
+	//RPC_EXPORT void Ethernet_Send(string &message);
+	//RPC_EXPORT uint32_t Ethernet_RecvPackets();
 };

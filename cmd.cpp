@@ -1817,7 +1817,7 @@ CMD_PROC(mask)
 //  experimential ROC test commands
 // =======================================================================
 
-CMD_PROC(ethsend)
+/*CMD_PROC(ethsend)
 {
 	char msg[45];
 	PAR_STRINGEOL(msg,45);
@@ -1832,7 +1832,7 @@ CMD_PROC(ethrx)
 	unsigned int n = tb.Ethernet_RecvPackets();
 	printf("%u packets received\n", n);
 	return true;
-}
+}*/
 
 
 void PrintScale(int min, int max)
@@ -2801,8 +2801,8 @@ void cmd()
 	CMD_REG(mask,     "mask                          mask all pixel and cols");
 
 	// --- experimental commands --------------------------------------------
-	CMD_REG(ethsend,  "ethsend <string>              send <string> in a Ethernet packet");
-	CMD_REG(ethrx,    "ethrx                         shows number of received packets");
+	//CMD_REG(ethsend,  "ethsend <string>              send <string> in a Ethernet packet");
+	//CMD_REG(ethrx,    "ethrx                         shows number of received packets");
 	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");
 	CMD_REG(phscan,   "phscan                        ROC pulse height scan");
 	CMD_REG(readback, "readback                      read out ROC data");
