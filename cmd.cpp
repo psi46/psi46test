@@ -852,7 +852,7 @@ CMD_PROC(dread)
 {
 	uint32_t words_remaining = 0;
 	vector<uint16_t> data;
-	tb.Daq_Read(data, words_remaining);
+	tb.Daq_Read(data,0, words_remaining);
 	int size = data.size();
 	printf("#samples: %i  remaining: %i\n", size, int(words_remaining));
 
@@ -879,7 +879,7 @@ CMD_PROC(dreada)
 {
 	uint32_t words_remaining = 0;
 	vector<uint16_t> data;
-	tb.Daq_Read(data, words_remaining);
+	tb.Daq_Read(data, 0,words_remaining);
 	int size = data.size();
 	printf("#samples: %i remaining: %i\n", size, int(words_remaining));
 
@@ -928,7 +928,7 @@ CMD_PROC(takedata)
 	while (!keypressed())
 	{
 		// read data and status from DTB
-		status = tb.Daq_Read(data, 40000, n);
+		status = tb.Daq_Read(data, 0, 40000, n);
 
 		// make statistics
 		sum += data.size();
@@ -1082,14 +1082,18 @@ CMD_PROC(takedata2)
 	double mean_size = 0.0;
 
 	clock_t t = clock();
-	unsigned long memsize = tb.Daq_Open(1000000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	unsigned long memsize = tb.Daq_Open(1000000,1);
+	//tb.Daq_Select_Deser160(deserAdjust);
 	tb.Daq_Start();
 	clock_t t_start = clock();
 	while (!keypressed())
 	{
 		// read data and status from DTB
-		status = tb.Daq_Read(data, 20000, n);
+		status = tb.Daq_Read(data, 0, 20000, n);
+
+		for(int j = 0; j<200 ; j++)
+			printf("%d",data[j]);	
+				
 
 		// make statistics
 		sum += data.size();
@@ -1162,7 +1166,7 @@ CMD_PROC(showclk)
 		tb.Pg_Single();
 		tb.uDelay(1000);
 		tb.Daq_Stop();
-		tb.Daq_Read(data[i], 1024);
+		tb.Daq_Read(data[i],0, 1024);
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
@@ -1221,7 +1225,7 @@ CMD_PROC(showctr)
 		tb.Pg_Single();
 		tb.uDelay(1000);
 		tb.Daq_Stop();
-		tb.Daq_Read(data[i], 1024);
+		tb.Daq_Read(data[i], 0, 1024);
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
@@ -1283,7 +1287,7 @@ CMD_PROC(showsda)
 		tb.roc_Pix_Trim(12, 34, 5);
 		tb.uDelay(1000);
 		tb.Daq_Stop();
-		tb.Daq_Read(data[i], 1024);
+		tb.Daq_Read(data[i], 0, 1024);
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
@@ -1383,7 +1387,7 @@ CMD_PROC(decoding)
 			tb.Pg_Single();
 			tb.uDelay(200);
 			tb.Daq_Stop();
-			tb.Daq_Read(data[i], 200);
+			tb.Daq_Read(data[i], 0, 200);
 		}
 		Log.printf("%3i ", int(t));
 		decoding_show(data);
@@ -1434,7 +1438,7 @@ CMD_PROC(tbmsel)
 {
 	int hub, port;
 	PAR_INT(hub,0,31);
-	PAR_INT(port,0,3);
+	PAR_INT(port,0,7);
 	tb.tbm_Enable(true);
 	tb.tbm_Addr(hub,port);
 	DO_FLUSH
@@ -1560,9 +1564,11 @@ CMD_PROC(tbmregs)
 	int i;
 	int value[13];
 	unsigned char data;
+	int ret = 0;
 
 	for (i=0; i<13; i++)
-		if (tb.tbm_Get(reg[i],data)) value[i] = data; else value[i] = -1;
+		if (ret = tb.tbm_Get(reg[i],data)) value[i] = data; else value[i] = -1;
+	printf(" return: %d\n",ret);
 	printf(" reg  TBMA   TBMB\n");
 	printf("TBMA %s\n", regline);
 	for (i=0; i<5;  i++) PrintTbmData(reg[i],value[i]);
@@ -1867,7 +1873,7 @@ void Scan1D(int vx, int xmin, int xmax)
 		}
 	}
 	tb.Daq_Stop();
-	tb.Daq_Read(data, 10000);
+	tb.Daq_Read(data, 0, 10000);
 
 	// --- analyze data
 	int pos = 0, count;
@@ -1977,7 +1983,7 @@ CMD_PROC(phscan)
 
 	tb.Daq_Stop();
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 4000);
+	tb.Daq_Read(data, 0, 4000);
 	tb.Daq_Close();
 
 	// --- plot data
@@ -2039,7 +2045,7 @@ CMD_PROC(deser160)
 			tb.Pg_Single();
 			tb.uDelay(10);
 			tb.Daq_Stop();
-			tb.Daq_Read(data, 100);
+			tb.Daq_Read(data, 0, 100);
 
 			if (data.size())
 			{
@@ -2112,7 +2118,7 @@ CMD_PROC(readback)
 
 	// read out data
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 40);
+	tb.Daq_Read(data, 0, 40);
 	tb.Daq_Close();
 
 	//analyze data
@@ -2807,6 +2813,14 @@ void cmd()
 	CMD_REG(phscan,   "phscan                        ROC pulse height scan");
 	CMD_REG(readback, "readback                      read out ROC data");
 	CMD_REG(deser160, "deser160                      allign deser160");
+	CMD_REG(tbmregs, "tbmregs                        print tbm registers");
+	CMD_REG(tbmsel, "tbmsel <port> <hub>             select tbm");
+	CMD_REG(modscan, "modscan                      module scan");
+
+	CMD_REG(tbmgetraw, "tbmgetraw <reg>			get TBM register");
+	CMD_REG(tbmget, "tbmget <reg>			get TBM register");
+	CMD_REG(tbmset, "tbmset <reg> <value>		set TBM register");
+	CMD_REG(modsel, "modsel 					");
 
 
 	// --- chip test command ---------------------------------------------

@@ -252,7 +252,7 @@ bool CalDelScan(int col, int row)
 		}
 	}
 	tb.Daq_Stop();
-	tb.Daq_Read(data, 10000);
+	tb.Daq_Read(data,0, 10000);
 	tb.Daq_Close();
 
 	tb.roc_Pix_Mask(col, row);
@@ -339,7 +339,7 @@ int GetReadback()
 
 	// read out data
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 1000);
+	tb.Daq_Read(data,0, 1000);
 
 	//analyze data
 	int pos = 0;
@@ -607,7 +607,7 @@ void test_pixel()
 	tb.Daq_Stop();
 
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 50000);
+	tb.Daq_Read(data, 0, 50000);
 	tb.Daq_Close();
 
 	// --- analyze data --------------------------------------------------------
@@ -695,7 +695,7 @@ void test_pulse_height1()
 
 	// read data
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 50000);
+	tb.Daq_Read(data, 0, 50000);
 	tb.Daq_Close();
 
 	// analyze data
@@ -759,7 +759,7 @@ void test_pulse_height2()
 
 	// read data
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 50000);
+	tb.Daq_Read(data,0, 50000);
 	tb.Daq_Close();
 
 	// analyze data
@@ -834,7 +834,7 @@ void test_pulseheight()
 	tb.roc_ClrCal();
 
 	tb.Daq_Stop();
-	tb.Daq_Read(data, 4000);
+	tb.Daq_Read(data, 0, 4000);
 	tb.Daq_Close();
 //	DumpData(data, 200);
 
@@ -885,7 +885,7 @@ bool GetPixel(unsigned int x)
 	}
 	tb.Daq_Stop();
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 10000);
+	tb.Daq_Read(data,0, 10000);
 	int pos = 0;
 	PixelReadoutData pix;
 
@@ -1034,7 +1034,7 @@ int GetPixelC(unsigned int x)
 	}
 	tb.Daq_Stop();
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 10000);
+	tb.Daq_Read(data,0, 10000);
 	int pos = 0;
 
 	for (i=0; i<count; i++)

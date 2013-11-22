@@ -253,21 +253,27 @@ public:
 	RPC_EXPORT void Pg_Trigger();
 	RPC_EXPORT void Pg_Loop(uint16_t period);
 
-	//RPC_EXPORT uint16_t GetUser1Version();
+//	RPC_EXPORT uint16_t GetUser1Version();
 
 
 	// --- data aquisition --------------------------------------------------
-	RPC_EXPORT uint32_t Daq_Open(uint32_t buffersize = 10000000); // max # of samples
+	RPC_EXPORT uint32_t Daq_Open(uint32_t buffersize = 1000000, uint8_t dma = 0 ); // max # of samples
 	RPC_EXPORT void Daq_Close();
 	RPC_EXPORT void Daq_Start();
 	RPC_EXPORT void Daq_Stop();
-	RPC_EXPORT uint32_t Daq_GetSize();
+	RPC_EXPORT uint32_t Daq_GetSize(uint8_t channel = 0);
 
 	RPC_EXPORT uint8_t Daq_Read(vectorR<uint16_t> &data,
-			 uint16_t blocksize = 16384);
+			 uint8_t channel, uint16_t blocksize = 16384);
+
+	RPC_EXPORT uint8_t Daq_Read(vectorR<uint16_t> &data,
+			uint8_t channel, uint16_t blocksize, uint32_t &availsize);
 
 	RPC_EXPORT uint8_t Daq_Read(vectorR<uint16_t> &data,
 			uint16_t blocksize, uint32_t &availsize);
+	
+	RPC_EXPORT uint8_t Daq_Read(vectorR<uint16_t> &data,
+			 uint16_t blocksize = 16384);
 
 	RPC_EXPORT void Daq_Select_ADC(uint16_t blocksize, uint8_t source,
 			uint8_t start, uint8_t stop = 0);
@@ -326,6 +332,15 @@ public:
 
 	// -- Reads back uninterpreted data, gives raw bit pattern. For debugging purposes if tbm_Get failes with error
 	RPC_EXPORT bool tbm_GetRaw(uint8_t reg, uint32_t &value);
+
+	// -- Other TBM functions
+
+	RPC_EXPORT void tbm1_Write(uint32_t hubAddr, uint32_t addr, int32_t value);
+
+	RPC_EXPORT void tbm2_Write(uint32_t hubAddr, uint32_t addr, int32_t value);
+
+	RPC_EXPORT void tbm_Write(uint32_t hubAddr, uint32_t addr, int32_t value);
+
 
 
 // --- Wafer test functions
