@@ -1,6 +1,7 @@
 // usb.cpp
 
-
+#include <libusb-1.0/libusb.h>
+#include <cstring>
 #include "profiler.h"
 #include "rpc_error.h"
 #include "usb.h"
@@ -78,21 +79,87 @@ bool CUSB::Enum(char name[], unsigned int pos)
 	return true;
 }
 
-
 bool CUSB::Open(char serialNumber[])
 {
-	if (isUSB_open) { ftStatus = FT_DEVICE_NOT_OPENED; return false; }
+    if (isUSB_open) { ftStatus = FT_DEVICE_NOT_OPENED; return false; }
 
-	m_posR = m_sizeR = m_posW = 0;
-	ftStatus = FT_OpenEx(serialNumber, FT_OPEN_BY_SERIAL_NUMBER, &ftHandle);
-	if (ftStatus != FT_OK) return false;
+    m_posR = m_sizeR = m_posW = 0;
 
-	ftStatus = FT_SetBitMode(ftHandle, 0xFF, 0x40);
-	if (ftStatus != FT_OK) return false;
+    ftStatus = FT_OpenEx(serialNumber, FT_OPEN_BY_SERIAL_NUMBER, &ftHandle);
 
-	FT_SetTimeouts(ftHandle,2000,1000);
-	isUSB_open = true;
-	return true;
+    if (ftStatus != FT_OK)  {
+        /* maybe the ftdi_sio and usbserial kernel modules are attached to the device */
+        /* try to detach them using the libusb library directly */
+
+        /* prepare libusb structures */
+        libusb_device ** list;
+        libusb_device_handle *handle;
+        struct libusb_device_descriptor descriptor;
+
+        /* initialise libusb and get device list*/
+        libusb_init(NULL);
+        ssize_t ndevices = libusb_get_device_list(NULL, &list);
+        if( ndevices < 0)
+          return false;
+
+        char serial [20];
+
+        bool found = false;
+
+        /* loop over all USB devices */
+        for( int dev = 0; dev < ndevices; dev++) {
+            /* get the device descriptor */
+            int ok = libusb_get_device_descriptor(list[dev], &descriptor);
+            if( ok != 0)
+                continue;
+            /* we're only interested in devices with one vendor and two possible product ID */
+            if( descriptor.idVendor != 0x0403 && (descriptor.idProduct != 0x6001 || descriptor.idProduct != 0x6014))
+                continue;
+
+            /* open the device */
+            ok = libusb_open(list[dev], &handle);
+            if( ok != 0)
+                    continue;
+            /* Read the serial number from the device */
+            ok = libusb_get_string_descriptor_ascii(handle, descriptor.iSerialNumber, (unsigned char *) serial, 20);
+            if( ok < 0)
+                continue;
+
+            /* Check the device serial number */
+            if( strcmp(serialNumber, serial) == 0) {
+                /* that's our device */
+                found = true;
+
+                /* Detach the kernel module from the device */
+                ok = libusb_detach_kernel_driver(handle, 0);
+                if( ok == 0)
+                    printf("Detached kernel driver from selected testboard.\n");
+                else
+                    printf("Unable to detach kernel driver from selected testboard.\n");
+                break;
+            }
+
+            libusb_close(handle);
+        }
+
+        libusb_free_device_list(list, 1);
+
+        /* if the device was not found in the previous loop, don't try again */
+        if( !found)
+            return false;
+
+        /* try to re-open with the detached device */
+        ftStatus = FT_OpenEx(serialNumber, FT_OPEN_BY_SERIAL_NUMBER, &ftHandle);
+        if( ftStatus != FT_OK)
+            return false;
+    }
+
+    ftStatus = FT_SetBitMode(ftHandle, 0xFF, 0x40);
+    if (ftStatus != FT_OK) return false;
+
+    FT_SetTimeouts(ftHandle,2000,1000);
+    isUSB_open = true;
+    return true;
 }
 
 
