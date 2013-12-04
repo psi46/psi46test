@@ -25,6 +25,6 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
  54  DTB1.2   1.1   1.7 DTB_WRNOOS 40:D8:55:11:80:36  pixelDTB054 Rice/TIF
  56  DTB1.2   1.1   1.7 DTB_WRPPWX 40:D8:55:11:80:38  pixelDTB056 UNLstock
  57  DTB1.2   1.1   1.7 DTB_WRPQJV 40:D8:55:11:80:39  pixelDTB057 UNLstock
- 58  DTB1.2   1.1   1.7 DTB_WRPRHI 40:D8:55:11:80:3A  pixelDTB058 UNLstock
- 61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 UNLstock
+ 58  DTB1.2   1.1   1.7 DTB_WRPRHI 40:D8:55:11:80:3A  pixelDTB058 KU
+ 61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 KU
  64  DTB1.2   1.1   1.7 DTB_WRQ0UZ 40:D8:55:11:80:40  pixelDTB064 UNLstock
