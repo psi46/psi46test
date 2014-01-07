@@ -53,61 +53,39 @@ void DecodePixel(const vector<uint16_t> &x, int &pos, PixelReadoutData &pix)
 }
 
 
+// ==========================================================================
 
+/*
+#define ERROR_RO_EMPTY      0
+#define ERROR_RO_MISSING    1
+#define ERROR_RO_ALIGNMENT  2
+#define ERROR_RO_HEADER     3
+#define ERROR_RO_DATASIZE   4
+*/
 
 // --- event lister ---------------------------------------------------------
 
-class CStore : public CAnalyzer
+CRocEvent* CReadback::Read()
 {
-	CRocEvent* Read();
-};
-
-
-CRocEvent* CStore::Read()
-{
-	CRocEvent *data = Get();
-	printf("%8u: %03X %4u:\n", (unsigned int)(data->eventNr), (unsigned int)(data->header), (unsigned int)(data->pixel.size()));
-	return data;
+	return Get();
 }
 
 
-// --- column statistics ----------------------------------------------------
-
-class CColActivity : public CAnalyzer
+CRocEvent* CPulseHeight::Read()
 {
-	unsigned long colhits[52];
-	CRocEvent* Read();
-public:
-	CColActivity() { Clear(); }
-	void Clear();
-};
-
-
-void CColActivity::Clear()
-{
-	for (int i=0; i<52; i++) colhits[i] = 0;
-}
-
-
-CRocEvent* CColActivity::Read()
-{
-	CRocEvent *data = Get();
-	list<CPixel>::iterator i;
-	for (i = data->pixel.begin(); i != data->pixel.end(); i++)
-		if (i->x >= 0 && i->x < 52) colhits[i->x]++;
-	return data;
+	return Get();
 }
 
 
 void Analyzer(CTestboard &tb)
 {
-	CBinaryDTBSource src(tb);
+	CDtbSource src(tb, false);
 	CDataRecordScanner rec;
 	CRocDecoder dec;
-	CStore lister;
 	CSink<CRocEvent*> pump;
 
-	src >> rec >> dec >> lister >> pump;
+	src >> rec >> dec >> pump;
 
 	pump.GetAll();
 }
+

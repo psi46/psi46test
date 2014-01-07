@@ -1,11 +1,11 @@
 // plot.cpp
 
-#include "CImg.h"
-using namespace cimg_library;
 
 #include <string>
 #include <vector>
 #include <list>
+#include <math.h>
+#include "plot.h"
 
 
 // === data scope ===========================================================
@@ -468,4 +468,151 @@ void show_graph2(CImgDisplay &disp, CImg<double> &data,
 	    disp.wait();
 	}
 
+}
+
+
+
+// === CDotPlot =============================================================
+
+const int CDotPlot::x0 = 60;
+const int CDotPlot::y0 = 60;
+
+CDotPlot::CDotPlot()
+{
+	const unsigned char colGrid[3]  = {128, 128, 128};
+	const unsigned char colLabel[3] = {  0,   0,   0};
+
+	img.assign(900, 900, 1, 3);
+	img.fill(255);
+	char s[16];
+	int len;
+	int x, y;
+	for (x=0; x<=256; x+=16)
+	{
+		int px = x0 + 3*x;
+		img.draw_line(px, y0, px, y0+3*256, colGrid);
+		sprintf(s, "%i", x);
+		len = strlen(s);
+		img.draw_text(px+1-3*len, y0+3*256+5, s, colLabel, 0); 
+	}
+	for (y=0; y<=256; y+=16)
+	{
+		int py = y0 + 3*256-3*y;
+		img.draw_line(x0, py, x0+3*256, py, colGrid);
+		sprintf(s, "%i", y);
+		len = strlen(s);
+		img.draw_text(x0-8-5*len, py-7, s, colLabel, 0); 
+	}
+
+}
+
+
+CDotPlot::~CDotPlot()
+{
+
+}
+
+
+void CDotPlot::Add(int x, int y, int value)
+{
+	const unsigned char colTable[17][3] =
+	{
+		{ 200, 220, 230 },
+		{  80, 150, 244 },
+		{  45, 190, 240 },
+		{  45, 190, 120 },
+		{  64, 140,  56 },
+		{  82, 147,  38 },
+		{ 174, 185,  16 },
+		{ 250, 205,   0 },
+		{ 255, 184,   2 },
+		{ 255, 147,  10 },
+		{ 237,  92,  20 },
+		{ 210,  44,  19 },
+		{ 239,  44,  44 },
+		{ 237, 112,  67 },
+		{ 243, 159, 108 },
+		{ 243, 207, 185 },
+		{ 255, 255, 255 }
+	};
+	
+	const unsigned char bwTable[17][3] =
+	{
+		{  95,  95,  95 },
+		{ 105, 105, 105 },
+		{ 115, 115, 115 },
+		{ 125, 125, 125 },
+		{ 135, 135, 135 },
+		{ 145, 145, 145 },
+		{ 155, 155, 155 },
+		{ 165, 165, 165 },
+		{ 175, 175, 175 },
+		{ 185, 185, 185 },
+		{ 195, 195, 195 },
+		{ 205, 205, 205 },
+		{ 215, 215, 215 },
+		{ 225, 225, 225 },
+		{ 235, 235, 235 },
+		{ 245, 245, 245 },
+		{ 255, 255, 255 }
+	};
+
+	const unsigned char brwTable[23][3] =
+	{
+		{  50,  83, 227 },
+		{  65,  93, 220 },
+		{  80, 103, 213 },
+		{  95, 113, 205 },
+		{ 105, 120, 198 },
+		{ 113, 125, 191 },
+		{ 122, 131, 183 },
+		{ 129, 137, 176 },
+		{ 137, 143, 169 },
+		{ 146, 148, 161 },
+		{ 157, 154, 151 },
+		{ 172, 154, 136 },
+		{ 189, 154, 119 },
+		{ 206, 154, 102 },
+		{ 221, 153,  85 },
+		{ 238, 153,  68 },
+		{ 254, 153,  52 },
+		{ 255, 171,  87 },
+		{ 255, 188, 121 },
+		{ 255, 204, 153 },
+		{ 255, 220, 185 },
+		{ 255, 237, 219 },
+		{ 255, 255, 255 }
+	};
+
+	if (x < 0 || x > 255) return;
+	if (y < 0 || y > 255) return;
+	if (value == 0) return;
+
+	// int c = int(std::log(double(value))*2.4);
+	int c = int(double(value)*23.0 / 600.0);
+	if (c < 0)  c = 0;
+	if (c > 22) c = 22;
+
+	int px = x0 + 3*x;
+	int py = y0 + 3*256-3*y;
+	img.draw_rectangle(px-1, py-1, px+1, py+1, brwTable[c]);
+}
+
+
+void CDotPlot::AddMean(int x, double y)
+{
+//	const unsigned char colMean[3]  = { 80, 255, 80};
+	const unsigned char colMean[3]  = { 80, 128, 40};
+
+	if (x < 0 || x > 255) return;
+	if (y < -1.0 || y > 256.0) return;
+	int px = x0 + 3*x;
+	int py = y0 + 3*256 - int(3.0*y + 0.5);
+//	img.draw_point(px, py, colMean);
+	img.draw_line(px-1, py, px+1, py, colMean);
+}
+
+void CDotPlot::Show()
+{
+	img.display("Ph vs Vana");
 }

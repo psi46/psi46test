@@ -3,6 +3,25 @@
 #ifndef CONNECT_H
 #define CONNECT_H
 
+#include <exception>
+
+
+// === data pipe error ======================================================
+
+class DataPipeException : public std::exception
+{
+public:
+	DataPipeException(const char *message) : std::exception(message) {};
+};
+
+
+class DP_not_connected : public DataPipeException
+{
+public:
+	DP_not_connected() : DataPipeException("Not connected") {};
+};
+
+
 
 // === data source ==========================================================
 
@@ -26,18 +45,20 @@ protected:
 	CNullSource() {}
 	CNullSource(const CNullSource&) {}
 	~CNullSource() {}
-	T ReadLast() { throw "no connection"; }
+    T ReadLast() { throw DP_not_connected(); }
 	T Read()     { return ReadLast();     }
-	template <class S> friend class CSink;
+	template <class TO> friend class CSink;
 };
 
 
 // === data sink ============================================================
 
+template <class TI, class TO> class CDataPipe;
+
 template <class T>
 class CSink
 {
-public:
+protected:
 	CSource<T> *src;
 	static CNullSource<T> null;
 public:
@@ -46,6 +67,8 @@ public:
 	T GetLast() { return src->ReadLast(); }
 	T Get()     { return src->Read();     }
 	void GetAll() { while (true) Get(); }
+	template <class TI, class TO> friend void operator >> (CSource<TI> &, CSink<TO> &);
+	template <class TI, class TO> friend CSource<TO>& operator >> (CSource<TI> &in, CDataPipe<TI,TO> &out);
 };
 
 template <class T> CNullSource<T> CSink<T>::null;

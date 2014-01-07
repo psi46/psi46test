@@ -22,3 +22,26 @@ struct PixelReadoutData
 void DumpData(const vector<uint16_t> &x, unsigned int n);
 
 void DecodePixel(const std::vector<uint16_t> &x, int &pos, PixelReadoutData &pix);
+
+
+
+// ==========================================================================
+
+class CReadback : public CAnalyzer
+{
+	bool valid;
+	unsigned int data;
+	void (*alert)(unsigned int);
+	CRocEvent* Read();
+public:
+	CReadback() : valid(0), data(0), alert(0) {}
+	bool IsValid() { return valid; }
+	unsigned int GetData() { if (valid) { valid = 0; return data; } return 0; }
+	unsigned int SetCallback(void (*callback)(unsigned int)) { alert = callback; }
+};
+
+
+class CPulseHeight : public CAnalyzer
+{
+	CRocEvent* Read();
+};

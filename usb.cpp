@@ -1,7 +1,10 @@
 // usb.cpp
 
+#ifndef _WIN32
 #include <libusb-1.0/libusb.h>
 #include <cstring>
+#endif
+
 #include "profiler.h"
 #include "rpc_error.h"
 #include "usb.h"
@@ -79,15 +82,20 @@ bool CUSB::Enum(char name[], unsigned int pos)
 	return true;
 }
 
+
 bool CUSB::Open(char serialNumber[])
 {
-    if (isUSB_open) { ftStatus = FT_DEVICE_NOT_OPENED; return false; }
+	if (isUSB_open) { ftStatus = FT_DEVICE_NOT_OPENED; return false; }
 
-    m_posR = m_sizeR = m_posW = 0;
+	m_posR = m_sizeR = m_posW = 0;
 
-    ftStatus = FT_OpenEx(serialNumber, FT_OPEN_BY_SERIAL_NUMBER, &ftHandle);
+	ftStatus = FT_OpenEx(serialNumber, FT_OPEN_BY_SERIAL_NUMBER, &ftHandle);
 
-    if (ftStatus != FT_OK)  {
+	if (ftStatus != FT_OK)
+#ifdef _WIN32
+		return false;
+#else
+	{
         /* maybe the ftdi_sio and usbserial kernel modules are attached to the device */
         /* try to detach them using the libusb library directly */
 
@@ -153,13 +161,15 @@ bool CUSB::Open(char serialNumber[])
         if( ftStatus != FT_OK)
             return false;
     }
+#endif
 
-    ftStatus = FT_SetBitMode(ftHandle, 0xFF, 0x40);
-    if (ftStatus != FT_OK) return false;
 
-    FT_SetTimeouts(ftHandle,2000,1000);
-    isUSB_open = true;
-    return true;
+	ftStatus = FT_SetBitMode(ftHandle, 0xFF, 0x40);
+	if (ftStatus != FT_OK) return false;
+
+	FT_SetTimeouts(ftHandle,2000,1000);
+	isUSB_open = true;
+	return true;
 }
 
 

@@ -43,6 +43,8 @@
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(BOOST_ROOT)\lib32;$(LibraryPath)</LibraryPath>
     <IncludePath>$(BOOST_ROOT);$(IncludePath)</IncludePath>
+    <CustomBuildAfterTargets />
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\win32\Release\</OutDir>
@@ -51,6 +53,7 @@
     <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
     <LibraryPath>$(BOOST_ROOT)\lib32;$(LibraryPath)</LibraryPath>
     <IncludePath>$(BOOST_ROOT);$(IncludePath)</IncludePath>
+    <CustomBuildAfterTargets />
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -90,6 +93,18 @@
       <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ROOTSYS)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <CustomBuildStep>
+      <Command>rpcgen pixel_dtb.h -hrpc_calls.cpp</Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Message>Create RPC Calls</Message>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>rpc_calls.cpp</Outputs>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Inputs>pixel_dtb.h</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -135,6 +150,7 @@
     </CustomBuildStep>
     <CustomBuildStep>
       <Inputs>pixel_dtb.h</Inputs>
+      <Message>Create RPC Calls</Message>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>

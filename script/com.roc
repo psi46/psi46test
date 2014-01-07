@@ -1,4 +1,0 @@
-welcome
-comment
-welcome
-flush

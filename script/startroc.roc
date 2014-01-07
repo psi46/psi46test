@@ -1,4 +1,4 @@
-log === testcal ===
+log === startdigroc ===
 
 resoff
 
@@ -46,7 +46,7 @@ dac  15  40  VoffsetOp
 dac  17  80  VoffsetRO
 dac  18 115  VIon
 
-dac  19 100  Vcomp_ADC 100
+dac  19  50  Vcomp_ADC 100
 dac  20  70  VIref_ADC 160
 
 dac  25  70  Vcal

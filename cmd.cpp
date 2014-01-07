@@ -16,7 +16,6 @@
 #include <math.h>
 #include <time.h>
 #include <fstream>
-#include <utility>
 #include "psi46test.h"
 #include "plot.h"
 #include "analyzer.h"
@@ -39,9 +38,9 @@ using namespace std;
 
 #define FIFOSIZE 8192
 
-//                   cable length:     5   48  prober 450 cm
-extern int delayAdjust =  4; //  4    0    19    5
-extern int deserAdjust =  4; //  4    4     5    6
+//                   cable length:     5   48  prober 450 cm  bump bonder
+extern const int delayAdjust =  3; //  4    0    19    5       16
+extern const int deserAdjust =  4; //  4    4     5    6        5
 
 
 // =======================================================================
@@ -150,6 +149,16 @@ CMD_PROC(welcome)
 	DO_FLUSH
 	return true;
 }
+
+CMD_PROC(clksrc)
+{
+	int source;
+	PAR_INT(source, 0, 1);
+	tb.SetClockSource(source);
+	DO_FLUSH
+	return true;
+}
+
 
 CMD_PROC(setled)
 {
@@ -811,16 +820,20 @@ CMD_PROC(pgloop)
 CMD_PROC(dopen)
 {
 	int buffersize;
+	int channel;
 	PAR_INT(buffersize, 0, 60000000);
-	buffersize = tb.Daq_Open(buffersize);
-	printf("%i words allocated for data buffer\n", buffersize);
+	if (!PAR_IS_INT(channel, 0, 7)) channel = 0;
+	buffersize = tb.Daq_Open(buffersize, channel);
+	printf("%i words allocated for data buffer %i\n", buffersize, channel);
 	if (buffersize == 0) printf("error\n");
 	return true;
 }
 
 CMD_PROC(dclose)
 {
-	tb.Daq_Close();
+	int channel;
+	if (!PAR_IS_INT(channel, 0, 7)) channel = 0;
+	tb.Daq_Close(channel);
 	DO_FLUSH
 	return true;
 }
@@ -828,14 +841,18 @@ CMD_PROC(dclose)
 
 CMD_PROC(dstart)
 {
-	tb.Daq_Start();
+	int channel;
+	if (!PAR_IS_INT(channel, 0, 7)) channel = 0;
+	tb.Daq_Start(channel);
 	DO_FLUSH
 	return true;
 }
 
 CMD_PROC(dstop)
 {
-	tb.Daq_Stop();
+	int channel;
+	if (!PAR_IS_INT(channel, 0, 7)) channel = 0;
+	tb.Daq_Stop(channel);
 	DO_FLUSH
 	return true;
 }
@@ -843,34 +860,118 @@ CMD_PROC(dstop)
 
 CMD_PROC(dsize)
 {
-	unsigned int size = tb.Daq_GetSize();
+	int channel;
+	if (!PAR_IS_INT(channel, 0, 7)) channel = 0;
+	unsigned int size = tb.Daq_GetSize(channel);
 	printf("size = %u\n", size);
 	return true;
 }
 
+
+void DecodeTbmHeader(unsigned int raw)
+{
+	int evNr = raw >> 8;
+	int stkCnt = raw & 6;
+	printf("  EV(%3i) STF(%c) PKR(%c) STKCNT(%2i)",
+		evNr,
+		(raw&0x0080)?'1':'0',
+		(raw&0x0040)?'1':'0',
+		stkCnt
+		); 
+}
+
+void DecodeTbmTrailer(unsigned int raw)
+{
+	int dataId = (raw >> 6) & 0x3;
+	int data   = raw & 0x3f;
+	printf("  NTP(%c) RST(%c) RSR(%c) SYE(%c) SYT(%c) CTC(%c) CAL(%c) SF(%c) D%i(%2i)",
+		(raw&0x8000)?'1':'0',
+		(raw&0x4000)?'1':'0',
+		(raw&0x2000)?'1':'0',
+		(raw&0x1000)?'1':'0',
+		(raw&0x0800)?'1':'0',
+		(raw&0x0400)?'1':'0',
+		(raw&0x0200)?'1':'0',
+		(raw&0x0100)?'1':'0',
+		dataId,
+		data
+		);
+}
+
+void DecodePixel(unsigned int raw)
+{
+	unsigned int ph = (raw & 0x0f) + ((raw >> 1) & 0xf0);
+	raw >>= 9;
+	int c =    (raw >> 12) & 7;
+	c = c*6 + ((raw >>  9) & 7);
+	int r =    (raw >>  6) & 7;
+	r = r*6 + ((raw >>  3) & 7);
+	r = r*6 + ( raw        & 7);
+	int y = 80 - r/2;
+	int x = 2*c + (r&1);
+	printf("   Pixel [%05o] %2i/%2i: %3u", raw, x, y, ph);
+}
+
+
 CMD_PROC(dread)
 {
+	int channel;
+	if (!PAR_IS_INT(channel, 0, 7)) channel = 0;
+
 	uint32_t words_remaining = 0;
 	vector<uint16_t> data;
-	tb.Daq_Read(data, words_remaining);
+//	int TBM_eventnr,TBM_stackinfo,ColAddr,RowAddr,PulseHeight,TBM_trailerBits,TBM_readbackData;
+
+	tb.Daq_Read(data, 4096, words_remaining, channel);
 	int size = data.size();
-	printf("#samples: %i  remaining: %i\n", size, int(words_remaining));
+	printf("#samples: %i  remaining: %u\n", size, (unsigned int)(words_remaining));
 
+	unsigned int hdr, trl;
+	unsigned int raw;
 	for (int i=0; i<size; i++)
 	{
-		int x = data[i] & 0x0fff;
-		printf(" %03X", x);
-		if (i%10 == 9) printf("\n");
+		int d = data[i] & 0xf;
+		int q = (data[i]>>4) & 0xf;
+		switch (q)
+		{
+		case  0: printf("  0(%1X)", d); break;
+
+		case  1: printf("\n R1(%1X)", d); raw = d; break;
+		case  2: printf(" R2(%1X)", d);   raw = (raw<<4) + d; break;
+		case  3: printf(" R3(%1X)", d);   raw = (raw<<4) + d; break;
+		case  4: printf(" R4(%1X)", d);   raw = (raw<<4) + d; break;
+		case  5: printf(" R5(%1X)", d);   raw = (raw<<4) + d; break;
+		case  6: printf(" R6(%1X)", d);   raw = (raw<<4) + d;
+			     DecodePixel(raw);
+				 break;
+
+		case  7: printf("\nROC-HEADER(%1X): ", d); break;
+
+		case  8: printf("\n\nTBM H1(%1X) ", d); hdr = d; break;
+		case  9: printf("H2(%1X) ", d);       hdr = (hdr<<4) + d; break;
+		case 10: printf("H3(%1X) ", d);       hdr = (hdr<<4) + d; break;
+		case 11: printf("H4(%1X) ", d);       hdr = (hdr<<4) + d; 
+			     DecodeTbmHeader(hdr);
+			     break;
+
+		case 12: printf("\nTBM T1(%1X) ", d); trl = d; break;
+		case 13: printf("T2(%1X) ", d);       trl = (trl<<4) + d; break;
+		case 14: printf("T3(%1X) ", d);       trl = (trl<<4) + d; break;
+		case 15: printf("T4(%1X) ", d);       trl = (trl<<4) + d;
+			     DecodeTbmTrailer(trl);
+			     break;
+		}
 	}
-	printf("\n");
 
 	for (int i=0; i<size; i++)
 	{
-		int x = data[i] & 0x0fff;
-		Log.printf("%03X", x);
+		int x = data[i] & 0xffff;
+		Log.printf("%04X", x);
 		if (i%100 == 9) printf("\n");
 	}
 	printf("\n");
+	Log.printf("\n");
+	Log.flush();
 
 	return true;
 }
@@ -1308,9 +1409,32 @@ CMD_PROC(showsda)
 }
 
 
+CMD_PROC(dselmod)
+{
+	tb.Daq_Select_Deser400();
+	DO_FLUSH
+	return true;
+}
 
+CMD_PROC(dmodres)
+{
+	int reset;
+	if (!PAR_IS_INT(reset, 0, 3)) reset = 3;
+	tb.Daq_Deser400_Reset(reset);
+	DO_FLUSH
+	return true;
+}
 
-CMD_PROC(adcena)
+CMD_PROC(dselroc)
+{
+	int shift;
+	PAR_INT(shift,0,7);
+	tb.Daq_Select_Deser160(shift);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(dselroca)
 {
 	int datasize;
 	PAR_INT(datasize, 1, 2047);
@@ -1319,21 +1443,14 @@ CMD_PROC(adcena)
 	return true;
 }
 
-CMD_PROC(adcdis)
+CMD_PROC(dseloff)
 {
-	tb.Daq_Select_Deser160(2);
+	tb.Daq_DeselectAll();
 	DO_FLUSH
 	return true;
 }
 
-CMD_PROC(deser)
-{
-	int shift;
-	PAR_INT(shift,0,7);
-	tb.Daq_Select_Deser160(shift);
-	DO_FLUSH
-	return true;
-}
+
 
 
 
@@ -1423,7 +1540,7 @@ CMD_PROC(vdac)     // regulated VDAC
 // =======================================================================
 //  tbm commands
 // =======================================================================
-/*
+
 CMD_PROC(tbmdis)
 {
 	tb.tbm_Enable(false);
@@ -1463,6 +1580,7 @@ CMD_PROC(tbmset)
 	return true;
 }
 
+/*
 CMD_PROC(tbmget)
 {
 	int reg;
@@ -1819,6 +1937,531 @@ CMD_PROC(mask)
 //  experimential ROC test commands
 // =======================================================================
 
+
+class CDemoAnalyzer : public CAnalyzer
+{
+	CRocEvent* Read();
+};
+
+CRocEvent* CDemoAnalyzer::Read()
+{
+	CRocEvent* ev = Get();
+
+	Log.printf("Header: %03X\n", int(ev->header));
+	for (unsigned int i=0; i<ev->pixel.size(); i++)
+		Log.printf("[%3i %3i %3i]\n", ev->pixel[i].x, ev->pixel[i].y, ev->pixel[i].ph);
+	Log.printf("\n");
+	return ev;
+};
+
+
+class CDemoAnalyzer2 : public CAnalyzer
+{
+	CRocEvent* Read();
+};
+
+
+CRocEvent* CDemoAnalyzer2::Read()
+{
+	CRocEvent* ev = Get();
+
+	Log.printf("%03X ", int(ev->header));
+	for (unsigned int i=0; i<ev->pixel.size(); i++)
+		Log.printf(" %3i", ev->pixel[i].ph);
+	Log.printf("\n");
+	return ev;
+};
+
+
+// --- Level Histo
+
+class CLevelHisto : public CAnalyzer
+{
+	unsigned int pos;
+	unsigned int h[256];
+	CRocEvent* Read();
+public:
+	CLevelHisto(unsigned int ro_pos);
+	void Clear();
+	void Report(FILE *f, int min, int max);
+};
+
+
+CLevelHisto::CLevelHisto(unsigned int rp_pos)
+{
+	pos = rp_pos;
+	Clear();
+}
+
+void CLevelHisto::Clear()
+{
+	for (int i=0; i<256; i++) h[i] = 0;
+}
+
+void CLevelHisto::Report(FILE *f, int min, int max)
+{
+	for (int i=min; i<=max; i++) fprintf(f, "%3i, %5u\n", i, h[i]);
+}
+
+
+CRocEvent* CLevelHisto::Read()
+{
+	CRocEvent* ev = Get();
+	if (ev->pixel.size() > pos)
+	{
+		unsigned int x = ev->pixel[pos].ph;
+		if (x < 256) h[x]++;
+	}
+	return ev;
+};
+
+
+// ---
+class CPrint : public CAnalyzer
+{
+	CRocEvent* Read();
+};
+
+
+CRocEvent* CPrint::Read()
+{
+	CRocEvent* ev = Get();
+	for (unsigned int i = 0; i < ev->pixel.size(); i++)
+	{
+		printf(" %3u", ev->pixel[i].ph);
+	}
+	printf("\n");
+	return ev;
+};
+
+
+CMD_PROC(analyze)
+{
+	int vc;
+	PAR_INT(vc,0,255)
+
+	CDtbSource src(tb, false);
+	CDataRecordScanner rec;
+	CRocDecoder dec;
+	CLevelHisto l(0);
+	CSink<CRocEvent*> pump;
+
+	src >> rec >> dec >> l >> pump;
+
+//	tb.roc_SetDAC(WBC,  15);
+	tb.roc_SetDAC(Vcal, vc);
+	tb.roc_SetDAC(CtrlReg,0x04); // high range
+
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(2, PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+	tb.uDelay(100);
+	tb.Flush();
+
+	tb.Daq_Open(1000000);
+	tb.Daq_Select_Deser160(deserAdjust);
+
+	tb.Daq_Start();
+	tb.uDelay(10);
+	for (int i=0; i<3; i++) tb.roc_Pix_Trim(i, 5, 15);
+
+	tb.uDelay(100);
+	tb.Pg_Loop(10000);
+
+	try
+	{
+		int i=0;
+		while (i++ < 10000 && !keypressed()) pump.Get();
+		tb.Pg_Stop();
+	}
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+
+	tb.Daq_Stop();
+
+/*	try { pump.GetAll(); }
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+*/
+	tb.Daq_Close();
+
+	const int min =  40;
+	const int max = 255;
+	for (int i=min; i<=max; i++) Log.printf(" %5i", i);
+	Log.printf("\n");
+	l.Report(Log.File(), min, max);
+
+	Log.flush();
+	return true;
+}
+
+
+CMD_PROC(adcsingle)
+{
+	CDtbSource src(tb, false);
+	CDataRecordScanner rec;
+	CRocDecoder dec;
+	CPrint print;
+//	CDemoAnalyzer print;
+	CSink<CRocEvent*> pump;
+
+	src >> rec >> dec >> print >> pump;
+
+	tb.Daq_Open(1000);
+	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Start();
+	tb.uDelay(10);
+
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(2, PG_SYNC|PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+	tb.uDelay(100);
+	tb.Flush();
+
+	tb.Pg_Single();
+	tb.uDelay(100);
+
+	try { pump.GetAll(); }
+	catch (DS_empty &) {}
+	catch (DataPipeException &e) { /* printf("%s\n", e.what()); */ }
+
+	tb.Daq_Stop();
+	tb.Daq_Close();
+	Log.flush();
+	return true;
+}
+
+
+CMD_PROC(adcpeak)
+{
+	CDtbSource src(tb, false);
+	CDataRecordScanner rec;
+	CRocDecoder dec;
+	CLevelHisto l(0);
+	CSink<CRocEvent*> pump;
+
+	src >> rec >> dec >> l >> pump;
+
+//	tb.roc_SetDAC(WBC,  15);
+	tb.roc_SetDAC(CtrlReg,0x04); // high range
+
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(2, PG_SYNC|PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+	tb.uDelay(100);
+	tb.Flush();
+
+	tb.Daq_Open(2000000);
+	tb.Daq_Select_Deser160(deserAdjust);
+
+	tb.Daq_Start();
+	tb.uDelay(10);
+	tb.roc_Pix_Trim(5, 5, 15);
+	tb.roc_Pix_Cal( 5, 5);
+//	tb.roc_SetDAC();
+	tb.uDelay(100);
+
+	tb.Pg_Loop(2000);
+	try
+	{
+		putchar('#');
+		for (int i=0; i<50; i++)
+		{
+			for (int k=0; k<1000; k++) pump.Get();
+			putchar('.');
+			if (keypressed()) break;
+		}
+	}
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+
+	tb.Pg_Stop();
+	printf(" \n");
+	tb.Daq_Stop();
+	tb.Daq_Close();
+
+	Log.section("ADCPEAK");
+	l.Report(Log.File(), 0, 255);
+	FILE *f = fopen("adchisto\\adchisto.txt", "wt");
+	if (f)
+	{
+		l.Report(f, 0, 255);
+		fclose(f);
+	} else printf("Error writing adchisto.txt\n");
+
+	Log.flush();
+	return true;
+}
+
+
+CMD_PROC(adchisto)
+{
+	CDtbSource src(tb, false);
+	CDataRecordScanner rec;
+	CRocDecoder dec;
+	CLevelHisto l(0);
+	CSink<CRocEvent*> pump;
+
+	src >> rec >> dec >> l >> pump;
+
+//	tb.roc_SetDAC(WBC,  15);
+	tb.roc_SetDAC(CtrlReg,0x04); // high range
+
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(2, PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+	tb.uDelay(100);
+	tb.Flush();
+
+	tb.Daq_Open(1000000);
+	tb.Daq_Select_Deser160(deserAdjust);
+
+	tb.Daq_Start();
+	tb.uDelay(10);
+	tb.roc_Pix_Trim(5, 5, 15);
+	tb.roc_Pix_Cal( 5, 5);
+
+	tb.uDelay(100);
+
+	tb.roc_SetDAC(Vcal, 0);
+	tb.Pg_Loop(2000);
+	try
+	{
+		for (int t=20; t<120; t++)
+		{
+			tb.roc_SetDAC(Vcal, t);
+			for (int s=100; s<130; s++)
+			{
+				tb.roc_SetDAC(VoffsetRO, s);
+				tb.uDelay(100);
+				for (int i=0; i<500; i++) pump.Get();
+			}
+			putchar('.');
+			if (keypressed()) break;
+		}
+	}
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+	printf("\n");
+	tb.Pg_Stop();
+
+	tb.Daq_Stop();
+
+	tb.Daq_Close();
+
+	Log.section("ADCHISTO");
+	l.Report(Log.File(), 0, 255);
+	FILE *f = fopen("adchisto\\adchisto.txt", "wt");
+	if (f)
+	{
+		l.Report(f, 0, 255);
+		fclose(f);
+	} else printf("Error writing adchisto.txt\n");
+
+	Log.flush();
+	return true;
+}
+
+
+
+class CAdcLevelHisto : public CAnalyzer
+{
+	unsigned int n;
+	unsigned int m;
+	CRocEvent* Read();
+public:
+	unsigned int h[256];
+	CAdcLevelHisto() { Clear(); }
+	void Clear();
+	double Mean() { return n ? double(m)/n : 0.0; }
+	void Report(FILE *f, int min, int max);
+};
+
+
+void CAdcLevelHisto::Clear()
+{
+	n = m = 0;
+	for (int i=0; i<256; i++) h[i] = 0;
+}
+
+CRocEvent* CAdcLevelHisto::Read()
+{
+	CRocEvent* ev = Get();
+	if (ev->pixel.size() > 0)
+	{
+		unsigned int x = ev->pixel[0].ph;
+		if (x < 256)
+		{
+			h[x]++;
+			m += x;
+			n++;
+		}
+	}
+	return ev;
+};
+
+void CAdcLevelHisto::Report(FILE *f, int min, int max)
+{
+	if (min < 0) min = 0;
+	if (max >=256) max = 255;
+	fprintf(f, " %5.1f", Mean());
+	for (int i=min; i<=max; i++) fprintf(f, " %3u", h[i]);
+	fprintf(f, "\n");
+}
+
+
+CMD_PROC(adctransfer)
+{
+	int mode;
+	PAR_INT(mode, 0, 1);
+
+	FILE *f = fopen("adchisto\\adctransfer.txt", "wt");
+	if (!f)
+	{
+		printf("Error open adctransfer.txt\n");
+		return true;
+	}
+	CDotPlot plot;
+
+	CDtbSource src(tb, false);
+	CDataRecordScanner rec;
+	CRocDecoder dec;
+	CAdcLevelHisto l;
+	CSink<CRocEvent*> pump;
+	src >> rec >> dec >> l >> pump;
+
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(2, PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+	tb.uDelay(100);
+	tb.Flush();
+
+	tb.Daq_Open(1000000);
+	tb.Daq_Select_Deser160(deserAdjust);
+
+	tb.Daq_Start();
+	tb.uDelay(10);
+//	tb.roc_Pix_Trim(5, 5, 15);
+//	tb.roc_Pix_Cal( 5, 5);
+
+	tb.uDelay(100);
+	const int cntPerStep = 100;
+	try
+	{
+#define DAC_PARAM
+#ifdef DAC_PARAM
+		for (int offs = 0; offs <= 256; offs += 32)
+		{
+			tb.roc_SetDAC(VoffsetRO, (offs==256)? 255 : offs);
+#endif
+			for (int t=40; t<200; t+=1)
+			{
+				l.Clear();
+				tb.roc_SetDAC(Vcal, t);
+				tb.uDelay(100);
+				int s;
+				for (s=0; s<cntPerStep; s++)
+				{
+					tb.Pg_Single();
+					tb.uDelay(100);
+				}
+				for (s=0; s<cntPerStep; s++) pump.Get();
+
+				if (mode == 1) for (s=0; s<256; s++) plot.Add(t, s, l.h[s]);
+				else plot.AddMean(t, l.Mean());
+
+				fprintf(f, "%3i ", t);
+				l.Report(f, 0, 255);
+				putchar('.');
+				if (keypressed()) break;
+			}
+#ifdef DAC_PARAM
+		}
+#endif
+	}
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+	printf("\n");
+
+	tb.Pg_Stop();
+
+	tb.Daq_Stop();
+
+	tb.Daq_Close();
+
+	fclose(f);
+	plot.Show();
+
+	return true;
+}
+
+
+void adctest_single()
+{
+/*	int x, y = 10;
+	tb.Daq_Start();
+	for (x=0; x<ROC_NUMCOLS; x++)
+	{
+		tb.roc_Pix_Trim(x, y, 0);
+		tb.Pg_Single();
+		tb.uDelay(100);
+		tb.roc_Pix_Mask(x, y);
+	}
+	tb.Daq_Stop();
+
+	CReadout data;
+	data.Init();
+
+	int p[ROC_NUMCOLS];
+	for (x=0; x<ROC_NUMCOLS; x++)
+	{
+		data.Read();
+		p[x] = (data.pixel.size() != 0)? (data.pixel.front()).ph : -1;
+	}
+
+	Log.section("ADCTEST");
+	for (x=0; x<ROC_NUMCOLS; x++) Log.printf(" %3i", p[x]);
+	Log.printf("\n");
+*/
+}
+
+
+CMD_PROC(adctest)
+{
+	tb.roc_SetDAC(WBC, 100);
+	tb.roc_SetDAC(Vcal, 20);
+	tb.roc_SetDAC(CtrlReg,0x04); // high range
+
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 100);
+	tb.Pg_SetCmd(2, PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+	tb.uDelay(100);
+	tb.Flush();
+
+	tb.Daq_Open(100000);
+	tb.Daq_Select_Deser160(deserAdjust);
+
+	// single pixel readout
+	try
+	{
+		adctest_single();
+	}
+	catch (int e)
+	{
+		printf("ERROR %i\n", e);
+	}
+
+	tb.Daq_Close();
+	return true;
+}
+
+
 CMD_PROC(ethsend)
 {
 	char msg[45];
@@ -2021,8 +2664,6 @@ CMD_PROC(deser160)
 
 	vector<uint16_t> data;
 
-	vector<std::pair<int,int> > goodvalues;
-
 	int x, y;
 	printf("      0     1     2     3     4     5     6     7\n");
 	for (y = 0; y < 20; y++)
@@ -2047,10 +2688,7 @@ CMD_PROC(deser160)
 			{
 				int h = data[0] & 0xffc;
 				if (h == 0x7f8)
-				{
 					printf(" <%03X>", int(data[0] & 0xffc));
-					goodvalues.push_back(std::make_pair(y,x));
-				}
 				else
 					printf("  %03X ", int(data[0] & 0xffc));
 			}
@@ -2059,21 +2697,6 @@ CMD_PROC(deser160)
 		printf("\n");
 	}
 	tb.Daq_Close();
-	printf("Old values: %i %i\n", delayAdjust, deserAdjust);
-	if (goodvalues.size() == 0)
-	{
-	    printf("No value found where header could be read back - no adjustments made.\n");
-	    return true;
-	}
-	printf("Good values are:\n");
-	for (std::vector<std::pair<int,int> >::const_iterator it = goodvalues.begin(); it != goodvalues.end(); it++)
-	{
-	    printf("%i %i\n", it->first, it->second);
-	}
-	const int select = floor( 0.5*goodvalues.size() - .5);
-	delayAdjust = goodvalues[select].first;
-	deserAdjust = goodvalues[select].second;
-	printf("New values: %i %i\n", delayAdjust, deserAdjust);
 
 	return true;
 }
@@ -2743,6 +3366,8 @@ void cmd()
 	CMD_REG(lvds,     "lvds                          LVDS inputs");
 	CMD_REG(lcds,     "lcds                          LCDS inputs");
 
+	CMD_REG(clksrc,   "clksrc <source>               Select clock source");
+
 	CMD_REG(pon,      "pon                           switch ROC power on");
 	CMD_REG(poff,     "poff                          switch ROC power off");
 	CMD_REG(va,       "va <mV>                       set VA in mV");
@@ -2767,22 +3392,24 @@ void cmd()
 	CMD_REG(pgtrig,   "pgtrig                        enable external pattern trigger");
 	CMD_REG(pgloop,   "pgloop <period>               start patterngenerator in loop mode");
 
-	CMD_REG(dopen,    "dopen <buffer size>           Open DAQ and allocate memory");
-	CMD_REG(dclose,   "dclose                        Close DAQ");
-	CMD_REG(dstart,   "dstart                        Enable DAQ");
-	CMD_REG(dstop,    "dstop                         Disable DAQ");
-	CMD_REG(dsize,    "dsize                         Show DAQ buffer fill state");
-	CMD_REG(dread,    "dread                         Read Daq buffer and show as digital data");
+	CMD_REG(dopen,    "dopen <buffer size> [<ch>]    Open DAQ and allocate memory");
+	CMD_REG(dclose,   "dclose [<channel>]            Close DAQ");
+	CMD_REG(dstart,   "dstart [<channel>]            Enable DAQ");
+	CMD_REG(dstop,    "dstop [<channel>]             Disable DAQ");
+	CMD_REG(dsize,    "dsize [<channel>]             Show DAQ buffer fill state");
+	CMD_REG(dread,    "dread [<channel>]             Read Daq buffer and show as digital data");
 	CMD_REG(dreada,   "dreada                        Read Daq buffer and show as analog data");
 	CMD_REG(showclk,  "showclk                       show CLK signal");
 	CMD_REG(showctr,  "showctr                       show CTR signal");
 	CMD_REG(showsda,  "showsda                       show SDA signal");
 	CMD_REG(takedata, "takedata                      Continous DTB readout (to stop press any key)");
 	CMD_REG(takedata2,"takedata2                     Continous DTB readout and decoding");
-	CMD_REG(deser,    "deser <value>                 controls deser160");
 
-	CMD_REG(adcena,   "adcena                        enable ADC");
-	CMD_REG(adcdis,   "adcdis                        disable ADC");
+	CMD_REG(dselmod,  "dselmod                       select deser400 for DAQ channel 0");
+	CMD_REG(dmodres,  "dmodres                       reset all deser400");
+	CMD_REG(dselroc,  "dselroc <value>               select deser160 for DAQ channel 0");
+	CMD_REG(dselroca, "dselroca <value>              select adc for channel 0");
+	CMD_REG(dseloff,  "dseloff                       deselect all");
 
 	// --- ROC commands --------------------------------------------------
 	CMD_REG(select,   "select <addr range>           set i2c address");
@@ -2802,7 +3429,21 @@ void cmd()
 	CMD_REG(cald,     "cald                          clear calibrate");
 	CMD_REG(mask,     "mask                          mask all pixel and cols");
 
+	// --- TBM commands --------------------------------------------------
+	CMD_REG(tbmdis,   "tbmdis                        disable TBM");
+	CMD_REG(tbmsel,   "tbmsel <hub> <port>           set hub and port address");
+	CMD_REG(modsel,   "modsel <hub>                  set hub address for module");
+	CMD_REG(tbmset,   "tbmset <reg> <value>          set TBM register");
+
 	// --- experimental commands --------------------------------------------
+	CMD_REG(adcsingle,"adcsingle                     ADC problem test 3");
+	CMD_REG(adchisto, "adchisto                      ADC problem test 1");
+	CMD_REG(adcpeak,  "adcpeak                       ADC problem test 2");
+	CMD_REG(adctransfer, "adctransfer");
+	CMD_REG(analyze,  "analyze                       test analyzer chain");
+	CMD_REG(readback, "readback                      extended read back");
+
+	CMD_REG(adctest,  "adctest                       check ADC pulse height readout");
 	CMD_REG(ethsend,  "ethsend <string>              send <string> in a Ethernet packet");
 	CMD_REG(ethrx,    "ethrx                         shows number of received packets");
 	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");

@@ -340,7 +340,7 @@ int GetReadback()
 	// read out data
 	vector<uint16_t> data;
 	tb.Daq_Read(data, 1000);
-
+//	DumpData(data, 40);
 	//analyze data
 	int pos = 0;
 	PixelReadoutData pix;
@@ -1118,7 +1118,7 @@ bool testAllPixelC(int vtrim, unsigned int trimbit=4 /* reference */ )
 	int col, row;
 	for (col=0; col<ROC_NUMCOLS; col++)
 	{
-		if (!tb.testColPixel(col,trimvalue,res)) return false;
+		if (!tb.TestColPixel(col,trimvalue,res)) return false;
 
 		for(row=0; row<ROC_NUMROWS; row++)
 		{
@@ -1306,4 +1306,123 @@ int test_roc_dig(bool &repeat)
 }
 
 
+// =======================================================================
+//
+//    digital ROC test on bump bonder (DLL)
+//
+// =======================================================================
 
+void test_cleanup_bonder(int bin, int cClass = 0)
+{
+	tb.Init();
+	tb.Flush();
+	g_chipdata.bin = bin;
+
+	g_chipdata.Calculate();
+	if (cClass > 0) g_chipdata.chipClass = cClass;
+
+	Log.section("CLASS", false);
+	Log.printf(" %i\n", g_chipdata.chipClass);
+
+	Log.section("POFF", false);
+	Log.printf(" %i\n", bin);
+}
+
+
+int test_roc_bumpbonder()
+{ PROFILING
+
+	int chipClass = 0;
+	g_chipdata.InitVana = VANA0;
+
+	tb.SetVD(2.5);
+	tb.SetID(0.5);
+	tb.SetVA(1.5);
+	tb.SetIA(0.4);
+
+	SetMHz();
+
+	int bin = 0;
+	tb.roc_I2cAddr(0);
+	tb.SetRocAddress(0);
+
+	switch (test_startup(true))
+	{
+		case ERROR_IMAX:
+			bin = 1; // Ueberstrom
+			test_cleanup_bonder(bin);
+			return bin;
+		case ERROR_IMIN:
+			bin = 2; // kein Strom
+			test_cleanup_bonder(bin);
+			return bin;
+	}
+
+	if (test_tout())
+	{
+		bin = 3; // kein Token Out
+		test_cleanup_bonder(bin);
+		return bin;
+	}
+
+ 	switch (test_i2c())
+	{
+	case ERROR_I2C:
+		bin = 4;
+		test_cleanup_bonder(bin);
+		return bin;
+	case ERROR_I2C0: bin = 4;
+	}
+
+	tb.roc_I2cAddr(0);
+	tb.SetRocAddress(0);
+
+	test_readback();
+
+	test_current();
+
+	CalDelScan();
+
+	test_pixel();
+	unsigned int pixcnt = g_chipdata.pixmap.DefectPixelCount();
+
+	Log.section("PIXMAP");
+	g_chipdata.pixmap.Print(Log);
+
+	if (bin == 4)
+	{
+		test_cleanup_bonder(bin);
+		return bin;
+	}
+
+
+	// === chip classification ==============================================
+
+	// --- class 4 ----------------------------------------------------------
+	chipClass = 4;
+
+	if (pixcnt > 40) goto fail; // > 1%
+
+	if (                              70.0 < g_chipdata.IdigOn)   goto fail;
+	if (                              10.0 < g_chipdata.IanaOn)   goto fail;
+	if (g_chipdata.IdigInit < 10.0 || 50.0 < g_chipdata.IdigInit) goto fail;
+	if (g_chipdata.IanaInit <  8.0 || 60.0 < g_chipdata.IanaInit) goto fail;
+
+	// --- class 3 ----------------------------------------------------------
+	chipClass = 3;
+
+	if (pixcnt > 4) goto fail;  // > 0.1%
+
+	// --- class 2 ----------------------------------------------------------
+	chipClass = 2;
+
+	if (pixcnt > 0) goto fail;
+
+	// --- class 1 ----------------------------------------------------------
+	chipClass = 1;
+
+fail:
+	test_cleanup_bonder(bin, chipClass);
+
+	return -chipClass;
+}
