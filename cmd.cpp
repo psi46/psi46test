@@ -150,15 +150,6 @@ CMD_PROC(welcome)
 	return true;
 }
 
-CMD_PROC(clksrc)
-{
-	int source;
-	PAR_INT(source, 0, 1);
-	tb.SetClockSource(source);
-	DO_FLUSH
-	return true;
-}
-
 
 CMD_PROC(setled)
 {
@@ -368,11 +359,18 @@ CMD_PROC(mdelay)
 //  test board commands
 // =======================================================================
 
-
-/*
-CMD_PROC(clock)
+CMD_PROC(clksrc)
 {
-	if (tb.isClockPresent())
+	int source;
+	PAR_INT(source, 0, 1);
+	tb.SetClockSource(source);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(clkok)
+{
+	if (tb.IsClockPresent())
 		printf("clock ok\n");
 	else
 		printf("clock missing\n");
@@ -399,7 +397,7 @@ CMD_PROC(stretch)
 	DO_FLUSH
 	return true;
 }
-*/
+
 
 CMD_PROC(clk)
 {
@@ -877,7 +875,7 @@ void DecodeTbmHeader(unsigned int raw)
 		(raw&0x0080)?'1':'0',
 		(raw&0x0040)?'1':'0',
 		stkCnt
-		); 
+		);
 }
 
 void DecodeTbmTrailer(unsigned int raw)
@@ -950,7 +948,7 @@ CMD_PROC(dread)
 		case  8: printf("\n\nTBM H1(%1X) ", d); hdr = d; break;
 		case  9: printf("H2(%1X) ", d);       hdr = (hdr<<4) + d; break;
 		case 10: printf("H3(%1X) ", d);       hdr = (hdr<<4) + d; break;
-		case 11: printf("H4(%1X) ", d);       hdr = (hdr<<4) + d; 
+		case 11: printf("H4(%1X) ", d);       hdr = (hdr<<4) + d;
 			     DecodeTbmHeader(hdr);
 			     break;
 
@@ -3222,7 +3220,8 @@ CMD_PROC(go)
 			}
 			else
 			{
-				if (!ChangeChipPos(chipPos+2)) break;
+				if (!ChangeChipPos(chipPos+1)) break;
+//				if (!ChangeChipPos(chipPos+2)) break; // exclude chip B (1)
 			}
 			char *answer = prober.printf("StepFirstDie");
 			int rsp;
@@ -3367,6 +3366,9 @@ void cmd()
 	CMD_REG(lcds,     "lcds                          LCDS inputs");
 
 	CMD_REG(clksrc,   "clksrc <source>               Select clock source");
+	CMD_REG(clkok,    "clkok                         Check if ext clock is present");
+	CMD_REG(fsel,     "fsel <freqdiv>                clock frequency select");
+	CMD_REG(stretch,  "stretch <src> <delay> <width> stretch clock");
 
 	CMD_REG(pon,      "pon                           switch ROC power on");
 	CMD_REG(poff,     "poff                          switch ROC power off");

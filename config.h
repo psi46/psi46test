@@ -5,8 +5,8 @@
 // === psi46test version ====================================================
 
 #define TITLE        "PSI46V2 ROC/Wafer Tester"
-#define VERSION      "V1.3"
-#define TIMESTAMP    "23.08.2013"
+#define VERSION      "V1.4"
+#define TIMESTAMP    "15.01.2014"
 
 
 // === set profiling options ================================================
