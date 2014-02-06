@@ -1,5 +1,4 @@
 
-
 #include "psi46test.h"
 #include "chipdatabase.h"
 #include "analyzer.h"
@@ -18,7 +17,7 @@
 #define VCAL_LEVEL          5	//  135 vcal for level test without sensor
 #define VCAL_LEVEL_SENSOR  45	//  45 vcal for level test with sensor
 #define VCAL_LEVEL_EXT    150	// 150 vcal for external calibrate
-#define VANA0             100   // default vana value
+#define VANA0             130   // default vana value - old 100
 #define VDIG0               4
 #define VSH0              150   // 225
 
@@ -70,10 +69,10 @@ void InitDAC(bool reset)
 	tb.roc_SetDAC( 17,  80);    // VoffsetRO
 	tb.roc_SetDAC( 18, 115);    // VIon
 
-	tb.roc_SetDAC( 19, 100);    // Vcomp_ADC
-	tb.roc_SetDAC( 20,  90);    // VIref_ADC
+	tb.roc_SetDAC( 19,  50);    // Vcomp_ADC old 100
+	tb.roc_SetDAC( 20,  70);    // VIref_ADC old 90
 
-	tb.roc_SetDAC( 25,   2);    // Vcal
+	tb.roc_SetDAC( 25,   50);    // Vcal old 2
 	tb.roc_SetDAC( 26,  g_chipdata.InitCalDel);  // CalDel
 
 	tb.roc_SetDAC( 0xfe, 15);   // WBC
