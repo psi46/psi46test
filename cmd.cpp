@@ -2572,6 +2572,152 @@ CMD_PROC(shmoo)
 }
 
 
+//-- M.Dall'Osso - Feb 06,2014
+char* dacname(int dac)
+{
+	char* dacName;
+	switch (dac) 
+	   {
+		 case 1:   dacName = "Vdig";		break;
+	  	 case 2:   dacName = "Vana";		break;
+		 case 3:   dacName = "Vsf";			break;
+		 case 4:   dacName = "Vcomp";		break;
+		 case 7:   dacName = "VwllPr";		break;
+		 case 9:   dacName = "VwllSh";		break;
+		 case 10:  dacName = "VhldDel";		break;
+		 case 11:  dacName = "Vtrim";		break;
+		 case 12:  dacName = "VthrComp";	break;
+		 case 13:  dacName = "VIBias_Bus";	break;
+		 case 14:  dacName = "Vbias_sf";	break;
+		 case 15:  dacName = "VOffsetOp";	break;
+		 case 17:  dacName = "VOffsetRO";	break;
+		 case 18:  dacName = "VIon";		break;
+		 case 19:  dacName = "Vcomp_ADC";	break;
+		 case 20:  dacName = "VIref_ADC";	break;
+		 case 22:  dacName = "VIColOr";		break;
+		 case 25:  dacName = "Vcal";		break;
+		 case 26:  dacName = "CalDel";		break;
+		 case 253: dacName = "CtrlReg";		break;
+		 case 254: dacName = "WBC";			break;
+		 default:  dacName = "NULL";
+	  }
+	
+	return dacName;
+}
+
+void Scan1D_new(int col, int row, int vx, int xmin, int xmax)
+{
+	int x, k;
+	vector<uint16_t> data;
+
+	// --- take data
+	tb.Daq_Start();
+		
+	tb.roc_Col_Enable(col, true);
+	tb.roc_Pix_Trim(col, row, 15);
+	tb.roc_Pix_Cal (col, row, false);
+	
+	for (x = xmin; x<=xmax; x++)
+	{
+		tb.roc_SetDAC(vx, x);
+		tb.uDelay(100);
+		for (k=0; k<10; k++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(5);
+		}
+	}
+
+    tb.roc_Pix_Mask(col, row);
+	tb.roc_Col_Enable(col, false);
+	tb.roc_ClrCal();
+
+	tb.Daq_Stop();
+	tb.Daq_Read(data, 10000);
+
+	// --- analyze data
+	int pos = 0, count;
+	int spos = 0;
+	char s[260];
+	PixelReadoutData pix;
+
+	try
+	{
+		for (x = xmin; x<=xmax; x++)
+		{
+			count = 0;
+			for (k=0; k<10; k++)
+			{
+				DecodePixel(data, pos, pix);
+				if (pix.n > 0) count++;
+			}
+			if (count == 0) s[spos++] = '.';
+			else if (count >= 10) s[spos++] = '*';
+			else s[spos++] = count + '0';
+		}
+	} catch (int) {}
+	s[spos] = 0;
+	Log.printf("%s\n", s);
+	Log.flush();
+}
+
+CMD_PROC(dacdac)
+{
+	int col, row, xdac, xmin, xmax, ydac, ymin, ymax;
+	
+	PAR_INT(col, 0, 51);
+	PAR_INT(row, 0, 79);
+	PAR_INT(xdac, 0, 0xff);
+	PAR_INT(xmin, 0,245);
+	PAR_INT(xmax, 10,0xff);
+	PAR_INT(ydac, 0, 0xff);
+	PAR_INT(ymin, 0,245);
+	PAR_INT(ymax, 10,0xff);
+
+	char* dac1 = dacname(xdac);
+	if(dac1 == "NULL") {printf("illegal xdac number!\n"); return false;};
+	char* dac2 = dacname(ydac);	
+	if(dac2 == "NULL") {printf("illegal ydac number!\n"); return false;};
+	
+	int count = xmax-xmin;
+	if (count > 150) {printf("too wide xdac range (max=150)!\n"); return false;}; //essential to have a clear visualization
+	int count2 = ymax-ymin;
+	if (count2 > 150) {printf("too wide ydac range (max=150)!\n"); return false;};
+
+	Log.section("DACDAC",false);
+	Log.printf("xdac=%s(%i:%i); ydac=%s(%i:%i)\n",
+	  	          dac1, xmin, xmax, dac2, ymin, ymax);
+
+	tb.Pg_Stop();
+	tb.Pg_SetCmd(0, PG_RESR + 15);
+	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(2, PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+
+	//tb.roc_SetDAC(Vcal, 200);
+	//printf("set Vcal=200\n");
+
+	tb.Daq_Open(50000);
+	tb.Daq_Select_Deser160(deserAdjust);
+	printf("..dacdac scan is running..\n");
+
+	PrintScale(xmin, xmax);
+	for (int y=ymin; y<=ymax; y++)
+	{
+		tb.roc_SetDAC(ydac,y);
+		tb.uDelay(100);
+		Log.printf("%5i|", y);
+		Scan1D_new(col, row, xdac, xmin, xmax);
+	}
+
+	tb.Daq_Close();
+	
+	InitDAC(true);
+	printf("all DACs to default values\n");
+
+	return true;
+}
+//---------------------------------------------
 
 
 CMD_PROC(phscan)
@@ -2654,6 +2800,93 @@ CMD_PROC(phscan)
 	return true;
 }
 
+//--  M.Dall'Osso - Feb 06,2014
+CMD_PROC(phscandac)
+{
+	int col, row, xdac, xmin, xmax;
+	PAR_INT(col, 0, 51);
+	PAR_INT(row, 0, 79);
+	PAR_INT(xdac, 0, 0xff);
+	char* dac = dacname(xdac);
+	if(dac == "NULL") {printf("illegal dac number!\n"); return false;};
+	PAR_INT(xmin, 0, 245);
+	PAR_INT(xmax, 10, 0xff);
+
+	Log.section("PHScanDac",false);
+	Log.printf("dac=%s(%i:%i)\n", dac, xmin, xmax);
+
+	tb.Pg_Stop();
+	tb.Pg_SetCmd(0, PG_RESR + 15);
+	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(2, PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+
+	//tb.roc_SetDAC(Vcal, 200);
+	//printf("set Vcal=200\n");
+	
+	tb.Daq_Open(50000);
+	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Start();
+		
+	// --- scan vcal
+	tb.roc_Col_Enable(col, true);
+	tb.roc_Pix_Trim(col, row, 15);
+	tb.roc_Pix_Cal (col, row, false);
+
+	for (int x = xmin; x < xmax; x++)
+	{
+		tb.roc_SetDAC(xdac, x);
+		tb.uDelay(100);
+		for (int k=0; k<5; k++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(50);
+		}
+	}
+
+	tb.roc_Pix_Mask(col, row);
+	tb.roc_Col_Enable(col, false);
+	tb.roc_ClrCal();
+
+	tb.Daq_Stop();
+	vector<uint16_t> data;
+	tb.Daq_Read(data, 4000);
+	tb.Daq_Close();
+
+	// --- plot data
+	PixelReadoutData pix;
+	int pos = 0;
+	int dpos = 0;
+	vector<double> y(xmax-xmin, 0.0);
+	try
+	{
+		for (int dac = xmin; dac < xmax; dac++)
+		{
+			int cnt = 0;
+			double yi = 0.0;
+			for (int k=0; k<5; k++)
+			{
+				DecodePixel(data, pos, pix);
+				if (pix.n > 0) { yi += pix.p; cnt++; }
+			}
+			y[dpos++] = (cnt > 0) ? yi/cnt : 0.0;
+		}
+	} catch (int e)
+	{
+		printf("Read error %i\n", e);
+		if (data.size() > 5) for (int i=0; i<=5; i++) printf(" %04X", int(data[i]));
+		printf("\n");
+		return true;
+	}
+
+	PlotData("ADC scan", dac , "ADC value", double(xmin), double(xmax), y);
+	
+	InitDAC(true);
+	printf("all DACs to default values\n");
+
+	return true;
+}
+//---------------------------------------
 
 CMD_PROC(deser160)
 {
@@ -3448,8 +3681,10 @@ void cmd()
 	CMD_REG(adctest,  "adctest                       check ADC pulse height readout");
 	CMD_REG(ethsend,  "ethsend <string>              send <string> in a Ethernet packet");
 	CMD_REG(ethrx,    "ethrx                         shows number of received packets");
-	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");
-	CMD_REG(phscan,   "phscan                        ROC pulse height scan");
+	CMD_REG(shmoo,    "shmoo  <vx xrange vy yrange>");
+	CMD_REG(dacdac,   "dacdac <col row xdac xmin xmax ydac ymin ymax> ROC PHscan vs 2 DACs");
+	CMD_REG(phscan,   "phscan <col row>              ROC PHscan vs VCal (plot)");
+	CMD_REG(phscandac,"phscandac <col row xdac xmin xmax> ROC PHscan vs DAC (plot)");
 	CMD_REG(readback, "readback                      read out ROC data");
 	CMD_REG(deser160, "deser160                      allign deser160");
 
