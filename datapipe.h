@@ -3,15 +3,15 @@
 #ifndef CONNECT_H
 #define CONNECT_H
 
-#include <exception>
+#include <stdexcept>
 
 
 // === data pipe error ======================================================
 
-class DataPipeException : public std::exception
+class DataPipeException : public std::runtime_error
 {
 public:
-	DataPipeException(const char *message) : std::exception(message) {};
+ DataPipeException(const char *message) : std::runtime_error(message) {};
 };
 
 
