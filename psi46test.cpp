@@ -117,6 +117,15 @@ int main(int argc, char* argv[])
 
 		Log.flush();
 
+		// ---
+		vector<uint16_t> vx;
+		vx.resize(13);
+		for (unsigned int i=0; i<vx.size(); i++) vx[i] = i+1000;
+		tb.VectorTest(vx, vx);
+		printf("vx={");
+		for (unsigned int i=0; i<vx.size(); i++) printf(" %i",int(vx[i]));
+		printf(" }\n");
+
 		// --- call command interpreter -----------------------
 		nEntry = 0;
 

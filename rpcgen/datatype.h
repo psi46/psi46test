@@ -5,15 +5,13 @@
 #include <string>
 using namespace std;
 
-#define NUMBER_OF_CGROUPS 32
-
 
 class CDataType
 {
 	static const char* typeCNames[12];
 	static const char* typeNames[12];
 	static const unsigned int typeByteSize[12];
-	enum { SIMPLE, REFERENCE,  VECTOR, VECTORR, STRING, STRINGR} comp;
+	enum { SIMPLE, REFERENCE,  VECTOR, VECTORR, STRING, STRINGR, HWVECTORR} comp;
 	enum { VOID, BOOL, CHAR, UCHAR, SHORT, USHORT, INT, UINT, LONG, ULONG, DWORD, UDWORD } type;
 	string cTypeName;
 	bool retValue;

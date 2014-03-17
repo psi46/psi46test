@@ -39,7 +39,7 @@ using namespace std;
 #define FIFOSIZE 8192
 
 //                   cable length:     5   48  prober 450 cm  bump bonder
-extern const int delayAdjust =  3; //  4    0    19    5       16
+extern const int delayAdjust =  2; //  4    0    19    5       16
 extern const int deserAdjust =  4; //  4    4     5    6        5
 
 
@@ -913,6 +913,53 @@ void DecodePixel(unsigned int raw)
 
 CMD_PROC(dread)
 {
+	uint32_t words_remaining = 0;
+	vector<uint16_t> data;
+	tb.Daq_Read(data, 256, 0);
+	int size = data.size();
+	printf("#samples: %i remaining: %i\n", size, int(words_remaining));
+
+	for (int i=0; i<size; i++)
+	{
+		printf(" %04X", int(data[i]));
+		if (i%10 == 9) printf("\n");
+	}
+	printf("\n");
+
+	return true;
+}
+
+CMD_PROC(dreadr)
+{
+	uint32_t words_remaining = 0;
+	vector<uint16_t> data;
+	tb.Daq_Read(data, words_remaining);
+	int size = data.size();
+	printf("#samples: %i remaining: %i\n", size, int(words_remaining));
+
+	for (int i=0; i<size; i++)
+	{
+		int x = data[i] & 0x0fff;
+		if (x & 0x0800) x |= 0xfffff000;
+		printf(" %6i", x);
+		if (i%10 == 9) printf("\n");
+	}
+	printf("\n");
+
+	for (int i=0; i<size; i++)
+	{
+		int x = data[i] & 0x0fff;
+		if (x & 0x0800) x |= 0xfffff000;
+		Log.printf("%6i", x);
+		if (i%100 == 9) printf("\n");
+	}
+	printf("\n");
+
+	return true;
+}
+
+CMD_PROC(dreadm)
+{
 	int channel;
 	if (!PAR_IS_INT(channel, 0, 7)) channel = 0;
 
@@ -1181,14 +1228,14 @@ CMD_PROC(takedata2)
 	double mean_size = 0.0;
 
 	clock_t t = clock();
-	unsigned long memsize = tb.Daq_Open(1000000);
+	unsigned long memsize = tb.Daq_Open(60000000);
 	tb.Daq_Select_Deser160(deserAdjust);
 	tb.Daq_Start();
 	clock_t t_start = clock();
 	while (!keypressed())
 	{
 		// read data and status from DTB
-		status = tb.Daq_Read(data, 20000, n);
+		status = tb.Daq_Read(data, 8000000, n, 0);
 
 		// make statistics
 		sum += data.size();
@@ -1204,12 +1251,12 @@ CMD_PROC(takedata2)
 		}
 
 		// decode file
-		for (unsigned int i=0; i<data.size(); i++) dec.Sample(data[i]);
+//		for (unsigned int i=0; i<data.size(); i++) dec.Sample(data[i]);
 
 		// abort after overflow error
 		if (((status & 1) == 0) && (n == 0)) break;
 
-		tb.mDelay(5);
+//		tb.mDelay(5);
 	}
 	tb.Daq_Stop();
 	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC;
@@ -2658,12 +2705,13 @@ CMD_PROC(phscan)
 CMD_PROC(deser160)
 {
 	tb.Daq_Open(1000);
+	tb.Pg_SetCmd(20, PG_RESR);
 	tb.Pg_SetCmd(0, PG_TOK);
 
 	vector<uint16_t> data;
 
 	int x, y;
-	printf("      0     1     2     3     4     5     6     7\n");
+	printf("      0        1        2        3        4        5        6        7\n");
 	for (y = 0; y < 20; y++)
 	{
 		printf("%2i:", y);
@@ -2674,14 +2722,13 @@ CMD_PROC(deser160)
 			tb.Sig_SetDelay(SIG_SDA,  y+15);
 			tb.Sig_SetDelay(SIG_CTR,  y);
 			tb.Sig_SetDelay(SIG_TIN,  y+5);
-			tb.uDelay(10);
+			tb.uDelay(100);
 
 			tb.Daq_Start();
 			tb.Pg_Single();
-			tb.uDelay(10);
+			tb.uDelay(50);
 			tb.Daq_Stop();
-			tb.Daq_Read(data, 100);
-
+			tb.Daq_Read(data, 10);
 			if (data.size())
 			{
 				int h = data[0] & 0xffc;
@@ -2689,6 +2736,11 @@ CMD_PROC(deser160)
 					printf(" <%03X>", int(data[0] & 0xffc));
 				else
 					printf("  %03X ", int(data[0] & 0xffc));
+				
+				if (data.size()<10)
+					printf("[%u]", (unsigned int)(data.size()));
+				else
+					printf("[*]");
 			}
 			else printf("  ... ");
 		}
@@ -3399,8 +3451,11 @@ void cmd()
 	CMD_REG(dstart,   "dstart [<channel>]            Enable DAQ");
 	CMD_REG(dstop,    "dstop [<channel>]             Disable DAQ");
 	CMD_REG(dsize,    "dsize [<channel>]             Show DAQ buffer fill state");
-	CMD_REG(dread,    "dread [<channel>]             Read Daq buffer and show as digital data");
+	CMD_REG(dread,    "dread [<channel>]             Read Daq buffer and show as raw data");
 	CMD_REG(dreada,   "dreada                        Read Daq buffer and show as analog data");
+	CMD_REG(dreadr,   "dreadr                        Read Daq buffer and show as ROC data");
+	CMD_REG(dreadm,   "dreadm                        Read Daq buffer and show as module data");
+
 	CMD_REG(showclk,  "showclk                       show CLK signal");
 	CMD_REG(showctr,  "showctr                       show CTR signal");
 	CMD_REG(showsda,  "showsda                       show SDA signal");

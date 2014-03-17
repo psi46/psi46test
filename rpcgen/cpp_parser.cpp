@@ -2,21 +2,6 @@
 
 #include "stdafx.h"
 
-#define RPC_CGRP_ID       0
-#define RPC_CGRP_SERVICE  1
-#define RPC_CGRP_DTB1     2
-#define RPC_CGRP_DTB2     3
-#define RPC_CGRP_DTB3     4
-#define RPC_CGRP_DTB4     5
-#define RPC_CGRP_ROC      8
-#define RPC_CGRP_TBM      9
-#define RPC_CGRP_ATB1    10
-#define RPC_CGRP_USER1   16    
-#define RPC_CGRP_USER2   17
-#define RPC_CGRP_USER3   18
-#define RPC_CGRP_USER4   19
-#define RPC_CGRP_ERROR   31
-
 
 void CppParser::GetIntegerType()
 {
@@ -80,6 +65,17 @@ void CppParser::GetComplexType()
 		if (!f.IsDelimiter('&')) throw CPError(CPError::REFERENCE_EXPECTED);
 		f.GetNext();
 		break;
+	case CToken::SYMB_HWVECTORR:
+		ctypeChar = '5';
+		f.GetNext();
+		if (!f.IsDelimiter('<')) throw CPError(CPError::TYPE_EXPECTED);
+		f.GetNext();
+		GetType();
+		if (!f.IsDelimiter('>')) throw CPError(CPError::TYPE_EXPECTED);
+		f.GetNext();
+		if (!f.IsDelimiter('&')) throw CPError(CPError::REFERENCE_EXPECTED);
+		f.GetNext();
+		break;
 	default: 
 		GetType();
 		if (f.IsDelimiter('&'))
@@ -119,6 +115,7 @@ void CppParser::GetParList()
 
 void CppParser::GetModifier()
 {
+	empty_fnct = false;
 	if (f.IsSymbol(CToken::SYMB_STATIC)) f.GetNext();
 }
 

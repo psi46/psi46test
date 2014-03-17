@@ -19,9 +19,21 @@
 #include "rpc_io.h"
 
 #define USBWRITEBUFFERSIZE  1024
-#define USBREADBUFFERSIZE   1024
+#define USBREADBUFFERSIZE   4096
 
-
+/*
+class CUsbLog
+{
+	FILE *f;
+	enum { IDLE, CMD_1, CMD_2, CMD_CNT, DAT_CNT1, DAT_CNT2, DAT_CNT3, DATA } state;
+	unsigned int count;
+	unsigned int cmd;
+public:
+	CUsbLog();
+	~CUsbLog();
+	void Add(unsigned int x);
+};
+*/
 
 class CUSB : public CRpcIo
 {

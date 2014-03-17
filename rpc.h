@@ -29,9 +29,15 @@
 
 using namespace std;
 
-#define RPC_TYPE_ATB      0x8F
-#define RPC_TYPE_DTB      0xC0
-#define RPC_TYPE_DTB_DATA 0xC1
+#define RPC_DTB_VERSION 0x0200
+
+#define RPC_TYPE_ATB          0x8F
+#define RPC_TYPE_DTB          0xC0
+#define RPC_TYPE_DTB_DATA     0xC2
+#define RPC_TYPE_DTB_DATA_OLD 0xC1
+
+#define RPC_EXPORT
+
 
 extern const char rpc_timestamp[];
 
@@ -41,7 +47,7 @@ extern const char rpc_timestamp[];
 	static const unsigned int rpc_cmdListSize; \
 	static const char *rpc_cmdName[]; \
 	int *rpc_cmdId; \
-	void rpc_Clear() { rpc_cmdId[0] = 0; rpc_cmdId[1] = 1; for ( unsigned int i=2; i<rpc_cmdListSize; i++) rpc_cmdId[i] = -1; } \
+	void rpc_Clear() { for ( unsigned int i=2; i<rpc_cmdListSize; i++) rpc_cmdId[i] = -1; rpc_cmdId[0] = 0; rpc_cmdId[1] = 1; } \
 	void rpc_Connect(CRpcIo &port) { rpc_io = &port; rpc_Clear(); } \
 	uint16_t rpc_GetCallId(uint16_t x) \
 	{ \
@@ -126,6 +132,7 @@ public:
 // === data =================================================================
 
 #define vectorR vector
+#define HWvectorR vector
 #define stringR string
 
 
@@ -133,23 +140,22 @@ class CDataHeader
 {
 public:
 	uint8_t m_type;
-	uint8_t m_chn;
-	uint16_t m_size;
+	uint32_t m_size;
 
 	void RecvHeader(CRpcIo &rpc_io);
 	void RecvRaw(CRpcIo &rpc_io, void *x)
 	{ if (m_size) rpc_io.Read(x, m_size); }
 };
 
-void rpc_SendRaw(CRpcIo &rpc_io, uint8_t channel, const void *x, uint16_t size);
+void rpc_SendRaw(CRpcIo &rpc_io, const void *x, uint32_t size);
 
-void rpc_DataSink(CRpcIo &rpc_io, uint16_t size);
+void rpc_DataSink(CRpcIo &rpc_io, uint32_t size);
 
 
 template <class T>
 inline void rpc_Send(CRpcIo &rpc_io, const vector<T> &x)
 {
-	rpc_SendRaw(rpc_io, 0, &(x[0]), sizeof(T)*x.size());
+	rpc_SendRaw(rpc_io, &(x[0]), sizeof(T)*x.size());
 }
 
 
@@ -170,7 +176,7 @@ void rpc_Receive(CRpcIo &rpc_io, vector<T> &x)
 
 inline void rpc_Send(CRpcIo &rpc_io, const string &x)
 {
-	rpc_SendRaw(rpc_io, 0, x.c_str(), x.length());
+	rpc_SendRaw(rpc_io, x.c_str(), x.length());
 }
 
 

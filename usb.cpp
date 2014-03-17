@@ -232,6 +232,7 @@ bool CUSB::FillBuffer(DWORD minBytesToRead)
 		m_sizeR = 0;
 		return false;
 	}
+
 	return true;
 }
 
@@ -275,3 +276,65 @@ void CUSB::Clear()
 	m_posW = 0;
 }
 
+
+/*
+CUsbLog::CUsbLog()
+{
+	f = fopen("usb_log.txt", "wt");
+	state = IDLE;
+}
+
+
+CUsbLog::~CUsbLog()
+{
+	fclose(f);
+}
+
+
+void CUsbLog::Add(unsigned int x)
+{
+	return;
+	switch (state)
+	{
+	case IDLE:
+		if (x == 0xc0) state = CMD_1;
+		else if (x == 0xc2)	state = DAT_CNT1;
+		else fprintf(f, "WRONG HEADER: %02X\n", x);
+		break;
+	case CMD_1:
+		cmd = x;
+		state = CMD_2;
+		break;
+	case CMD_2:
+		cmd += x << 8;
+		state = CMD_CNT;
+		break;
+	case CMD_CNT:
+		count = x;
+		fprintf(f, "CMD(%u, %u)\n", cmd, count);
+		state = count ? DATA : IDLE;
+		break;
+	case DAT_CNT1:
+		count = x;
+		state = DAT_CNT2;
+		return;
+	case DAT_CNT2:
+		count += x << 8;
+		state = DAT_CNT3;
+		return;
+	case DAT_CNT3:
+		count += x << 16;
+		fprintf(f, "DAT(%u)\n", count);
+		state = count ? DATA : IDLE;
+		return;
+	case DATA:
+		fprintf(f, " %02X", x);
+		count--;
+		if (count == 0)
+		{
+			fprintf(f, "\n");
+			state = IDLE;
+		}
+	}
+}
+*/

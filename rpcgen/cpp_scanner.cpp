@@ -84,24 +84,25 @@ void CppScanner::GetName()
 	s[i] = 0;
 
 	type = CToken::SYMBOL;
-	if      (!strcmp(s, "void"))     symbol = CToken::SYMB_VOID;
-	else if (!strcmp(s, "bool"))     symbol = CToken::SYMB_BOOL;
-	else if (!strcmp(s, "int8_t"))   symbol = CToken::SYMB_CHAR;
-	else if (!strcmp(s, "int16_t"))  symbol = CToken::SYMB_SHORT;
-	else if (!strcmp(s, "int32_t"))  symbol = CToken::SYMB_INT;
-	else if (!strcmp(s, "int64_t"))  symbol = CToken::SYMB_LONG;
-	else if (!strcmp(s, "uint8_t"))  symbol = CToken::SYMB_UCHAR;
-	else if (!strcmp(s, "uint16_t")) symbol = CToken::SYMB_USHORT;
-	else if (!strcmp(s, "uint32_t")) symbol = CToken::SYMB_UINT;
-	else if (!strcmp(s, "uint64_t")) symbol = CToken::SYMB_ULONG;
-	else if (!strcmp(s, "vector"))   symbol = CToken::SYMB_VECTOR;
-	else if (!strcmp(s, "vectorR"))  symbol = CToken::SYMB_VECTORR;
-	else if (!strcmp(s, "string"))   symbol = CToken::SYMB_STRING;
-	else if (!strcmp(s, "stringR"))  symbol = CToken::SYMB_STRINGR;
-	else if (!strcmp(s, "stringR"))  symbol = CToken::SYMB_STRINGR;
-	else if (!strcmp(s, "false"))    symbol = CToken::SYMB_FALSE;
-	else if (!strcmp(s, "true"))     symbol = CToken::SYMB_TRUE;
-	else if (!strcmp(s, "static"))   symbol = CToken::SYMB_STATIC;
+	if      (!strcmp(s, "void"))         symbol = CToken::SYMB_VOID;
+	else if (!strcmp(s, "bool"))         symbol = CToken::SYMB_BOOL;
+	else if (!strcmp(s, "int8_t"))       symbol = CToken::SYMB_CHAR;
+	else if (!strcmp(s, "int16_t"))      symbol = CToken::SYMB_SHORT;
+	else if (!strcmp(s, "int32_t"))      symbol = CToken::SYMB_INT;
+	else if (!strcmp(s, "int64_t"))      symbol = CToken::SYMB_LONG;
+	else if (!strcmp(s, "uint8_t"))      symbol = CToken::SYMB_UCHAR;
+	else if (!strcmp(s, "uint16_t"))     symbol = CToken::SYMB_USHORT;
+	else if (!strcmp(s, "uint32_t"))     symbol = CToken::SYMB_UINT;
+	else if (!strcmp(s, "uint64_t"))     symbol = CToken::SYMB_ULONG;
+	else if (!strcmp(s, "vector"))       symbol = CToken::SYMB_VECTOR;
+	else if (!strcmp(s, "vectorR"))      symbol = CToken::SYMB_VECTORR;
+	else if (!strcmp(s, "HWvectorR"))    symbol = CToken::SYMB_HWVECTORR;
+	else if (!strcmp(s, "string"))       symbol = CToken::SYMB_STRING;
+	else if (!strcmp(s, "stringR"))      symbol = CToken::SYMB_STRINGR;
+	else if (!strcmp(s, "stringR"))      symbol = CToken::SYMB_STRINGR;
+	else if (!strcmp(s, "false"))        symbol = CToken::SYMB_FALSE;
+	else if (!strcmp(s, "true"))         symbol = CToken::SYMB_TRUE;
+	else if (!strcmp(s, "static"))       symbol = CToken::SYMB_STATIC;
 	else
 	{
 		type = CToken::NAME;

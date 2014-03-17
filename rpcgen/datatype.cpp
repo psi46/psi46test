@@ -29,11 +29,12 @@ bool CDataType::Read(const char*&s, int parNr)
 	if (*s == 0) return false;
 	switch (*s)
 	{
-		case '0': comp = REFERENCE; s++; break;
+		case '0': comp = REFERENCE;  s++; break;
 		case '1': comp = VECTOR;     s++; break;
 		case '2': comp = VECTORR;    s++; break;
-		case '3': comp = STRING;    s++; break;
-		case '4': comp = STRINGR;   s++; break;
+		case '3': comp = STRING;     s++; break;
+		case '4': comp = STRINGR;    s++; break;
+		case '5': comp = HWVECTORR;  s++; break;
 		default:  comp = SIMPLE;
 	}
 
@@ -84,6 +85,9 @@ bool CDataType::Read(const char*&s, int parNr)
 	case STRINGR:
 		cTypeName = string("stringR");
 		break;
+	case HWVECTORR:
+		cTypeName = string("HWvectorR<") + typeCNames[type] + ">";
+		break;
 	}
 
 	return true;
@@ -116,7 +120,7 @@ void CDataType::WriteRecvPar(FILE *f)
 
 void CDataType::WriteRecvDat(FILE *f)
 {
-	if (comp == VECTORR || comp == STRINGR)
+	if (comp == VECTORR || comp == HWVECTORR || comp == STRINGR)
 		fprintf(f, "\trpc_Receive(*rpc_io, rpc_par%u);\n", id);
 }
 
@@ -133,11 +137,18 @@ void CDataType::WriteDtbSendDat(FILE *f)
 	switch (comp)
 	{
 	case VECTOR:
+		fprintf(f, "\t%s rpc_par%u; if (!rpc_RecvVector(msg, rpc_par%u)) return false;\n", GetCTypeName(), id, id);
+		break;
 	case STRING:
-		fprintf(f, "\t%s rpc_par%u; if (!rpc_Receive(rpc_io, rpc_par%u)) return false;\n", GetCTypeName(), id, id);
+		fprintf(f, "\t%s rpc_par%u; if (!msg.RecvString(rpc_par%u)) return false;\n", GetCTypeName(), id, id);
 		break;
 	case VECTORR:
 	case STRINGR:
+		fprintf(f, "\tuint32_t rpc_par%u_hdr;\n", id);
+		fprintf(f, "\t%s rpc_par%u;\n", GetCTypeName(), id);
+		break;
+	case HWVECTORR:
+		fprintf(f, "\tuint32_t rpc_par%u_hdr;\n", id);
 		fprintf(f, "\t%s rpc_par%u;\n", GetCTypeName(), id);
 		break;
     default:
@@ -155,8 +166,18 @@ void CDataType::WriteDtbRecvPar(FILE *f)
 
 void CDataType::WriteDtbRecvDat(FILE *f)
 {
-	if (comp == VECTORR || comp == STRINGR)
-		fprintf(f, "\tif (!rpc_Send(rpc_io, rpc_par%u)) return false;\n", id);
+	switch (comp)
+	{
+		case VECTORR:
+			fprintf(f, "\tif (!rpc_SendVector(msg, rpc_par%u_hdr, rpc_par%u)) return false;\n", id, id);
+			break;
+		case STRINGR:
+			fprintf(f, "\tif (!msg.SendString(rpc_par%u_hdr, rpc_par%u)) return false;\n", id, id);
+			break;
+		case HWVECTORR:
+			fprintf(f, "\trpc_par%u.Write(msg, rpc_par%u_hdr);\n", id, id);
+			break;
+	}
 }
 
 
