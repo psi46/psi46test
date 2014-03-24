@@ -8,7 +8,7 @@ int rs232_open(int portNr, int baud, char parity, int data_bit, int stop_bit,
 	
 int rs232_exit(int fd);
 
-int rs232_write(int fd, char *data, int size);
+int rs232_write(int fd, const char *data, int size);
 
 int rs232_read(int fd, char *str, int size, int timeout);
 

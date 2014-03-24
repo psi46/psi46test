@@ -39,7 +39,7 @@ using namespace std;
 #define FIFOSIZE 8192
 
 //                   cable length:     5   48  prober 450 cm  bump bonder
-extern const int delayAdjust =  2; //  4    0    19    5       16
+extern const int delayAdjust =  4; //  4    0    19    5       16
 extern const int deserAdjust =  4; //  4    4     5    6        5
 
 
@@ -915,7 +915,7 @@ CMD_PROC(dread)
 {
 	uint32_t words_remaining = 0;
 	vector<uint16_t> data;
-	tb.Daq_Read(data, 256, 0);
+	tb.Daq_Read(data, 256, words_remaining, 0);
 	int size = data.size();
 	printf("#samples: %i remaining: %i\n", size, int(words_remaining));
 
@@ -1484,6 +1484,15 @@ CMD_PROC(dselroca)
 	int datasize;
 	PAR_INT(datasize, 1, 2047);
 	tb.Daq_Select_ADC(datasize, 1, 4, 6);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(dselsim)
+{
+	int startvalue;
+	if (!PAR_IS_INT(startvalue, 0, 16383)) startvalue = 0;
+	tb.Daq_Select_Datagenerator(startvalue);
 	DO_FLUSH
 	return true;
 }
@@ -3466,6 +3475,7 @@ void cmd()
 	CMD_REG(dmodres,  "dmodres                       reset all deser400");
 	CMD_REG(dselroc,  "dselroc <value>               select deser160 for DAQ channel 0");
 	CMD_REG(dselroca, "dselroca <value>              select adc for channel 0");
+	CMD_REG(dselsim,  "dselsim <startvalue>          select data generator for channel 0");
 	CMD_REG(dseloff,  "dseloff                       deselect all");
 
 	// --- ROC commands --------------------------------------------------

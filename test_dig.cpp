@@ -15,7 +15,7 @@
                                 //   schwelle @ 40MHz = 17
 #define VCAL_DCOL_TEST     65  // 30 ... 120
 
-#define VCAL_LEVEL          5	//  135 vcal for level test without sensor
+#define VCAL_LEVEL         40	//  135 vcal for level test without sensor
 #define VCAL_LEVEL_SENSOR  45	//  45 vcal for level test with sensor
 #define VCAL_LEVEL_EXT    150	// 150 vcal for external calibrate
 #define VANA0             100   // default vana value
@@ -53,30 +53,30 @@ void InitDAC(bool reset)
 
 	tb.roc_SetDAC(  1,  VDIG0); // Vdig
 	tb.roc_SetDAC(  2,  g_chipdata.InitVana);
-	tb.roc_SetDAC(  3,  40);    // Vsf
+	tb.roc_SetDAC(  3,  30);    // Vsf
 	tb.roc_SetDAC(  4,  12);    // Vcomp
 
-	tb.roc_SetDAC(  7,  60);    // VwllPr
-	tb.roc_SetDAC(  9,  60);    // VwllSh
+	tb.roc_SetDAC(  7, 150);    // VwllPr
+	tb.roc_SetDAC(  9, 150);    // VwllSh
 	tb.roc_SetDAC( 10, 117);    // VhldDel
 	tb.roc_SetDAC( 11,  40);    // Vtrim
-	tb.roc_SetDAC( 12,  20);    // VthrComp
+	tb.roc_SetDAC( 12,  80);    // VthrComp
 
 	tb.roc_SetDAC( 13,  30);    // VIBias_Bus
-	tb.roc_SetDAC( 14,   6);    // Vbias_sf
+//	tb.roc_SetDAC( 14,   6);    // Vbias_sf
 	tb.roc_SetDAC( 22,  99);    // VIColOr
 
-	tb.roc_SetDAC( 15,  40);    // VoffsetOp
-	tb.roc_SetDAC( 17,  80);    // VoffsetRO
-	tb.roc_SetDAC( 18, 115);    // VIon
+//	tb.roc_SetDAC( 15,  40);    // VoffsetOp
+	tb.roc_SetDAC( 17, 170);    // VoffsetRO
+//	tb.roc_SetDAC( 18, 115);    // VIon
 
-	tb.roc_SetDAC( 19, 100);    // Vcomp_ADC
+	tb.roc_SetDAC( 19,  50);    // Vcomp_ADC
 	tb.roc_SetDAC( 20,  90);    // VIref_ADC
 
 	tb.roc_SetDAC( 25,   2);    // Vcal
 	tb.roc_SetDAC( 26,  g_chipdata.InitCalDel);  // CalDel
 
-	tb.roc_SetDAC( 0xfe, 15);   // WBC
+	tb.roc_SetDAC( 0xfe, 14);   // WBC
 	tb.roc_SetDAC( 0xfd,  4);   // CtrlReg
 
 	tb.Flush();
@@ -241,6 +241,9 @@ bool CalDelScan(int col, int row)
 	tb.Daq_Open(50000);
 	tb.Daq_Select_Deser160(deserAdjust);
 	tb.Daq_Start();
+
+	tb.Daq_Read(data, 10000, 0);
+
 	for (x = 0; x<=max_caldel; x++)
 	{
 		tb.roc_SetDAC(CalDel, x);
@@ -252,7 +255,7 @@ bool CalDelScan(int col, int row)
 		}
 	}
 	tb.Daq_Stop();
-	tb.Daq_Read(data, 10000);
+	tb.Daq_Read(data, 10000, 0);
 	tb.Daq_Close();
 
 	tb.roc_Pix_Mask(col, row);
@@ -1143,7 +1146,7 @@ int test_PUCsC(bool forceDefTest = false)
 	tb.Daq_Select_Deser160(deserAdjust);
 
 	InitDAC();
-	tb.roc_SetDAC(VthrComp, 20);
+	tb.roc_SetDAC(VthrComp, 40); // 20
 	tb.roc_SetDAC(CtrlReg,0x00); // 0x04
 
 	testAllPixelC(  0);
@@ -1195,6 +1198,9 @@ int test_roc_dig(bool &repeat)
 	int bin = 1;
 	tb.roc_I2cAddr(0);
 	tb.SetRocAddress(0);
+
+	tb.SignalProbeD1(PROBE_TIN);
+	tb.SignalProbeA1(PROBEA_SDATA1);
 
 	switch (test_startup(true))
 	{

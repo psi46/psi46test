@@ -317,6 +317,8 @@ public:
 	RPC_EXPORT void Daq_Select_Deser400();
 	RPC_EXPORT void Daq_Deser400_Reset(uint8_t reset = 3);
 
+	RPC_EXPORT void Daq_Select_Datagenerator(uint16_t startvalue);
+
 	RPC_EXPORT void Daq_DeselectAll();
 
 
