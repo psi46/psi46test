@@ -241,9 +241,6 @@ bool CalDelScan(int col, int row)
 	tb.Daq_Open(50000);
 	tb.Daq_Select_Deser160(deserAdjust);
 	tb.Daq_Start();
-
-	tb.Daq_Read(data, 10000, 0);
-
 	for (x = 0; x<=max_caldel; x++)
 	{
 		tb.roc_SetDAC(CalDel, x);

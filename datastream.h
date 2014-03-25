@@ -16,6 +16,13 @@ using namespace std;
 
 // === Error Messages =======================================================
 
+
+class DS_no_dtb_access : public DataPipeException
+{
+public:
+	DS_no_dtb_access() : DataPipeException("No DTB connection") {};
+};
+
 class DS_buffer_overflow : public DataPipeException
 {
 public:
@@ -79,14 +86,17 @@ struct CRocEvent
 
 // --- PixelDTB
 
-#define DTB_SOURCE_BLOCK_SIZE 4096
+#define DTB_SOURCE_BLOCK_SIZE 116072 // 262144
 
 class CDtbSource : public CSource<uint16_t>
 {
+	bool isOpen;
+	unsigned int channel;
+	unsigned int dtbFifoSize;
 	volatile bool stopAtEmptyData;
 
 	// --- DTB control/state
-	CTestboard &tb;
+	CTestboard *tb;
 	uint32_t dtbRemainingSize;
 	uint8_t  dtbState;
 
@@ -99,9 +109,20 @@ class CDtbSource : public CSource<uint16_t>
 	// --- virtual data access methods
 	uint16_t Read() { return (pos < buffer.size()) ? lastSample = buffer[pos++] : FillBuffer(); }
 	uint16_t ReadLast() { return lastSample; }
+
+	bool Open(CTestboard &dtb, unsigned int dataChannel,
+		bool endless, unsigned int dtbBufferSize);
 public:
-	CDtbSource(CTestboard &src, bool endlesStream)
-		: stopAtEmptyData(endlesStream), tb(src), lastSample(0x4000), pos(0) {}
+	CDtbSource() : isOpen(false) {}
+	~CDtbSource() { Close(); }
+	
+	bool OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
+		bool endless = true, unsigned int dtbBufferSize = 5000000);
+	void Close();
+
+	void Enable();
+	void Disable();
+	void Clear() { Disable(); Enable(); }
 
 	// --- control and status
 	uint8_t  GetState() { return dtbState; }
@@ -134,15 +155,45 @@ public:
 };
 
 
-// === CDataRecordScanner (CDataPipe<uint16_t>, CDataRecord*>) ==============
+// === CStreamDump (uint16_t, uint16_t) ==============
+
+class CStreamDump : public CDataPipe<uint16_t,uint16_t>
+{
+	FILE *f;
+	int row;
+	uint16_t x;
+	uint16_t Read();
+	uint16_t ReadLast() { return x; }
+public:
+	CStreamDump(const char *filename) { row = 0; f = fopen(filename, "wt"); }
+	~CStreamDump() { fclose(f); }
+};
+
+
+// === CDataRecordScanner (CDataPipe<uint16_t>, CDataRecord*) ==============
 
 class CDataRecordScanner : public CDataPipe<uint16_t, CDataRecord*>
 {
+	bool nextStartDetected;
 	CDataRecord record;
 	CDataRecord* Read();
 	CDataRecord* ReadLast() { return &record; }
 public:
-	CDataRecordScanner() {}
+	CDataRecordScanner() : nextStartDetected(false) {}
+};
+
+
+// === CRocRawDataPrinter (CDateRecord*, CDataRecord) ==============
+
+class CRocRawDataPrinter : public CDataPipe<CDataRecord*, CDataRecord*>
+{
+	FILE *f;
+	CDataRecord* record;
+	CDataRecord* Read();
+	CDataRecord* ReadLast() { return record; }
+public:
+	CRocRawDataPrinter(const char *filename) { f = fopen(filename, "wt"); }
+	~CRocRawDataPrinter() { fclose(f); }
 };
 
 
@@ -153,6 +204,20 @@ class CRocDecoder : public CDataPipe<CDataRecord*, CRocEvent*>
 	CRocEvent roc_event;
 	CRocEvent* Read();
 	CRocEvent* ReadLast() { return &roc_event; }
+};
+
+
+// === CRocEventPrinter (CRocEvent*, CRocEvent*) ============================
+
+class CRocEventPrinter : public CDataPipe<CRocEvent*, CRocEvent*>
+{
+	FILE *f;
+	CRocEvent* x;
+	CRocEvent* Read();
+	CRocEvent* ReadLast() { return x; }
+public:
+	CRocEventPrinter(const char *filename) { x = 0; f = fopen(filename, "wt"); }
+	~CRocEventPrinter() { fclose(f); }
 };
 
 

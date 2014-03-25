@@ -21,12 +21,67 @@ void CRocPixel::DecodeRaw()
 
 // === CDtbSource (CSource<uint16_t>) ================================
 
+bool CDtbSource::Open(CTestboard &dtb, unsigned int dataChannel,
+		bool endless, unsigned int dtbBufferSize)
+
+{
+	if (isOpen) Close();
+	if (dataChannel > 8) return false;
+	channel = dataChannel;
+	tb = &dtb;
+	stopAtEmptyData = !endless;
+	dtbFifoSize = dtbBufferSize;
+
+	// --- DTB control/state
+	dtbRemainingSize = 0;
+	dtbState = 0;
+
+	// --- data buffer
+	lastSample = 0;
+	pos = 0;
+	buffer.clear();
+
+	isOpen = tb->Daq_Open(dtbFifoSize, channel) != 0;
+	return isOpen;
+}
+
+
+bool CDtbSource::OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
+		bool endless, unsigned int dtbBufferSize)
+{
+	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
+	tb->Daq_Select_Deser160(deserAdjust);
+	return true;
+}
+
+
+void CDtbSource::Close()
+{
+	if (!isOpen) return;
+	tb->Daq_Close(channel);
+	isOpen = false;
+}
+
+void CDtbSource::Enable()
+{
+	if (!isOpen) return;
+	tb->Daq_Start(channel);
+}
+
+void CDtbSource::Disable()
+{
+	if (!isOpen) return;
+	tb->Daq_Stop(channel);
+}
+
+
 uint16_t CDtbSource::FillBuffer()
 {
+	if (!isOpen) throw DS_no_dtb_access();
 	pos = 0;
 	do
 	{
-		dtbState = tb.Daq_Read(buffer, DTB_SOURCE_BLOCK_SIZE, dtbRemainingSize);
+		dtbState = tb->Daq_Read(buffer, DTB_SOURCE_BLOCK_SIZE, dtbRemainingSize, channel);
 
 /*		if (dtbRemainingSize < 100000)
 		{
@@ -38,16 +93,11 @@ uint16_t CDtbSource::FillBuffer()
 		if (buffer.size() == 0)
 		{
 			if (stopAtEmptyData) throw DS_empty();
-			if (dtbState) throw DS_buffer_overflow();
+			/* if (dtbState & 6) */ throw DS_buffer_overflow();
 		}
 
 	} while (buffer.size() == 0);
 
-/*	printf("----------------\n");
-	for (unsigned int i=0; i<buffer.size(); i++)
-		printf(" %4X", (unsigned int)(buffer[i]));
-	printf("\n----------------\n");
-*/
 	return lastSample = buffer[pos++];
 }
 
@@ -72,34 +122,71 @@ uint16_t CBinaryFileSource::FillBuffer()
 CDataRecord* CDataRecordScanner::Read()
 {
 	record.Clear();
+	uint16_t x=0;
 
-	if (GetLast() & 0x4000)	Get();
-	if (!(GetLast() & 0x8000))
-	{
-		record.SetStartError();
-		while (!(GetLast() & 0x8000)) Get();
-	}
 
-	do
+	if (!nextStartDetected) x=Get();
+	nextStartDetected = false;
+
+	while (!((x=GetLast()) & 0x8000)) Get();
+	record.Add(GetLast() & 0x0fff);
+
+	while (!((x=GetLast()) & 0x4000))
 	{
-		if (record.GetSize() >= 40000)
+		if ((x=Get()) & 0x8000)
 		{
-			record.SetOverflow();
-			break;
+			record.SetEndError();
+			nextStartDetected = true;
+			return &record;
 		}
-		record.Add(GetLast() & 0x0fff);
-
-	} while ((Get() & 0xc000) == 0);
-	
-	if (GetLast() & 0x4000) record.Add(GetLast() & 0x0fff);
-	else record.SetEndError();
-
-/*	for (unsigned int i=0; i<record.data.size(); i++)
-		printf(" %4X", (unsigned int)(record.data[i]));
-	printf("\n");
-*/
+		if (record.GetSize() < 40000) record.Add(GetLast() & 0x0fff);
+		else record.SetOverflow();
+	}
 	return &record;
 }
+
+
+
+// === CStreamDump (uint16_t, uint16_t) ==============
+
+
+uint16_t CStreamDump::Read()
+{
+	x = Get();
+	if (f)
+	{
+		if (row < 9)
+		{
+			fprintf(f, "%04X ", (unsigned int)x);
+			row++;
+		}
+		else
+		{
+			fprintf(f, "%04X\n", (unsigned int)x);
+			row = 0;
+		}
+	}
+	return x;
+}
+
+
+// === CRocRawDataPrinter (CDateRecord*, CDataRecord) ==============
+
+CDataRecord* CRocRawDataPrinter::Read()
+{
+	CDataRecord *x = Get();
+	if (f)
+	{
+		unsigned int n = x->GetSize();
+		fprintf(f, "%u:", n);
+		for (unsigned int i=0; i<n; i++) fprintf(f, " %03X", (unsigned int)((*x)[i]));
+		fprintf(f, "\n");
+	}
+	return x;
+}
+
+
+
 
 
 // === CDecoder (CDataRecord*, CRocEvent*) =====================================
@@ -124,13 +211,23 @@ CRocEvent* CRocDecoder::Read()
 			roc_event.pixel.push_back(pix);
 		}
 	}
-
-/*	printf("====== %03X ======\n", (unsigned int)(roc_event.header));
-	for (unsigned int i=0; i<roc_event.pixel.size(); i++)
-		printf(" %06X (%05o) [%3i, %3i, %3i]\n", 
-			(unsigned int)(roc_event.pixel[i].raw), (unsigned int)(roc_event.pixel[i].raw >> 9),
-			int(roc_event.pixel[i].x), int(roc_event.pixel[i].y), int(roc_event.pixel[i].ph));
-	printf("\n");
-*/
 	return &roc_event;
+}
+
+
+// === CRocEventPrinter (CRocEvent*, CRocEvent*) ============================
+
+CRocEvent* CRocEventPrinter::Read()
+{
+	x = Get();
+	if (f)
+	{
+		fprintf(f, "%03X(%u):", int(x->header), (unsigned int)(x->pixel.size()));
+		for (unsigned int i=0; i<x->pixel.size(); i++)
+		{
+			fprintf(f, " (%2i/%2i/%3i)", x->pixel[i].x, x->pixel[i].y, x->pixel[i].ph);
+		}
+		fprintf(f, "\n");
+	}
+	return x;
 }

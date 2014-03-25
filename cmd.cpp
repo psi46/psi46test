@@ -1251,7 +1251,7 @@ CMD_PROC(takedata2)
 		}
 
 		// decode file
-//		for (unsigned int i=0; i<data.size(); i++) dec.Sample(data[i]);
+		for (unsigned int i=0; i<data.size(); i++) dec.Sample(data[i]);
 
 		// abort after overflow error
 		if (((status & 1) == 0) && (n == 0)) break;
@@ -1272,6 +1272,7 @@ CMD_PROC(takedata2)
 
 	return true;
 }
+
 
 CMD_PROC(showclk)
 {
@@ -2094,70 +2095,50 @@ CMD_PROC(analyze)
 	int vc;
 	PAR_INT(vc,0,255)
 
-	CDtbSource src(tb, false);
+	CDtbSource src;
+	CStreamDump srcdump("streamdump.txt");
 	CDataRecordScanner rec;
-	CRocDecoder dec;
-	CLevelHisto l(0);
+	CRocRawDataPrinter rawList("raw.txt");
+	CRocDecoder decoder;
+	CRocEventPrinter evList("eventlist.txt");
 	CSink<CRocEvent*> pump;
+//	CLevelHisto l(0);
 
-	src >> rec >> dec >> l >> pump;
+	src >> srcdump >> rec >> rawList >> decoder >> evList >> pump;
 
-//	tb.roc_SetDAC(WBC,  15);
-	tb.roc_SetDAC(Vcal, vc);
-	tb.roc_SetDAC(CtrlReg,0x04); // high range
+	src.OpenRocDig(tb, deserAdjust, true, 1000000);
+	src.Enable();
 
-	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
-	tb.Pg_SetCmd(2, PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-	tb.uDelay(100);
-	tb.Flush();
-
-	tb.Daq_Open(1000000);
-	tb.Daq_Select_Deser160(deserAdjust);
-
-	tb.Daq_Start();
-	tb.uDelay(10);
-	for (int i=0; i<3; i++) tb.roc_Pix_Trim(i, 5, 15);
-
-	tb.uDelay(100);
-	tb.Pg_Loop(10000);
-
+	tb.Pg_Loop(500);
+/*	tb.Pg_Single(); tb.uDelay(100);
+	src.Clear();
+	for (int i=0; i<10; i++)
+	{
+		tb.Pg_Single();
+		tb.uDelay(100);
+	}
+*/
 	try
 	{
 		int i=0;
-		while (i++ < 10000 && !keypressed()) pump.Get();
+		while (i++ < 100000 && !keypressed()) { pump.Get(); tb.mDelay(10); }
 		tb.Pg_Stop();
 	}
 	catch (DS_empty &) { printf("finished\n"); }
 	catch (DataPipeException &e) { printf("%s\n", e.what()); }
 
-	tb.Daq_Stop();
-
-/*	try { pump.GetAll(); }
-	catch (DS_empty &) { printf("finished\n"); }
-	catch (DataPipeException &e) { printf("%s\n", e.what()); }
-*/
-	tb.Daq_Close();
-
-	const int min =  40;
-	const int max = 255;
-	for (int i=min; i<=max; i++) Log.printf(" %5i", i);
-	Log.printf("\n");
-	l.Report(Log.File(), min, max);
-
-	Log.flush();
+	src.Disable();
 	return true;
 }
 
 
 CMD_PROC(adcsingle)
 {
-	CDtbSource src(tb, false);
+/*	CDtbSource src(tb, false);
 	CDataRecordScanner rec;
 	CRocDecoder dec;
 	CPrint print;
-//	CDemoAnalyzer print;
+	CDemoAnalyzer print;
 	CSink<CRocEvent*> pump;
 
 	src >> rec >> dec >> print >> pump;
@@ -2179,28 +2160,30 @@ CMD_PROC(adcsingle)
 
 	try { pump.GetAll(); }
 	catch (DS_empty &) {}
-	catch (DataPipeException &e) { /* printf("%s\n", e.what()); */ }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
 
 	tb.Daq_Stop();
 	tb.Daq_Close();
 	Log.flush();
+	*/
 	return true;
+
 }
 
 
 CMD_PROC(adcpeak)
 {
-	CDtbSource src(tb, false);
+/*	CDtbSource src(tb, false);
 	CDataRecordScanner rec;
 	CRocDecoder dec;
 	CLevelHisto l(0);
 	CSink<CRocEvent*> pump;
 
 	src >> rec >> dec >> l >> pump;
-
+*/
 //	tb.roc_SetDAC(WBC,  15);
-	tb.roc_SetDAC(CtrlReg,0x04); // high range
-
+//	tb.roc_SetDAC(CtrlReg,0x04); // high range
+/*
 	tb.Pg_SetCmd(0, PG_RESR + 25);
 	tb.Pg_SetCmd(1, PG_CAL  + 20);
 	tb.Pg_SetCmd(2, PG_SYNC|PG_TRG  + 16);
@@ -2247,13 +2230,14 @@ CMD_PROC(adcpeak)
 	} else printf("Error writing adchisto.txt\n");
 
 	Log.flush();
+*/
 	return true;
 }
 
 
 CMD_PROC(adchisto)
 {
-	CDtbSource src(tb, false);
+/*	CDtbSource src(tb, false);
 	CDataRecordScanner rec;
 	CRocDecoder dec;
 	CLevelHisto l(0);
@@ -2317,6 +2301,7 @@ CMD_PROC(adchisto)
 	} else printf("Error writing adchisto.txt\n");
 
 	Log.flush();
+*/
 	return true;
 }
 
@@ -2370,6 +2355,7 @@ void CAdcLevelHisto::Report(FILE *f, int min, int max)
 
 CMD_PROC(adctransfer)
 {
+/*
 	int mode;
 	PAR_INT(mode, 0, 1);
 
@@ -2450,7 +2436,7 @@ CMD_PROC(adctransfer)
 
 	fclose(f);
 	plot.Show();
-
+	*/
 	return true;
 }
 

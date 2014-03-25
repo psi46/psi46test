@@ -79,13 +79,13 @@ CRocEvent* CPulseHeight::Read()
 
 void Analyzer(CTestboard &tb)
 {
-	CDtbSource src(tb, false);
+/*	CDtbSource src(tb, false);
 	CDataRecordScanner rec;
 	CRocDecoder dec;
 	CSink<CRocEvent*> pump;
 
 	src >> rec >> dec >> pump;
 
-	pump.GetAll();
+	pump.GetAll(); */
 }
 
