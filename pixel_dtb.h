@@ -303,11 +303,18 @@ public:
 	RPC_EXPORT void Daq_Stop(uint8_t channel = 0);
 	RPC_EXPORT uint32_t Daq_GetSize(uint8_t channel = 0);
 
+	// --- Read data from DAQ FIFO
+	// Meaning if return bits
+#define DAQ_FIFO_OVFL 4
+#define DAQ_MEM_OVFL  2
+#define DAQ_STOPPED   1
+
 	RPC_EXPORT uint8_t Daq_Read(HWvectorR<uint16_t> &data,
 			uint32_t blocksize = 65536, uint8_t channel = 0);
 
 	RPC_EXPORT uint8_t Daq_Read(HWvectorR<uint16_t> &data,
 			uint32_t blocksize, uint32_t &availsize, uint8_t channel = 0);
+
 
 	RPC_EXPORT void Daq_Select_ADC(uint16_t blocksize, uint8_t source,
 			uint8_t start, uint8_t stop = 0);

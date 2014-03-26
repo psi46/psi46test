@@ -2097,16 +2097,18 @@ CMD_PROC(analyze)
 
 	CDtbSource src;
 	CStreamDump srcdump("streamdump.txt");
+	CSink<CDataRecord*> pump;		
 	CDataRecordScanner rec;
 	CRocRawDataPrinter rawList("raw.txt");
-	CRocDecoder decoder;
-	CRocEventPrinter evList("eventlist.txt");
-	CSink<CRocEvent*> pump;
+//	CRocDecoder decoder;
+//	CRocEventPrinter evList("eventlist.txt");
+//	CSink<CRocEvent*> pump;
 //	CLevelHisto l(0);
 
-	src >> srcdump >> rec >> rawList >> decoder >> evList >> pump;
+	src >> srcdump >> rec >> rawList /* >> decoder >> evList */ >> pump;
 
-	src.OpenRocDig(tb, deserAdjust, true, 1000000);
+//	src.OpenRocDig(tb, deserAdjust, true, 1000000);
+	src.OpenSimulator(tb, true, 1000000);
 	src.Enable();
 
 	tb.Pg_Loop(500);
@@ -2121,7 +2123,7 @@ CMD_PROC(analyze)
 	try
 	{
 		int i=0;
-		while (i++ < 100000 && !keypressed()) { pump.Get(); tb.mDelay(10); }
+		while (i++ < 500000 && !keypressed()) { pump.Get(); tb.uDelay(1000); }
 		tb.Pg_Stop();
 	}
 	catch (DS_empty &) { printf("finished\n"); }

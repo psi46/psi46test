@@ -55,6 +55,14 @@ bool CDtbSource::OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 }
 
 
+bool CDtbSource::OpenSimulator(CTestboard &dtb, bool endless, unsigned int dtbBufferSize)
+{
+	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
+	tb->Daq_Select_Datagenerator(0);
+	return true;
+}
+
+
 void CDtbSource::Close()
 {
 	if (!isOpen) return;
@@ -93,7 +101,7 @@ uint16_t CDtbSource::FillBuffer()
 		if (buffer.size() == 0)
 		{
 			if (stopAtEmptyData) throw DS_empty();
-			/* if (dtbState & 6) */ throw DS_buffer_overflow();
+			if (dtbState & (DAQ_FIFO_OVFL | DAQ_MEM_OVFL)) throw DS_buffer_overflow();
 		}
 
 	} while (buffer.size() == 0);

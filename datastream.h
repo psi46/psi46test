@@ -118,6 +118,9 @@ public:
 	
 	bool OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
+	bool OpenSimulator(CTestboard &dtb,
+		bool endless = true, unsigned int dtbBufferSize = 5000000);
+
 	void Close();
 
 	void Enable();
