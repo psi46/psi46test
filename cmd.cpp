@@ -2091,28 +2091,34 @@ CRocEvent* CPrint::Read()
 
 
 CMD_PROC(analyze)
-{
+{ PROFILING
 	int vc;
 	PAR_INT(vc,0,255)
 
 	CDtbSource src;
-	CStreamDump srcdump("streamdump.txt");
-	CSink<CDataRecord*> pump;		
+	src.Logging(true);
+//	CStreamErrorDump srcdump("streamdump.txt");
 	CDataRecordScanner rec;
-	CRocRawDataPrinter rawList("raw.txt");
-//	CRocDecoder decoder;
+//	CRocRawDataPrinter rawList("raw.txt");
+
+//	CSink<CDataRecord*> pump;
+
+	CRocDecoder decoder;
 //	CRocEventPrinter evList("eventlist.txt");
-//	CSink<CRocEvent*> pump;
+	CSink<CRocEvent*> pump;
 //	CLevelHisto l(0);
 
-	src >> srcdump >> rec >> rawList /* >> decoder >> evList */ >> pump;
+	src >> rec >> decoder >> pump;
+//	src >> srcdump >> rec >> rawList >> decoder >> evList >> pump;
 
-//	src.OpenRocDig(tb, deserAdjust, true, 1000000);
-	src.OpenSimulator(tb, true, 1000000);
+	src.OpenRocDig(tb, deserAdjust, true, 20000000);
+//	src.OpenSimulator(tb, true, 1000000);
 	src.Enable();
+	tb.uDelay(100);
+	tb.Pg_Loop(2000);
+//	printf("waiting...\n"); tb.mDelay(30000);
 
-	tb.Pg_Loop(500);
-/*	tb.Pg_Single(); tb.uDelay(100);
+	/*	tb.Pg_Single(); tb.uDelay(100);
 	src.Clear();
 	for (int i=0; i<10; i++)
 	{
@@ -2123,11 +2129,13 @@ CMD_PROC(analyze)
 	try
 	{
 		int i=0;
-		while (i++ < 500000 && !keypressed()) { pump.Get(); tb.uDelay(1000); }
+		while (i++ < 500000 && !keypressed()) { pump.Get(); /* tb.uDelay(10); */ }
 		tb.Pg_Stop();
 	}
 	catch (DS_empty &) { printf("finished\n"); }
 	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+
+//	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
 
 	src.Disable();
 	return true;

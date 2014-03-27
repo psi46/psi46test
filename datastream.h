@@ -86,11 +86,12 @@ struct CRocEvent
 
 // --- PixelDTB
 
-#define DTB_SOURCE_BLOCK_SIZE 116072 // 262144
+#define DTB_SOURCE_BLOCK_SIZE 65536
 
 class CDtbSource : public CSource<uint16_t>
 {
 	bool isOpen;
+	bool logging;
 	unsigned int channel;
 	unsigned int dtbFifoSize;
 	volatile bool stopAtEmptyData;
@@ -113,7 +114,7 @@ class CDtbSource : public CSource<uint16_t>
 	bool Open(CTestboard &dtb, unsigned int dataChannel,
 		bool endless, unsigned int dtbBufferSize);
 public:
-	CDtbSource() : isOpen(false) {}
+	CDtbSource() : isOpen(false), logging(false) {}
 	~CDtbSource() { Close(); }
 	
 	bool OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
@@ -122,7 +123,7 @@ public:
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
 
 	void Close();
-
+	void Logging(bool on) { logging = on; }
 	void Enable();
 	void Disable();
 	void Clear() { Disable(); Enable(); }
@@ -170,6 +171,24 @@ class CStreamDump : public CDataPipe<uint16_t,uint16_t>
 public:
 	CStreamDump(const char *filename) { row = 0; f = fopen(filename, "wt"); }
 	~CStreamDump() { fclose(f); }
+};
+
+
+// === CStreamErrorDump (uint16_t, uint16_t) ==============
+
+class CStreamErrorDump : public CDataPipe<uint16_t,uint16_t>
+{
+	FILE *f;	
+	bool good;
+	unsigned int m, n1, n2;
+
+	uint16_t x;
+	uint16_t Read();
+	uint16_t ReadLast() { return x; }
+public:
+	CStreamErrorDump(const char *filename) { good = true; m = n1 = n2 = 0; f = fopen(filename, "wt"); }
+	~CStreamErrorDump() { fclose(f); }
+	unsigned int ByteCount() { return n2; }
 };
 
 

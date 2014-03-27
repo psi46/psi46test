@@ -7,7 +7,7 @@
 // === Data structures ======================================================
 
 void CRocPixel::DecodeRaw()
-{
+{ PROFILING
 	ph = (raw & 0x0f) + ((raw >> 1) & 0xf0);
 	int c =    (raw >> 21) & 7;
 	c = c*6 + ((raw >> 18) & 7);
@@ -24,7 +24,7 @@ void CRocPixel::DecodeRaw()
 bool CDtbSource::Open(CTestboard &dtb, unsigned int dataChannel,
 		bool endless, unsigned int dtbBufferSize)
 
-{
+{ PROFILING
 	if (isOpen) Close();
 	if (dataChannel > 8) return false;
 	channel = dataChannel;
@@ -48,7 +48,7 @@ bool CDtbSource::Open(CTestboard &dtb, unsigned int dataChannel,
 
 bool CDtbSource::OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless, unsigned int dtbBufferSize)
-{
+{ PROFILING
 	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
 	tb->Daq_Select_Deser160(deserAdjust);
 	return true;
@@ -56,7 +56,7 @@ bool CDtbSource::OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 
 
 bool CDtbSource::OpenSimulator(CTestboard &dtb, bool endless, unsigned int dtbBufferSize)
-{
+{ PROFILING
 	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
 	tb->Daq_Select_Datagenerator(0);
 	return true;
@@ -64,40 +64,33 @@ bool CDtbSource::OpenSimulator(CTestboard &dtb, bool endless, unsigned int dtbBu
 
 
 void CDtbSource::Close()
-{
+{ PROFILING
 	if (!isOpen) return;
 	tb->Daq_Close(channel);
 	isOpen = false;
 }
 
 void CDtbSource::Enable()
-{
+{ PROFILING
 	if (!isOpen) return;
 	tb->Daq_Start(channel);
 }
 
 void CDtbSource::Disable()
-{
+{ PROFILING
 	if (!isOpen) return;
 	tb->Daq_Stop(channel);
 }
 
 
 uint16_t CDtbSource::FillBuffer()
-{
+{ PROFILING
 	if (!isOpen) throw DS_no_dtb_access();
 	pos = 0;
 	do
 	{
 		dtbState = tb->Daq_Read(buffer, DTB_SOURCE_BLOCK_SIZE, dtbRemainingSize, channel);
-
-/*		if (dtbRemainingSize < 100000)
-		{
-			if      (dtbRemainingSize > 1000) tb.mDelay(  1);
-			else if (dtbRemainingSize >    0) tb.mDelay( 10);
-			else                              tb.mDelay(100);
-		}
-*/
+		if (logging) printf("%i(%u/%u)\n", int(dtbState), (unsigned int)(buffer.size()), dtbRemainingSize);
 		if (buffer.size() == 0)
 		{
 			if (stopAtEmptyData) throw DS_empty();
@@ -113,7 +106,7 @@ uint16_t CDtbSource::FillBuffer()
 // === CBinaryFileSource (CSource<uint16_t>) ================================
 
 uint16_t CBinaryFileSource::FillBuffer()
-{
+{ PROFILING
 	pos = 0;
 	do
 	{
@@ -128,7 +121,7 @@ uint16_t CBinaryFileSource::FillBuffer()
 // === CDataRecordScanner (CDataPipe<uint16_t, CRecord*>) =============
 
 CDataRecord* CDataRecordScanner::Read()
-{
+{ PROFILING
 	record.Clear();
 	uint16_t x=0;
 
@@ -159,7 +152,7 @@ CDataRecord* CDataRecordScanner::Read()
 
 
 uint16_t CStreamDump::Read()
-{
+{ PROFILING
 	x = Get();
 	if (f)
 	{
@@ -178,10 +171,41 @@ uint16_t CStreamDump::Read()
 }
 
 
+// === CStreamErrorDump (uint16_t, uint16_t) ==============
+
+
+uint16_t CStreamErrorDump::Read()
+{ PROFILING
+	x = Get();
+	if (!f) return x;
+
+	n2++;
+	if (good && (x & 0x3000))
+	{
+		good = false;
+		fprintf(f, "%7u good\n", n2-n1);
+		n1 = n2;
+		m = 0;
+	}
+	else if (!good)
+	{
+		if (!(x & 0x3000)) m++; else m = 0;
+		if (m > 2)
+		{
+			good = true;
+			fprintf(f, "%7u bad\n", n2-n1-2);
+			n1 = n2-2;
+		}
+	}
+
+	return x;
+}
+
+
 // === CRocRawDataPrinter (CDateRecord*, CDataRecord) ==============
 
 CDataRecord* CRocRawDataPrinter::Read()
-{
+{ PROFILING
 	CDataRecord *x = Get();
 	if (f)
 	{
@@ -200,7 +224,7 @@ CDataRecord* CRocRawDataPrinter::Read()
 // === CDecoder (CDataRecord*, CRocEvent*) =====================================
 
 CRocEvent* CRocDecoder::Read()
-{
+{ PROFILING
 	CDataRecord *sample = Get();
 	roc_event.header = 0;
 	roc_event.pixel.clear();
@@ -226,7 +250,7 @@ CRocEvent* CRocDecoder::Read()
 // === CRocEventPrinter (CRocEvent*, CRocEvent*) ============================
 
 CRocEvent* CRocEventPrinter::Read()
-{
+{ PROFILING
 	x = Get();
 	if (f)
 	{

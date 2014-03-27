@@ -20,18 +20,19 @@
 class Watchpoint
 {
 	static long long frequency;
-	static std::list<Watchpoint*> *wplist;
+	static std::list<Watchpoint*> wplist;
 
 	std::string name;
 	unsigned int n;
 	long long t;
 
-	bool IsRunning() { return wplist != 0; }
+	bool IsRunning() { return wplist.size() != 0; }
 	void Incr(long long dt) { t += dt; n++; }
 	static void Report(const char *filename);
 public:
 	Watchpoint(const char *fname);
 	~Watchpoint();
+	bool operator<(Watchpoint &wp) { return wp.name < name; }
 	friend class AutoCounter;
 };
 
