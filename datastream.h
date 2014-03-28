@@ -117,6 +117,8 @@ public:
 	CDtbSource() : isOpen(false), logging(false) {}
 	~CDtbSource() { Close(); }
 	
+	bool OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDel, uint16_t timeout,
+		bool endless = true, unsigned int dtbBufferSize = 5000000);
 	bool OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
 	bool OpenSimulator(CTestboard &dtb,
@@ -247,6 +249,7 @@ public:
 
 class CAnalyzer : public CDataPipe<CRocEvent*, CRocEvent*>
 {
-	CRocEvent* Read() { return Get(); };
-	CRocEvent* ReadLast() { return GetLast(); }
+	CRocEvent* x;
+	CRocEvent* Read() { return x = Get(); };
+	CRocEvent* ReadLast() { return x; }
 };

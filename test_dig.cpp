@@ -192,15 +192,25 @@ int test_tout()
 	tb.Pg_SetCmd(0, PG_RESR + 20);
 	tb.Pg_SetCmd(1, PG_TOK);
 	
-	tb.Daq_Open(1000);
-	tb.Daq_Select_Deser160(deserAdjust);
-	tb.Daq_Start();
-	tb.Pg_Single();
-	tb.uDelay(4000);
-	tb.Pg_Stop();
-	unsigned int cnt = tb.Daq_GetSize();
-	if (cnt > 255) cnt = 255;
-	tb.Daq_Close();
+	unsigned int cnt;
+
+	CDtbSource src;
+	CDataRecordScanner raw;
+	CSink<CDataRecord*> data;
+	src >> raw >> data;
+	src.OpenRocDig(tb, deserAdjust, false, 1000);
+
+	try
+	{
+		src.Enable();
+		tb.Pg_Single();
+		tb.uDelay(4000);
+		src.Disable();
+		cnt = data.Get()->GetSize();
+		if (cnt > 255) cnt = 255;
+	} catch (DataPipeException e) { cnt = 255; }
+
+	src.Close();
 	tb.Flush();
 
 	g_chipdata.token = cnt;
@@ -222,8 +232,6 @@ bool CalDelScan(int col, int row)
 	const int max_caldel = 200;
 	int x, k;
 
-	vector<uint16_t> data;
-
 	InitDAC(false);
 	tb.roc_SetDAC(Vcal, VCAL_TEST);
 	tb.roc_SetDAC(CtrlReg,0x04); // 0x04
@@ -238,9 +246,13 @@ bool CalDelScan(int col, int row)
 	tb.roc_Pix_Cal(col, row);
 
 	// --- take data
-	tb.Daq_Open(50000);
-	tb.Daq_Select_Deser160(deserAdjust);
-	tb.Daq_Start();
+	CDtbSource src;
+	CDataRecordScanner raw;
+	CSink<CDataRecord*> data;
+	src >> raw >> data;
+
+	src.OpenRocDig(tb, deserAdjust, false, 50000);
+	src.Enable();
 	for (x = 0; x<=max_caldel; x++)
 	{
 		tb.roc_SetDAC(CalDel, x);
@@ -251,9 +263,7 @@ bool CalDelScan(int col, int row)
 			tb.uDelay(5);
 		}
 	}
-	tb.Daq_Stop();
-	tb.Daq_Read(data, 10000, 0);
-	tb.Daq_Close();
+	src.Disable();
 
 	tb.roc_Pix_Mask(col, row);
 	tb.roc_ClrCal();
@@ -262,23 +272,18 @@ bool CalDelScan(int col, int row)
 	int pos = 0, count;
 	string s;
 	s.reserve(max_caldel+1);
-	PixelReadoutData pix;
-
 	try
 	{
 		for (x = 0; x<=max_caldel; x++)
 		{
 			count = 0;
-			for (k=0; k<10; k++)
-			{
-				DecodePixel(data, pos, pix);
-				if (pix.n > 0) count++;
-			}
+			for (k=0; k<10; k++) if (data.Get()->GetSize() > 1) count++;
 			if (count == 0) s.push_back('.');
 			else if (count >= 10) s.push_back('*');
 			else s.push_back('0' + count);
 		}
-	} catch (int e) { printf("\nERROR %i @ %i\n", e, int(s.size())); return false; }
+	} catch (DataPipeException e) { printf("\nERROR CalDelScan\n"); return false; }
+	src.Close();
 
 	unsigned int x1, x2, xdiff, xmean;
 	x1 = s.find("********");

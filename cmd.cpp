@@ -1298,7 +1298,7 @@ CMD_PROC(showclk)
 	tb.SignalProbeADC(PROBEA_CLK, gain-1);
 	tb.uDelay(10);
 
-	tb.Daq_Select_ADC(nSamples, 1, 1);
+	tb.Daq_Select_ADC(nSamples, 0, 1, 1);
 	tb.uDelay(1000);
 	tb.Daq_Open(1024);
 	for (i=0; i<20; i++)
@@ -2097,25 +2097,69 @@ CMD_PROC(analyze)
 
 	CDtbSource src;
 	src.Logging(true);
-//	CStreamErrorDump srcdump("streamdump.txt");
+	CStreamErrorDump srcdump("streamdump.txt");
 	CDataRecordScanner rec;
-//	CRocRawDataPrinter rawList("raw.txt");
+	CRocRawDataPrinter rawList("raw.txt");
 
 //	CSink<CDataRecord*> pump;
 
 	CRocDecoder decoder;
-//	CRocEventPrinter evList("eventlist.txt");
+	CRocEventPrinter evList("eventlist.txt");
 	CSink<CRocEvent*> pump;
 //	CLevelHisto l(0);
 
-	src >> rec >> decoder >> pump;
-//	src >> srcdump >> rec >> rawList >> decoder >> evList >> pump;
+//	src >> rec >> decoder >> pump;
+	src >> srcdump >> rec >> rawList >> decoder >> evList >> pump;
 
 	src.OpenRocDig(tb, deserAdjust, true, 20000000);
 //	src.OpenSimulator(tb, true, 1000000);
 	src.Enable();
 	tb.uDelay(100);
-	tb.Pg_Loop(2000);
+	tb.Pg_Loop(20000);
+//	printf("waiting...\n"); tb.mDelay(30000);
+
+	/*	tb.Pg_Single(); tb.uDelay(100);
+	src.Clear();
+	for (int i=0; i<10; i++)
+	{
+		tb.Pg_Single();
+		tb.uDelay(100);
+	}
+*/
+	try
+	{
+		int i=0;
+		while (i++ < 500000 && !keypressed()) { pump.Get(); /* tb.uDelay(10); */ }
+		tb.Pg_Stop();
+	}
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+
+//	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
+
+	src.Disable();
+	return true;
+}
+
+
+CMD_PROC(analyzeana)
+{ PROFILING
+	int vc;
+	PAR_INT(vc,0,255)
+
+	CDtbSource src;
+	src.Logging(true);
+	CStreamErrorDump srcdump("streamdump.txt");
+	CDataRecordScanner rec;
+	CRocRawDataPrinter rawList("raw.txt");
+	CSink<CDataRecord*> pump;
+
+	src >> srcdump >> rec >> rawList >> pump;
+
+	src.OpenRocAna(tb, 1, 1, 100, true, 20000);
+	src.Enable();
+	tb.uDelay(100);
+	tb.Pg_Loop(20000);
 //	printf("waiting...\n"); tb.mDelay(30000);
 
 	/*	tb.Pg_Single(); tb.uDelay(100);
@@ -3504,6 +3548,7 @@ void cmd()
 	CMD_REG(adcpeak,  "adcpeak                       ADC problem test 2");
 	CMD_REG(adctransfer, "adctransfer");
 	CMD_REG(analyze,  "analyze                       test analyzer chain");
+	CMD_REG(analyzeana,"analyzeana                    test analyzer chain");
 	CMD_REG(readback, "readback                      extended read back");
 
 	CMD_REG(adctest,  "adctest                       check ADC pulse height readout");

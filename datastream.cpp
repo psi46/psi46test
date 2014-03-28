@@ -46,6 +46,17 @@ bool CDtbSource::Open(CTestboard &dtb, unsigned int dataChannel,
 }
 
 
+bool CDtbSource::OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDel, uint16_t timeout,
+	bool endless, unsigned int dtbBufferSize)
+{ PROFILING
+	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
+	dtb.Daq_Select_ADC(timeout, // 1..65535
+		0,  // source: tin/tout
+		1,  // tin delay 0..63
+		1); // tout delay 0..63
+	return true;
+}
+
 bool CDtbSource::OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless, unsigned int dtbBufferSize)
 { PROFILING
