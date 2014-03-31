@@ -6,16 +6,60 @@
 
 // === Data structures ======================================================
 
+// error bits:{ ph | x | y | c1 | c0 | r2 | r1 | r0 }
+
 void CRocPixel::DecodeRaw()
 { PROFILING
 	ph = (raw & 0x0f) + ((raw >> 1) & 0xf0);
-	int c =    (raw >> 21) & 7;
-	c = c*6 + ((raw >> 18) & 7);
-	int r =    (raw >> 15) & 7;
-	r = r*6 + ((raw >> 12) & 7);
-	r = r*6 + ((raw >>  9) & 7);
-	y = 80 - r/2;
-	x = 2*c + (r&1);
+	error = (raw & 0x10) ? 128 : 0;
+
+	int c1 = (raw >> 21) & 7;  if (c1>=6) error |= 16;
+	int c0 = (raw >> 18) & 7;  if (c0>=6) error |= 8;
+	int c  = c1*6 + c0;
+
+	int r2 = (raw >> 15) & 7;  if (r2>=6) error |= 4;
+	int r1 = (raw >> 12) & 7;  if (r1>=6) error |= 2;
+	int r0 = (raw >>  9) & 7;  if (r0>=6) error |= 1;
+	int r  = (r2*6 + r1)*6 + r0;
+
+	y = 80 - r/2;    if ((unsigned int)y >= 80) error |= 32;
+	x = 2*c + (r&1); if ((unsigned int)x >= 52) error |= 64;
+}
+
+
+void CRocPixel::DecodeAna(CAnalogLevelDecoder &dec, uint16_t *v)
+{ PROFILING
+	error = 0;
+
+	int c1 = dec.Translate(v[0]);  if (c1>=6) error |= 16;
+	int c0 = dec.Translate(v[1]);  if (c0>=6) error |= 8;
+	int c  = c1*6 + c0;
+
+	int r2 = dec.Translate(v[2]);  if (r2>=6) error |= 4;
+	int r1 = dec.Translate(v[3]);  if (r1>=6) error |= 2;
+	int r0 = dec.Translate(v[4]);  if (r0>=6) error |= 1;
+	int r  = (r2*6 + r1)*6 + r0;
+
+	ph = dec.CorrectOffset(v[5]);
+
+	y = 80 - r/2;    if ((unsigned int)y >= 80) error |= 32;
+	x = 2*c + (r&1); if ((unsigned int)x >= 52) error |= 64;
+}
+
+
+void CAnalogLevelDecoder::Calibrate(int ublackLevel, int blackLevel)
+{
+	level0 = blackLevel;
+	level1 = (blackLevel - ublackLevel)/4;
+	levelS = level1/2;
+}
+
+
+int CAnalogLevelDecoder::Translate(uint16_t x)
+{
+	int y = ExpandSig(x) - level0;
+	if (y >= 0) y += levelS; else y -= levelS;
+	return y/level1 + 1;
 }
 
 
@@ -46,14 +90,15 @@ bool CDtbSource::Open(CTestboard &dtb, unsigned int dataChannel,
 }
 
 
-bool CDtbSource::OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDel, uint16_t timeout,
+bool CDtbSource::OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDelay, uint16_t timeout,
 	bool endless, unsigned int dtbBufferSize)
 { PROFILING
 	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
 	dtb.Daq_Select_ADC(timeout, // 1..65535
 		0,  // source: tin/tout
-		1,  // tin delay 0..63
-		1); // tout delay 0..63
+		tinDelay,  // tin delay 0..63
+		toutDelay); // tout delay 0..63
+	dtb.SignalProbeADC(PROBEA_SDATA1, GAIN_4);
 	return true;
 }
 
@@ -215,35 +260,56 @@ uint16_t CStreamErrorDump::Read()
 
 // === CRocRawDataPrinter (CDateRecord*, CDataRecord) ==============
 
+
+
 CDataRecord* CRocRawDataPrinter::Read()
 { PROFILING
 	CDataRecord *x = Get();
 	if (f)
 	{
 		unsigned int n = x->GetSize();
-		fprintf(f, "%u:", n);
-		for (unsigned int i=0; i<n; i++) fprintf(f, " %03X", (unsigned int)((*x)[i]));
+		fprintf(f, "%4u:", n);
+		if (adc_samples)
+			for (unsigned int i=0; i<n; i++)
+				fprintf(f, " %5i", CAnalogLevelDecoder::ExpandSig((*x)[i]));
+		else
+		for (unsigned int i=0; i<n; i++)
+			fprintf(f, " %03X", (unsigned int)((*x)[i]));
+
 		fprintf(f, "\n");
 	}
 	return x;
 }
 
 
+// === CLevelHistogram (CDataRecord*, CDataRecord*) ==============
+
+//	CHistogram h;
+	
+CDataRecord* CLevelHistogram::Read()
+{
+	x = Get();
+	if (x->GetSize() >= 3)
+	{
+		for (unsigned int i = 0; i < x->GetSize(); i++)
+			if (i%6 != 2) h.AddData(CAnalogLevelDecoder::ExpandSig((*x)[i]));
+	}
+	return x;
+}
 
 
+// === CRocDigDecoder (CDataRecord*, CRocEvent*) ===============================
 
-// === CDecoder (CDataRecord*, CRocEvent*) =====================================
-
-CRocEvent* CRocDecoder::Read()
+CRocEvent* CRocDigDecoder::Read()
 { PROFILING
 	CDataRecord *sample = Get();
-	roc_event.header = 0;
-	roc_event.pixel.clear();
+	x.header = 0;
+	x.pixel.clear();
 	unsigned int n = sample->GetSize();
 	if (n > 0)
 	{
-		if (n > 1) roc_event.pixel.reserve((n-1)/2);
-		roc_event.header = (*sample)[0];
+		if (n > 4) x.pixel.reserve((n-1)/2);
+		x.header = (*sample)[0];
 		unsigned int pos = 1;
 		while (pos < n-1)
 		{
@@ -251,10 +317,36 @@ CRocEvent* CRocDecoder::Read()
 			pix.raw =  (*sample)[pos++] << 12;
 			pix.raw += (*sample)[pos++];
 			pix.DecodeRaw();
-			roc_event.pixel.push_back(pix);
+			x.pixel.push_back(pix);
 		}
 	}
-	return &roc_event;
+	return &x;
+}
+
+
+// === CRocAnaDecoder (CDataRecord*, CRocEvent*) ===============================
+
+CRocEvent* CRocAnaDecoder::Read()
+{ PROFILING
+	CDataRecord *sample = Get();
+	x.header = 0;
+	x.pixel.clear();
+	unsigned int n = sample->GetSize();
+	if (n >= 3)
+	{
+		if (n > 15) x.pixel.reserve((n-3)/6);
+		x.header = CAnalogLevelDecoder::ExpandSig((*sample)[2]);
+		unsigned int pos = 3;
+		while (pos+6 <= n)
+		{
+			CRocPixel pix;
+			pix.raw = 0;
+			pix.DecodeAna(dec, &((*sample)[pos]));
+			x.pixel.push_back(pix);
+			pos += 6;
+		}
+	}
+	return &x;
 }
 
 

@@ -2097,13 +2097,13 @@ CMD_PROC(analyze)
 
 	CDtbSource src;
 	src.Logging(true);
-	CStreamErrorDump srcdump("streamdump.txt");
+	CStreamDump srcdump("streamdump.txt");
 	CDataRecordScanner rec;
 	CRocRawDataPrinter rawList("raw.txt");
 
 //	CSink<CDataRecord*> pump;
 
-	CRocDecoder decoder;
+	CRocDigDecoder decoder;
 	CRocEventPrinter evList("eventlist.txt");
 	CSink<CRocEvent*> pump;
 //	CLevelHisto l(0);
@@ -2149,27 +2149,22 @@ CMD_PROC(analyzeana)
 
 	CDtbSource src;
 	src.Logging(true);
-	CStreamErrorDump srcdump("streamdump.txt");
+	CStreamDump srcdump("streamdump.txt");
 	CDataRecordScanner rec;
-	CRocRawDataPrinter rawList("raw.txt");
-	CSink<CDataRecord*> pump;
+	CLevelHistogram hist;
+	CRocRawDataPrinter rawList("raw.txt", true);
+	CRocAnaDecoder decode;
+	decode.Calibrate(-364, -30);
+	CRocEventPrinter evList("eventlist.txt");
+	CSink<CRocEvent*> pump;
 
-	src >> srcdump >> rec >> rawList >> pump;
+	src >> srcdump >> rec >> hist >> rawList >> decode >> evList >> pump;
 
-	src.OpenRocAna(tb, 1, 1, 100, true, 20000);
+	src.OpenRocAna(tb, 14, 10, 100, true, 20000);
 	src.Enable();
 	tb.uDelay(100);
 	tb.Pg_Loop(20000);
-//	printf("waiting...\n"); tb.mDelay(30000);
 
-	/*	tb.Pg_Single(); tb.uDelay(100);
-	src.Clear();
-	for (int i=0; i<10; i++)
-	{
-		tb.Pg_Single();
-		tb.uDelay(100);
-	}
-*/
 	try
 	{
 		int i=0;
@@ -2182,6 +2177,9 @@ CMD_PROC(analyzeana)
 //	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
 
 	src.Disable();
+
+	Log.section("ALEVEL");
+	hist.Report(Log);
 	return true;
 }
 

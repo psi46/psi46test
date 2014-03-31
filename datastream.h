@@ -10,6 +10,8 @@
 #include "psi46test.h"
 #include "datapipe.h"
 #include "protocol.h"
+#include "histo.h"
+
 
 using namespace std;
 
@@ -61,17 +63,34 @@ public:
 	
 	unsigned int GetSize() { return data.size(); }
 	void Add(uint16_t value) { data.push_back(value); }
-	uint16_t operator[](int index) { return data[index]; }
+	uint16_t& operator[](int index) { return data[index]; }
+};
+
+
+class CAnalogLevelDecoder
+{
+	int level0;
+	int level1;
+	int levelS;
+
+public:
+	void Calibrate(int ublackLevel, int blackLevel);
+	static int ExpandSig(uint16_t x) { return (x & 0x0800) ? int(x) - 4096 : int(x); }
+	int Translate(uint16_t x);
+	int CorrectOffset(uint16_t x) { return Translate(x) - level0; }
 };
 
 
 struct CRocPixel
 {
+// error bits:{ ph | x | y | c1 | c0 | r2 | r1 | r0 }
+	int error;
 	int raw;
 	int x;
 	int y;
 	int ph;
 	void DecodeRaw();
+	void DecodeAna(CAnalogLevelDecoder &dec, uint16_t *x);
 };
 
 
@@ -80,6 +99,9 @@ struct CRocEvent
 	unsigned short header;
 	vector<CRocPixel> pixel;
 };
+
+
+
 
 
 // === Data Sources =========================================================
@@ -117,7 +139,7 @@ public:
 	CDtbSource() : isOpen(false), logging(false) {}
 	~CDtbSource() { Close(); }
 	
-	bool OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDel, uint16_t timeout,
+	bool OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDelay, uint16_t timeout,
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
 	bool OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
@@ -207,27 +229,59 @@ public:
 };
 
 
-// === CRocRawDataPrinter (CDateRecord*, CDataRecord) ==============
+// === CRocRawDataPrinter (CDataRecord*, CDataRecord*) ==============
+
 
 class CRocRawDataPrinter : public CDataPipe<CDataRecord*, CDataRecord*>
 {
 	FILE *f;
+	bool adc_samples;
 	CDataRecord* record;
 	CDataRecord* Read();
 	CDataRecord* ReadLast() { return record; }
 public:
-	CRocRawDataPrinter(const char *filename) { f = fopen(filename, "wt"); }
+	CRocRawDataPrinter(const char *filename, bool roc_ana = false)
+	{ adc_samples = roc_ana, f = fopen(filename, "wt"); }
 	~CRocRawDataPrinter() { fclose(f); }
 };
 
 
-// === CDecoder (CDataRecord*, CRocEvent*) ==================================
+// === CLevelHistogram (CDataRecord*, CDataRecord*) ==============
 
-class CRocDecoder : public CDataPipe<CDataRecord*, CRocEvent*>
+class CLevelHistogram : public CDataPipe<CDataRecord*, CDataRecord*>
 {
-	CRocEvent roc_event;
+	CHistogram h;
+	CDataRecord* x;
+	CDataRecord* Read();
+	CDataRecord* ReadLast() { return x; }
+public:
+	CLevelHistogram() : h(-500,500,1) {}
+	~CLevelHistogram() {}
+	void Report(CProtocol &log) { h.Print(log, 10); }
+};
+
+
+// === CRocDigDecoder (CDataRecord*, CRocEvent*) ============================
+
+class CRocDigDecoder : public CDataPipe<CDataRecord*, CRocEvent*>
+{
+	CRocEvent x;
 	CRocEvent* Read();
-	CRocEvent* ReadLast() { return &roc_event; }
+	CRocEvent* ReadLast() { return &x; }
+};
+
+
+// === CRocAnaDecoder (CDataRecord*, CRocEvent*) ============================
+
+class CRocAnaDecoder : public CDataPipe<CDataRecord*, CRocEvent*>
+{
+	CAnalogLevelDecoder dec;
+	CRocEvent x;
+	CRocEvent* Read();
+	CRocEvent* ReadLast() { return &x; }
+public:
+	void Calibrate(int ublackLevel, int blackLevel)
+	{ dec.Calibrate(ublackLevel, blackLevel); }
 };
 
 
