@@ -54,9 +54,6 @@
     <ClCompile Include="pipe.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
-    <ClCompile Include="analyzer.cpp">
-      <Filter>Quellcodedateien</Filter>
-    </ClCompile>
     <ClCompile Include="datastream.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
@@ -91,6 +88,9 @@
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
     <ClCompile Include="rpc_error.cpp">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
+    <ClCompile Include="test_ana.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
   </ItemGroup>
@@ -150,9 +150,6 @@
       <Filter>Header-Dateien</Filter>
     </ClInclude>
     <ClInclude Include="datastream.h">
-      <Filter>Header-Dateien</Filter>
-    </ClInclude>
-    <ClInclude Include="analyzer.h">
       <Filter>Header-Dateien</Filter>
     </ClInclude>
     <ClInclude Include="plot.h">

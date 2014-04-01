@@ -18,7 +18,7 @@
 #include <fstream>
 #include "psi46test.h"
 #include "plot.h"
-#include "analyzer.h"
+#include "datastream.h"
 
 #include "command.h"
 #include "defectlist.h"
@@ -33,8 +33,6 @@ using namespace std;
 #endif
 
 #define DO_FLUSH  if (par.isInteractive()) tb.Flush();
-
-using namespace std;
 
 #define FIFOSIZE 8192
 
@@ -2586,6 +2584,7 @@ void PrintScale(int min, int max)
 	Log.puts("\n");
 }
 
+/*
 void Scan1D(int vx, int xmin, int xmax)
 {
 	int x, k;
@@ -2633,6 +2632,7 @@ void Scan1D(int vx, int xmin, int xmax)
 }
 
 
+
 CMD_PROC(shmoo)
 {
 	int vx, xmin, xmax, vy, ymin, ymax;
@@ -2664,10 +2664,10 @@ CMD_PROC(shmoo)
 
 	return true;
 }
+*/
 
 
-
-
+/*
 CMD_PROC(phscan)
 {
 	int col, row;
@@ -2747,7 +2747,7 @@ CMD_PROC(phscan)
 
 	return true;
 }
-
+*/
 
 CMD_PROC(deser160)
 {
@@ -2814,6 +2814,7 @@ CMD_PROC(deser160)
 
 */
 
+/*
 CMD_PROC(readback)
 {
 	int i;
@@ -2883,7 +2884,7 @@ CMD_PROC(readback)
 
 	return true;
 }
-
+*/
 
 
 // =======================================================================
@@ -3015,7 +3016,7 @@ bool test_wafer()
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin = test_roc_dig(repeat);
+	int bin = TestRocDig::test_roc_dig(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 	GetTimeStamp(g_chipdata.endTime);
@@ -3047,7 +3048,7 @@ bool test_chip(char chipid[])
 
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin = test_roc_dig(repeat);
+	int bin = TestRocDig::test_roc_dig(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 
@@ -3175,7 +3176,7 @@ bool go_TestDefects()
 		GetTimeStamp(g_chipdata.startTime);
 		Log.timestamp("BEGIN");
 		bool repeat;
-		int bin = test_roc_dig(repeat);
+		int bin = TestRocDig::test_roc_dig(repeat);
 		GetTimeStamp(g_chipdata.endTime);
 		Log.timestamp("END");
 		Log.puts("\n");
@@ -3208,7 +3209,7 @@ bool TestSingleChip(int &bin, bool &repeat)
 	GetTimeStamp(g_chipdata.startTime);
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
-	bin = test_roc_dig(repeat);
+	bin = TestRocDig::test_roc_dig(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 
@@ -3547,14 +3548,14 @@ void cmd()
 	CMD_REG(adctransfer, "adctransfer");
 	CMD_REG(analyze,  "analyze                       test analyzer chain");
 	CMD_REG(analyzeana,"analyzeana                    test analyzer chain");
-	CMD_REG(readback, "readback                      extended read back");
+//	CMD_REG(readback, "readback                      extended read back");
 
 	CMD_REG(adctest,  "adctest                       check ADC pulse height readout");
 	CMD_REG(ethsend,  "ethsend <string>              send <string> in a Ethernet packet");
 	CMD_REG(ethrx,    "ethrx                         shows number of received packets");
-	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");
-	CMD_REG(phscan,   "phscan                        ROC pulse height scan");
-	CMD_REG(readback, "readback                      read out ROC data");
+//	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");
+//	CMD_REG(phscan,   "phscan                        ROC pulse height scan");
+//	CMD_REG(readback, "readback                      read out ROC data");
 	CMD_REG(deser160, "deser160                      allign deser160");
 
 

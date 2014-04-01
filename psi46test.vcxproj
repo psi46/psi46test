@@ -154,7 +154,6 @@
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="analyzer.cpp" />
     <ClCompile Include="chipdatabase.cpp" />
     <ClCompile Include="cmd.cpp">
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">All</AssemblerOutput>
@@ -178,6 +177,7 @@
     <ClCompile Include="rpc.cpp" />
     <ClCompile Include="rpc_calls.cpp" />
     <ClCompile Include="rpc_error.cpp" />
+    <ClCompile Include="test_ana.cpp" />
     <ClCompile Include="test_dig.cpp" />
     <ClCompile Include="usb.cpp">
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>
@@ -187,7 +187,6 @@
     <ClCompile Include="win32\rs232.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="analyzer.h" />
     <ClInclude Include="chipdatabase.h" />
     <ClInclude Include="CImg.h" />
     <ClInclude Include="color.h" />

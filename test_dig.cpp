@@ -2,12 +2,12 @@
 
 #include "psi46test.h"
 #include "chipdatabase.h"
-#include "analyzer.h"
 
 #include "profiler.h"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include "datastream.h"
 
 
 
@@ -22,6 +22,8 @@
 #define VDIG0               4
 #define VSH0              150   // 225
 
+
+
 // =======================================================================
 //  global variables for test results
 // =======================================================================
@@ -29,6 +31,8 @@
 CChip g_chipdata;
 
 
+namespace TestRocDig
+{
 
 // =======================================================================
 //  initialization
@@ -1403,3 +1407,7 @@ fail:
 
 	return -chipClass;
 }
+
+
+
+} // namespace TestRocDig
