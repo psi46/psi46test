@@ -75,7 +75,7 @@ class CAnalogLevelDecoder
 
 public:
 	void Calibrate(int ublackLevel, int blackLevel);
-	static int ExpandSig(uint16_t x) { return (x & 0x0800) ? int(x) - 4096 : int(x); }
+	static int ExpandSign(uint16_t x) { return (x & 0x0800) ? int(x) - 4096 : int(x); }
 	int Translate(uint16_t x);
 	int CorrectOffset(uint16_t x) { return Translate(x) - level0; }
 };
@@ -258,6 +258,28 @@ public:
 	CLevelHistogram() : h(-500,500,1) {}
 	~CLevelHistogram() {}
 	void Report(CProtocol &log) { h.Print(log, 10); }
+};
+
+
+// === CReadBack (CDataRecord*, CDataRecord*) ====================
+
+class CReadBack : public CDataPipe<CDataRecord*, CDataRecord*>
+{
+	unsigned int count;
+	unsigned int shiftReg;
+	unsigned int data;
+	bool updated;
+	bool valid;
+
+	CDataRecord* x;
+	CDataRecord* Read();
+	CDataRecord* ReadLast() { return x; }
+public:
+	CReadBack() : count(0), shiftReg(0), data(0), updated(false), valid(false) {}
+	~CReadBack() {}
+	bool IsUpdated() { return updated; }
+	bool IsValid() { return valid; }
+	unsigned int GetRdbData() { updated = false; return data; }
 };
 
 

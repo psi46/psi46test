@@ -57,7 +57,7 @@ void CAnalogLevelDecoder::Calibrate(int ublackLevel, int blackLevel)
 
 int CAnalogLevelDecoder::Translate(uint16_t x)
 {
-	int y = ExpandSig(x) - level0;
+	int y = ExpandSign(x) - level0;
 	if (y >= 0) y += levelS; else y -= levelS;
 	return y/level1 + 1;
 }
@@ -271,7 +271,7 @@ CDataRecord* CRocRawDataPrinter::Read()
 		fprintf(f, "%4u:", n);
 		if (adc_samples)
 			for (unsigned int i=0; i<n; i++)
-				fprintf(f, " %5i", CAnalogLevelDecoder::ExpandSig((*x)[i]));
+				fprintf(f, " %5i", CAnalogLevelDecoder::ExpandSign((*x)[i]));
 		else
 		for (unsigned int i=0; i<n; i++)
 			fprintf(f, " %03X", (unsigned int)((*x)[i]));
@@ -292,8 +292,37 @@ CDataRecord* CLevelHistogram::Read()
 	if (x->GetSize() >= 3)
 	{
 		for (unsigned int i = 0; i < x->GetSize(); i++)
-			if (i%6 != 2) h.AddData(CAnalogLevelDecoder::ExpandSig((*x)[i]));
+			if (i%6 != 2) h.AddData(CAnalogLevelDecoder::ExpandSign((*x)[i]));
 	}
+	return x;
+}
+
+
+// === CReadBack (CDataRecord*, CDataRecord*) ====================
+
+CDataRecord* CReadBack::Read()
+{
+	x = Get();
+	unsigned int header = x->GetSize() ? (*x)[0] : 0;
+
+	if ((header & 0xffc) == 0x7f8)
+	{
+		shiftReg <<= 1;	if (header & 1) shiftReg++;
+		count++;
+
+		if (header & 2) // start marker
+		{
+			if (count == 16)
+			{
+				data = shiftReg & 0xffff;
+				updated = true;
+				valid = true;
+			}
+			count = 0;
+		}
+	}
+	else count = 0;
+
 	return x;
 }
 
@@ -335,7 +364,7 @@ CRocEvent* CRocAnaDecoder::Read()
 	if (n >= 3)
 	{
 		if (n > 15) x.pixel.reserve((n-3)/6);
-		x.header = CAnalogLevelDecoder::ExpandSig((*sample)[2]);
+		x.header = CAnalogLevelDecoder::ExpandSign((*sample)[2]);
 		unsigned int pos = 3;
 		while (pos+6 <= n)
 		{
