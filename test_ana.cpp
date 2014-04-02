@@ -11,14 +11,14 @@
 
 
 
-#define VCAL_TEST          20  // 20 50 60 (high range) pixel alive test
+#define VCAL_TEST          35  // 35 (high range) pixel alive test
                                 //   schwelle @ 40MHz = 17
 #define VCAL_DCOL_TEST     65  // 30 ... 120
 
-#define VCAL_LEVEL         40	//  135 vcal for level test without sensor
+#define VCAL_LEVEL        140	//  135 vcal for level test without sensor
 #define VCAL_LEVEL_SENSOR  45	//  45 vcal for level test with sensor
 #define VCAL_LEVEL_EXT    150	// 150 vcal for external calibrate
-#define VANA0             100   // default vana value
+#define VANA0             145   // default vana value
 #define VDIG0               4
 #define VSH0              150   // 225
 
@@ -50,35 +50,39 @@ void InitDAC(bool reset)
 	if (reset)
 	{
 		g_chipdata.InitVana = VANA0;
-		g_chipdata.InitCalDel = 68;
 	}
 
 	tb.roc_SetDAC(  1,  VDIG0); // Vdig
 	tb.roc_SetDAC(  2,  g_chipdata.InitVana);
 	tb.roc_SetDAC(  3,  30);    // Vsf
 	tb.roc_SetDAC(  4,  12);    // Vcomp
-
-	tb.roc_SetDAC(  7, 150);    // VwllPr
-	tb.roc_SetDAC(  9, 150);    // VwllSh
-	tb.roc_SetDAC( 10, 117);    // VhldDel
-	tb.roc_SetDAC( 11,  40);    // Vtrim
-	tb.roc_SetDAC( 12,  80);    // VthrComp
+	tb.roc_SetDAC(  5,   0);    // Vleak_comp
+	tb.roc_SetDAC(  6,   0);    // VrgPr
+	tb.roc_SetDAC(  7,  35);    // VwllPr
+	tb.roc_SetDAC(  8,   0);    // VrgSh
+	tb.roc_SetDAC(  9,  35);    // VwllSh
+	tb.roc_SetDAC( 10, 160);    // VhldDel
+	tb.roc_SetDAC( 11,   7);    // Vtrim
+	tb.roc_SetDAC( 12,  70);    // VthrComp
 
 	tb.roc_SetDAC( 13,  30);    // VIBias_Bus
-//	tb.roc_SetDAC( 14,   6);    // Vbias_sf
+	tb.roc_SetDAC( 14,  10);    // Vbias_sf
+	tb.roc_SetDAC( 15,  50);    // VoffsetOp
+	tb.roc_SetDAC( 16, 115);    // VIbiasOp
+	tb.roc_SetDAC( 17, 120);    // VoffsetRO
+	tb.roc_SetDAC( 18, 115);    // VIon
+	tb.roc_SetDAC( 19, 220);    // VIbias_PH
+	tb.roc_SetDAC( 20, 153);    // VIbias_DAC
+	tb.roc_SetDAC( 21, 220);    // VIbias_roc
 	tb.roc_SetDAC( 22,  99);    // VIColOr
-
-//	tb.roc_SetDAC( 15,  40);    // VoffsetOp
-	tb.roc_SetDAC( 17, 170);    // VoffsetRO
-//	tb.roc_SetDAC( 18, 115);    // VIon
-
-	tb.roc_SetDAC( 19,  50);    // Vcomp_ADC
-	tb.roc_SetDAC( 20,  90);    // VIref_ADC
+	tb.roc_SetDAC( 23,   0);    // Vnpix
+	tb.roc_SetDAC( 24,   0);    // VsumCol
 
 	tb.roc_SetDAC( 25,   2);    // Vcal
-	tb.roc_SetDAC( 26,  g_chipdata.InitCalDel);  // CalDel
+	tb.roc_SetDAC( 26,  40);    // 30 CalDel
+	tb.roc_SetDAC( 27,   0);    // RangeTemp
 
-	tb.roc_SetDAC( 0xfe, 14);   // WBC
+	tb.roc_SetDAC( 0xfe, 20);   // WBC
 	tb.roc_SetDAC( 0xfd,  4);   // CtrlReg
 
 	tb.Flush();
@@ -96,10 +100,10 @@ void InitChip()
 
 void SetMHz(int MHz = 0)
 { PROFILING
-	tb.Sig_SetDelay(SIG_CLK,  delayAdjust);
-	tb.Sig_SetDelay(SIG_SDA,  delayAdjust+15);
-	tb.Sig_SetDelay(SIG_CTR,  delayAdjust);
-	tb.Sig_SetDelay(SIG_TIN,  delayAdjust+5);
+	tb.Sig_SetDelay(SIG_CLK,  16);
+	tb.Sig_SetDelay(SIG_SDA,  16+15);
+	tb.Sig_SetDelay(SIG_CTR,  16);
+	tb.Sig_SetDelay(SIG_TIN,  16+5);
 	tb.Flush();
 
 	tct_wbc = 5;
@@ -200,7 +204,7 @@ int test_tout()
 	CDataRecordScanner raw;
 	CSink<CDataRecord*> data;
 	src >> raw >> data;
-	src.OpenRocDig(tb, deserAdjust, false, 1000);
+	src.OpenRocAna(tb, 14, 10, 300, false, 5000);
 
 	try
 	{
@@ -209,6 +213,7 @@ int test_tout()
 		tb.uDelay(4000);
 		src.Disable();
 		cnt = data.Get()->GetSize();
+		cnt = cnt >= 3 ? (cnt-3)/6 : 0;
 		if (cnt > 255) cnt = 255;
 	} catch (DataPipeException e) { cnt = 255; }
 
@@ -220,92 +225,8 @@ int test_tout()
 
 
 	if (cnt == 255) return ERROR_TOKEN_MISSING;
-	if (cnt != 1) return ERROR_TOKEN_TIME;  // no empty readout
+	if (cnt != 0) return ERROR_TOKEN_TIME;  // no empty readout
 	return 0;
-}
-
-
-// =======================================================================
-// caldel scan
-// =======================================================================
-
-bool CalDelScan(int col, int row)
-{ PROFILING
-	const int max_caldel = 200;
-	int x, k;
-
-	InitDAC(false);
-	tb.roc_SetDAC(Vcal, VCAL_TEST);
-	tb.roc_SetDAC(CtrlReg,0x04); // 0x04
-
-	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 15 + tct_wbc);
-	tb.Pg_SetCmd(2, PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-
-	for (int i=0; i<ROC_NUMCOLS; i++) tb.roc_Col_Enable(i, true);
-	tb.roc_Pix_Trim(col, row, 15);
-	tb.roc_Pix_Cal(col, row);
-
-	// --- take data
-	CDtbSource src;
-	CDataRecordScanner raw;
-	CSink<CDataRecord*> data;
-	src >> raw >> data;
-
-	src.OpenRocDig(tb, deserAdjust, false, 50000);
-	src.Enable();
-	for (x = 0; x<=max_caldel; x++)
-	{
-		tb.roc_SetDAC(CalDel, x);
-		tb.uDelay(100);
-		for (k=0; k<10; k++)
-		{
-			tb.Pg_Single();
-			tb.uDelay(5);
-		}
-	}
-	src.Disable();
-
-	tb.roc_Pix_Mask(col, row);
-	tb.roc_ClrCal();
-	
-	// --- analyze data
-	int pos = 0, count;
-	string s;
-	s.reserve(max_caldel+1);
-	try
-	{
-		for (x = 0; x<=max_caldel; x++)
-		{
-			count = 0;
-			for (k=0; k<10; k++) if (data.Get()->GetSize() > 1) count++;
-			if (count == 0) s.push_back('.');
-			else if (count >= 10) s.push_back('*');
-			else s.push_back('0' + count);
-		}
-	} catch (DataPipeException e) { printf("\nERROR CalDelScan\n"); return false; }
-	src.Close();
-
-	unsigned int x1, x2, xdiff, xmean;
-	x1 = s.find("********");
-	if (x1 == string::npos) return false;
-	x2 = x1+1;
-	while (x2 < (s.size()-1) && s[x2] == '*') x2++;
-	xdiff = x2 - x1;
-	xmean = (x1 + x2)/2;
-	
-	Log.section("CALDELSCAN", false);
-	Log.printf("%i %i %u\n%s\n", col, row, xmean, s.c_str());
-	g_chipdata.InitCalDel = xmean;
-	return true;
-}
-
-
-void CalDelScan()
-{ PROFILING
-	int i = 0;
-	while (!CalDelScan(24+2*i,40+i) && i < 4) i++;
 }
 
 
@@ -316,58 +237,16 @@ void CalDelScan()
 #define ERROR_I2C  5
 #define ERROR_I2C0 6 // address 0 works
 
-/*
-0000 I2C data
-0001 I2C address
-0010 I2C pixel column
-0011 I2C pixel row
 
-1000 VD unreg
-1001 VA unreg
-1010 VA reg
-1011 V bandgap
-1100 IA
-
-{ rocaddr[3:0], sana, s[2:0], data[7:0] }
-*/
-
-int GetReadback()
-{ PROFILING
-	int i;
-
-	// --- take data
-	CDtbSource src;
-	CDataRecordScanner raw;
-	CReadBack rdb;
-	CSink<CDataRecord*> pump;
-	src >> raw >> rdb >> pump;
-
-	src.OpenRocDig(tb, deserAdjust, false, 10000);
-	src.Enable();
-	for (i=0; i<32; i++)
-	{
-		tb.Pg_Single();
-		tb.uDelay(10);
-	}
-	src.Disable();
-
-	// read out data
-	try	{ pump.GetAll(); } catch (DataPipeException) {}
-
-	src.Close();
-
-	return rdb.IsUpdated() ? rdb.GetRdbData() : 0;
-}
-
-
-bool Check_Prog(int addr_i2c)
-{ PROFILING
+void check_20_40(int addr_i2c)
+{
 	tb.roc_I2cAddr(addr_i2c);
-	tb.roc_SetDAC(Vcal, 0x0);
-	if ((GetReadback() & 0xff) != 0x00) return false;
-	tb.roc_SetDAC(Vcal, 0x5);
-	if ((GetReadback() & 0xff) != 0x05) return false;
-	return true;
+	tb.roc_SetDAC(CtrlReg, 0x05);
+	tb.cDelay(10);
+	tb.Pg_Single();
+	tb.cDelay(50);
+	tb.roc_SetDAC(CtrlReg, 0x04);
+	tb.cDelay(5);
 }
 
 
@@ -375,13 +254,33 @@ int test_i2c()
 { PROFILING
 	// --- init
 	Log.section("I2C");
-	tb.Pg_SetCmd(0, PG_TOK);
-	tb.roc_SetDAC(255, 0);
-
+	tb.Pg_SetCmd(0, PG_RESR+20);
+	tb.Pg_SetCmd(1, PG_TOK);
+	
 	int i, k;
 	unsigned int mask;
+
+	CDtbSource src;
+	CDataRecordScanner raw;
+	CSink<CDataRecord*> data;
+	src >> raw >> data;
+	src.OpenRocAna(tb, 14, 10, 300, false, 1000);
+	src.Enable();
+
+	// scan adresses
+	for (i=0; i<16; i++)
+	{
+		tb.SetRocAddress(i);
+		tb.cDelay(16000);
+		for (k=0; k<16; k++) check_20_40(k);
+	}
+	tb.SetRocAddress(0);
+	tb.roc_I2cAddr(0);
+	tb.cDelay(10000);
+	src.Disable();
+	tb.Flush();
+
 	unsigned int res[16];
-	int error = 0;
 	for (i=0; i<16; i++) res[i] = 0;
 
 	std::stringstream sslog;
@@ -392,17 +291,22 @@ int test_i2c()
 	for (i=0; i<16; i++)
 	{
 		sslog << std::setw(2) << std::hex << i << ": ";
-		tb.SetRocAddress(i);
-		tb.uDelay(400);
-		for (k=0, mask=1; k<16; k++, mask<<=1)
-			if (Check_Prog(k)) { res[i] |= mask; sslog << "1 "; } else { sslog << ". "; }
+		try
+		{
+			for (k=0, mask=1; k<16; k++, mask<<=1)
+			{
+				CDataRecord *px = data.Get();
+				if (px->GetSize() > 3)
+				{
+					res[i] |= mask;
+					sslog << "1 ";
+				}
+				else sslog << ". ";
+			}
+		} catch (DataPipeException e) {}
 		sslog << std::endl;
 	}
-
-	tb.SetRocAddress(0);
-	tb.roc_I2cAddr(0);
-	tb.cDelay(10000);
-	tb.Flush();
+	
 	Log.puts(sslog.str());
 
 	// check results
@@ -415,63 +319,9 @@ int test_i2c()
 		}
 	}
 	g_chipdata.i2c = 1;
+
 	return 0;
 }
-
-
-// =======================================================================
-//  readback test
-// =======================================================================
-
-
-void test_readback()
-{ PROFILING
-	if ((settings.port_prober >= 0) && (g_chipdata.mapPos != 3)) return;
-
-	tb.Pg_SetCmd(0, PG_TOK);
-
-	tb.roc_SetDAC(0xff, 8);
-	int vdig_u = GetReadback() & 0xff;
-	vdig_u = GetReadback() & 0xff;
-
-	tb.roc_SetDAC(0xff, 9);
-	int vana_u = GetReadback() & 0xff;
-
-	tb.roc_SetDAC(0xff, 10);
-	int vana_r = GetReadback() & 0xff;
-
-	tb.roc_SetDAC(0xff, 11);
-	int vbg = GetReadback() & 0xff;
-
-	tb.roc_SetDAC(0xff, 12);
-	int iana = GetReadback() & 0xff;
-
-	Log.section("READBACK");
-	
-	double vd = tb.GetVD();
-	double va = tb.GetVA();
-	double ia = tb.GetIA()*1000.0;
-		
-	if(vdig_u == 0) return;
-	double cal = vd/vdig_u;
-
-	double vdig_u_V = cal*vdig_u;
-	Log.printf("Vdig_u  %3i  %5.2lf  %5.2lf \n", vdig_u,  vdig_u_V, vd);
-
-    double vana_u_V = cal*vana_u;
-	Log.printf("Vana_u  %3i  %5.2lf  %5.2lf\n",  vana_u,  vana_u_V, va);
-
-	double vana_r_V = cal/2*vana_r;
-	Log.printf("Vana_r  %3i  %5.2lf \n",         vana_r,  vana_r_V);
-
-	double vbg_V = cal/2*vbg;
-	Log.printf("Vbg     %3i  %5.2lf \n",         vbg,     vbg_V);
-
-	double iana_mA = cal*15.0*iana;
-	Log.printf("Iana    %3i  %5.1lf  %5.1lf\n",   iana,    iana_mA,  ia);
-
-}
-
 
 
 // =======================================================================
@@ -509,7 +359,7 @@ void test_current()
 
 	// Iana @ Vana
 	double ia = 0.0;
-	const int dac[VANASTEPS] = { 20, 60, 100, 140, 180 };
+	const int dac[VANASTEPS] = { 64, 96, 128, 160, 192 };
 
 	Log.section("VANA");
 	for (int i=0; i<VANASTEPS; i++)
@@ -538,6 +388,76 @@ void test_current()
 }
 
 
+// =======================================================================
+// calibrate analog decoding
+// =======================================================================
+
+int ub_level;
+int b_level;
+
+void test_calibrate_decoding()
+{ PROFILING
+	// load settings
+	Log.section("CALREADOUT", false);
+
+	InitDAC();
+	tb.roc_Chip_Mask();
+
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_TOK);
+	tb.uDelay(100);
+	tb.Flush();
+
+	CDtbSource src;
+	CDataRecordScanner raw;
+	CSink<CDataRecord*> data;
+	src >> raw >> data;
+
+	src.OpenRocAna(tb, 14, 10, 100, false, 1000);
+	src.Enable();
+
+	// --- scan all pixel ------------------------------------------------------
+	int i;
+	for (i=0; i<30; i++)
+	{
+		tb.Pg_Single();
+		tb.uDelay(10);
+	}
+	src.Disable();
+
+	int ub = 0, b = 0, n = 0;
+	try
+	{
+		for (i=0; i<30; i++)
+		{
+			CDataRecord *ev = data.Get();
+			if (ev->GetSize() >= 2)
+			{
+				ub += CAnalogLevelDecoder::ExpandSign((*ev)[0]);
+				b  += CAnalogLevelDecoder::ExpandSign((*ev)[1]);
+				n++;
+			}
+		}
+	}
+	catch (DataPipeException e)
+	{
+		printf("\nERROR test_calibrate_decoding: %s\n", e.what());
+	}
+
+	if (n>0)
+	{
+		ub_level = ub/n;
+		b_level  = b/n;
+	}
+	else
+	{
+		ub_level = -350;
+		b_level  = 0;
+	}
+
+	Log.printf(" %i %i\n", ub_level, b_level);
+}
+
 
 // =======================================================================
 //  pixel alive test
@@ -553,7 +473,7 @@ void test_pixel()
 	tb.roc_SetDAC(CtrlReg,0x04); // 0x04
 
 	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 15 + tct_wbc);
+	tb.Pg_SetCmd(1, PG_CAL  + 20 + tct_wbc);
 	tb.Pg_SetCmd(2, PG_TRG  + 16);
 	tb.Pg_SetCmd(3, PG_TOK);
 	tb.uDelay(100);
@@ -561,11 +481,13 @@ void test_pixel()
 
 	CDtbSource src;
 	CDataRecordScanner raw;
-	CRocDigDecoder dec;
+	CRocAnaDecoder dec;
+	dec.Calibrate(ub_level, b_level);
+
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocAna(tb, 14, 10, 100, false, 100000);
 	src.Enable();
 
 	// --- scan all pixel ------------------------------------------------------
@@ -755,89 +677,6 @@ void test_pulse_height2()
 	} catch (DataPipeException e) { printf("\nERROR Test Pulse Height 2: %s\n", e.what()); return; }
 
 	g_chipdata.pixmap.pulseHeight2Exist = true;
-}
-
-
-
-// =======================================================================
-//  pulse height scan
-// =======================================================================
-
-
-void test_pulseheight()
-{ PROFILING
-	int col = 10, row = 10;
-	InitDAC();
-	tb.roc_SetDAC(Vcal, VCAL_TEST);
-	tb.roc_SetDAC(CtrlReg,0x04); // 0x04
-
-	if (g_chipdata.pixmap.GetUnmaskedCount(col, row) == 0) col += 2;
-	if (g_chipdata.pixmap.GetUnmaskedCount(col, row) == 0) col += 2;
-	if (g_chipdata.pixmap.GetUnmaskedCount(col, row) == 0) col += 2;
-
-	Log.section("PHSCAN");
-
-	const int vcalmin = 0;
-	const int vcalmax = 140;
-
-	tb.Pg_Stop();
-	tb.Pg_SetCmd(0, PG_RESR + 15);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
-	tb.Pg_SetCmd(2, PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-
-	CDtbSource src;
-	CDataRecordScanner raw;
-	CRocDigDecoder dec;
-	CSink<CRocEvent*> data;
-	src >> raw >> dec >> data;
-
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
-	src.Enable();
-	tb.uDelay(100);
-
-	// --- scan vcal
-	tb.roc_Col_Enable(col, true);
-	tb.roc_Pix_Trim(col, row, 15);
-	tb.roc_Pix_Cal (col, row, false);
-
-	for (int cal = vcalmin; cal < vcalmax; cal++)
-	{
-		tb.roc_SetDAC(Vcal, cal);
-		tb.uDelay(100);
-		for (int k=0; k<5; k++)
-		{
-			tb.Pg_Single();
-			tb.uDelay(20);
-		}
-	}
-
-	tb.roc_Pix_Mask(col, row);
-	tb.roc_Col_Enable(col, false);
-	tb.roc_ClrCal();
-
-	src.Disable();
-
-	// --- plot data
-	try
-	{
-		for (int cal = vcalmin; cal < vcalmax; cal++)
-		{
-			int cnt = 0;
-			double yi = 0.0;
-			for (int k=0; k<5; k++)
-			{
-				CRocEvent *ev = data.Get();
-				if (ev->pixel.size() > 0) { yi += ev->pixel[0].ph; cnt++; }
-			}
-			if (cnt > 0)
-				Log.printf("%3i %5.1f\n", cal, yi/cnt);
-			else
-				Log.printf("%3i\n", cal);
-		}
-	} catch (DataPipeException e) { printf("\nERROR test_pulseheight: %s\n", e.what()); }
-
-	Log.flush();
 }
 
 
@@ -1156,7 +995,7 @@ void test_cleanup(int bin)
 }
 
 
-int test_roc_ana(bool &repeat)
+int test_roc(bool &repeat)
 { PROFILING
 	repeat = false;
 	g_chipdata.InitVana = VANA0;
@@ -1205,32 +1044,27 @@ int test_roc_ana(bool &repeat)
 	tb.roc_I2cAddr(0);
 	tb.SetRocAddress(0);
 
-	test_readback();
-
 	test_current();
 
-	CalDelScan();
-
-	test_pulseheight();
-	test_pulseheight();
-
+	test_calibrate_decoding();
 	test_pixel();
 	unsigned int pixcnt = g_chipdata.pixmap.DefectPixelCount();
 
-	if (pixcnt<=400)
+/*	if (pixcnt<=400)
 	{
 		test_pulse_height1();
 		test_pulse_height2();
 	}
-
+*/
 //	test_DCOLs();
 
-	test_PUCsC(pixcnt<500);
+//	test_PUCsC(pixcnt<500);
 
 	// --- Testresultat auswerten ------------------------------
 
 	Log.section("PIXMAP");
 	g_chipdata.pixmap.Print(Log);
+/*
 	Log.section("PULSE");
 	g_chipdata.pixmap.PrintPulseHeight(Log);
 	g_chipdata.pixmap.PrintPulseHeight1(Log);
@@ -1240,7 +1074,7 @@ int test_roc_ana(bool &repeat)
 	Log.section("PUC2");
 	g_chipdata.pixmap.PrintLevel(3, Log);
 	Log.section("PUC3");
-	g_chipdata.pixmap.PrintLevel(2, Log);
+	g_chipdata.pixmap.PrintLevel(2, Log); */
 //	Log.section("PUC4");
 //	g_chipdata.pixmap.PrintLevel(1, Log);
 //	Log.section("PUC5");
@@ -1356,12 +1190,9 @@ int test_roc_bumpbonder()
 	tb.roc_I2cAddr(0);
 	tb.SetRocAddress(0);
 
-	test_readback();
-
 	test_current();
 
-	CalDelScan();
-
+	test_calibrate_decoding();
 	test_pixel();
 	unsigned int pixcnt = g_chipdata.pixmap.DefectPixelCount();
 

@@ -59,7 +59,7 @@ int CAnalogLevelDecoder::Translate(uint16_t x)
 {
 	int y = ExpandSign(x) - level0;
 	if (y >= 0) y += levelS; else y -= levelS;
-	return y/level1 + 1;
+	return level1 ? y/level1 + 1 : 0;
 }
 
 
@@ -99,6 +99,7 @@ bool CDtbSource::OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDelay
 		tinDelay,  // tin delay 0..63
 		toutDelay); // tout delay 0..63
 	dtb.SignalProbeADC(PROBEA_SDATA1, GAIN_4);
+	dtb.uDelay(800); // to stabilize ADC input signal
 	return true;
 }
 

@@ -1158,7 +1158,7 @@ void test_cleanup(int bin)
 }
 
 
-int test_roc_dig(bool &repeat)
+int test_roc(bool &repeat)
 { PROFILING
 	repeat = false;
 	g_chipdata.InitVana = VANA0;

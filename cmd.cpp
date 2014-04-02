@@ -40,6 +40,8 @@ using namespace std;
 extern const int delayAdjust =  4; //  4    0    19    5       16
 extern const int deserAdjust =  4; //  4    4     5    6        5
 
+bool testRocAna = false;
+
 
 // =======================================================================
 //  connection, communication, startup commands
@@ -2896,6 +2898,18 @@ int chipPos = 0;
 
 char chipPosChar[] = "ABCD";
 
+CMD_PROC(roctype)
+{
+	char s[256];
+	PAR_STRING(s,250);
+
+	if (strcmp(s, "ana") == 0) testRocAna = true;
+	else if (strcmp(s, "dig") == 0) testRocAna = false;
+	else printf("choose ana or dig\n");
+	
+	return true;
+}
+
 
 void GetTimeStamp(char datetime[])
 {
@@ -3016,7 +3030,7 @@ bool test_wafer()
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin = TestRocDig::test_roc_dig(repeat);
+	int bin = testRocAna ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 	GetTimeStamp(g_chipdata.endTime);
@@ -3048,7 +3062,7 @@ bool test_chip(char chipid[])
 
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin = TestRocDig::test_roc_dig(repeat);
+	int bin = testRocAna ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 
@@ -3176,7 +3190,7 @@ bool go_TestDefects()
 		GetTimeStamp(g_chipdata.startTime);
 		Log.timestamp("BEGIN");
 		bool repeat;
-		int bin = TestRocDig::test_roc_dig(repeat);
+	int bin = testRocAna ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
 		GetTimeStamp(g_chipdata.endTime);
 		Log.timestamp("END");
 		Log.puts("\n");
@@ -3209,7 +3223,7 @@ bool TestSingleChip(int &bin, bool &repeat)
 	GetTimeStamp(g_chipdata.startTime);
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
-	bin = TestRocDig::test_roc_dig(repeat);
+	bin = testRocAna ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 
@@ -3560,6 +3574,8 @@ void cmd()
 
 
 	// --- chip test command ---------------------------------------------
+	CMD_REG(roctype,  "roctype ana|dig               choose ROC type for test");
+
 	if (settings.port_prober >= 0)
 	CMD_REG(test,     "test                          run chip test");
 	else
