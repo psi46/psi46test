@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 	strncpy(filename, argv[1], sizeof(filename));
 
 	// --- load settings ----------------------------------
-	if (!settings.read("psi46test.ini"))
+	if (!settings.Read("psi46test.ini"))
 	{
 		printf("error reading \"psi46test.ini\"\n");
 		return 2;
@@ -100,17 +100,16 @@ int main(int argc, char* argv[])
 		else
 		{
 			printf("USB error: %s\n", tb.ConnectionError());
-			printf("ATB: could not open port to device %s\n", settings.port_tb);
 			printf("Connect testboard and try command 'scan' to find connected devices.\n");
 			printf("Make sure you have permission to access USB devices.\n");
 		}
 
 		// --- open prober ------------------------------------
-		if (settings.port_prober>=0)
-			if (!prober.open(settings.port_prober))
+		if (settings.proberPort>=0)
+			if (!prober.open(settings.proberPort))
 			{
 				printf("Prober: could not open port %i\n",
-					settings.port_prober);
+					settings.proberPort);
 				Log.puts("Prober: could not open port\n");
 				return 4;
 			}

@@ -93,6 +93,9 @@
     <ClCompile Include="test_ana.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
+    <ClCompile Include="file.cpp">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="command.h">
@@ -180,6 +183,9 @@
       <Filter>Header-Dateien</Filter>
     </ClInclude>
     <ClInclude Include="config.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="file.h">
       <Filter>Header-Dateien</Filter>
     </ClInclude>
   </ItemGroup>

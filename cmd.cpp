@@ -27,20 +27,7 @@
 
 using namespace std;
 
-
-#ifndef _WIN32
-#define _int64 long long
-#endif
-
 #define DO_FLUSH  if (par.isInteractive()) tb.Flush();
-
-#define FIFOSIZE 8192
-
-//                   cable length:     5   48  prober 450 cm  bump bonder
-extern const int delayAdjust =  4; //  4    0    19    5       16
-extern const int deserAdjust =  4; //  4    4     5    6        5
-
-bool testRocAna = false;
 
 
 // =======================================================================
@@ -1229,7 +1216,7 @@ CMD_PROC(takedata2)
 
 	clock_t t = clock();
 	unsigned long memsize = tb.Daq_Open(60000000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 	tb.Daq_Start();
 	clock_t t_start = clock();
 	while (!keypressed())
@@ -2111,7 +2098,7 @@ CMD_PROC(analyze)
 //	src >> rec >> decoder >> pump;
 	src >> srcdump >> rec >> rawList >> decoder >> evList >> pump;
 
-	src.OpenRocDig(tb, deserAdjust, true, 20000000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, true, 20000000);
 //	src.OpenSimulator(tb, true, 1000000);
 	src.Enable();
 	tb.uDelay(100);
@@ -2196,7 +2183,7 @@ CMD_PROC(adcsingle)
 	src >> rec >> dec >> print >> pump;
 
 	tb.Daq_Open(1000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 	tb.Daq_Start();
 	tb.uDelay(10);
 
@@ -2244,7 +2231,7 @@ CMD_PROC(adcpeak)
 	tb.Flush();
 
 	tb.Daq_Open(2000000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 
 	tb.Daq_Start();
 	tb.uDelay(10);
@@ -2308,7 +2295,7 @@ CMD_PROC(adchisto)
 	tb.Flush();
 
 	tb.Daq_Open(1000000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 
 	tb.Daq_Start();
 	tb.uDelay(10);
@@ -2434,7 +2421,7 @@ CMD_PROC(adctransfer)
 	tb.Flush();
 
 	tb.Daq_Open(1000000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 
 	tb.Daq_Start();
 	tb.uDelay(10);
@@ -2537,7 +2524,7 @@ CMD_PROC(adctest)
 	tb.Flush();
 
 	tb.Daq_Open(100000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 
 	// single pixel readout
 	try
@@ -2651,7 +2638,7 @@ CMD_PROC(shmoo)
 		vx, xmin, xmax, vy, ymin, ymax);
 
 	tb.Daq_Open(50000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 
 	PrintScale(xmin, xmax);
 	for (int y=ymin; y<=ymax; y++)
@@ -2691,7 +2678,7 @@ CMD_PROC(phscan)
 	tb.roc_SetDAC(WBC,  15);
 
 	tb.Daq_Open(50000);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 	tb.Daq_Start();
 
 	// --- scan vcal
@@ -2785,7 +2772,7 @@ CMD_PROC(deser160)
 					printf(" <%03X>", int(data[0] & 0xffc));
 				else
 					printf("  %03X ", int(data[0] & 0xffc));
-				
+
 				if (data.size()<10)
 					printf("[%u]", (unsigned int)(data.size()));
 				else
@@ -2824,7 +2811,7 @@ CMD_PROC(readback)
 	tb.Daq_Open(100);
 	tb.Pg_Stop();
 	tb.Pg_SetCmd(0, PG_TOK);
-	tb.Daq_Select_Deser160(deserAdjust);
+	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
 
 	// --- take data
 	tb.Daq_Start();
@@ -2903,10 +2890,10 @@ CMD_PROC(roctype)
 	char s[256];
 	PAR_STRING(s,250);
 
-	if (strcmp(s, "ana") == 0) testRocAna = true;
-	else if (strcmp(s, "dig") == 0) testRocAna = false;
+	if (strcmp(s, "ana") == 0) settings.rocType = 0;
+	else if (strcmp(s, "dig") == 0) settings.rocType = 1;
 	else printf("choose ana or dig\n");
-	
+
 	return true;
 }
 
@@ -3030,7 +3017,7 @@ bool test_wafer()
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin = testRocAna ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+	int bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 	GetTimeStamp(g_chipdata.endTime);
@@ -3062,7 +3049,7 @@ bool test_chip(char chipid[])
 
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin = testRocAna ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+	int bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 
@@ -3080,7 +3067,7 @@ bool test_chip(char chipid[])
 CMD_PROC(test)
 {
 
-	if (settings.port_prober >= 0)
+	if (settings.proberPort >= 0)
 	{
 		test_wafer();
 	}
@@ -3190,7 +3177,7 @@ bool go_TestDefects()
 		GetTimeStamp(g_chipdata.startTime);
 		Log.timestamp("BEGIN");
 		bool repeat;
-	int bin = testRocAna ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+		int bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
 		GetTimeStamp(g_chipdata.endTime);
 		Log.timestamp("END");
 		Log.puts("\n");
@@ -3223,7 +3210,7 @@ bool TestSingleChip(int &bin, bool &repeat)
 	GetTimeStamp(g_chipdata.startTime);
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
-	bin = testRocAna ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+	bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 
@@ -3390,7 +3377,7 @@ CMD_PROC(goto)
 
 void cmdHelp()
 {
-	if (settings.port_prober >= 0)
+	if (settings.proberPort >= 0)
 	{
 	 fputs("\n"
 	 "+-- control commands ------------------------------------------+\n"
@@ -3576,12 +3563,12 @@ void cmd()
 	// --- chip test command ---------------------------------------------
 	CMD_REG(roctype,  "roctype ana|dig               choose ROC type for test");
 
-	if (settings.port_prober >= 0)
+	if (settings.proberPort >= 0)
 	CMD_REG(test,     "test                          run chip test");
 	else
 	CMD_REG(test,     "test <chip id>                run chip test");
 
-	if (settings.port_prober >= 0)
+	if (settings.proberPort >= 0)
 	{
 	// --- prober commands -----------------------------------------------
 	CMD_REG(go,       "go init|cont                  start wafer test (press <cr> to stop)");
@@ -3598,7 +3585,7 @@ void cmd()
 
 	cmdHelp();
 
-	cmd_intp.SetScriptPath(settings.path);
+	cmd_intp.SetScriptPath(settings.scriptPath.c_str());
 
 	// command loop
 	while (true)

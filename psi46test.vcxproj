@@ -164,6 +164,7 @@
     <ClCompile Include="datastream.cpp" />
     <ClCompile Include="defectlist.cpp" />
     <ClCompile Include="error.cpp" />
+    <ClCompile Include="file.cpp" />
     <ClCompile Include="histo.cpp" />
     <ClCompile Include="pipe.cpp" />
     <ClCompile Include="pixelmap.cpp" />
@@ -196,6 +197,7 @@
     <ClInclude Include="datastream.h" />
     <ClInclude Include="defectlist.h" />
     <ClInclude Include="error.h" />
+    <ClInclude Include="file.h" />
     <ClInclude Include="htable.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="pixelmap.h" />

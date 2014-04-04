@@ -177,7 +177,7 @@ int test_startup(bool probecard)
 		Log.section("VAOUT", false);
 		Log.printf("%5.3f\n", g_chipdata.probecard.v_aout);
 	}
-	
+
 	return 0;
 }
 
@@ -197,7 +197,7 @@ int test_tout()
 	tb.roc_SetDAC( CtrlReg, 0x04);
 	tb.Pg_SetCmd(0, PG_RESR + 20);
 	tb.Pg_SetCmd(1, PG_TOK);
-	
+
 	unsigned int cnt;
 
 	CDtbSource src;
@@ -256,7 +256,7 @@ int test_i2c()
 	Log.section("I2C");
 	tb.Pg_SetCmd(0, PG_RESR+20);
 	tb.Pg_SetCmd(1, PG_TOK);
-	
+
 	int i, k;
 	unsigned int mask;
 
@@ -306,7 +306,7 @@ int test_i2c()
 		} catch (DataPipeException e) {}
 		sslog << std::endl;
 	}
-	
+
 	Log.puts(sslog.str());
 
 	// check results
@@ -577,9 +577,9 @@ void test_pulse_height1()
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	src.Enable();
-	
+
 	int col, row;
 
 	// scan data
@@ -640,7 +640,7 @@ void test_pulse_height2()
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	src.Enable();
 
 	int col, row;
@@ -793,7 +793,7 @@ int test_PUCs(bool forceDefTest = false)
 	CRocDigDecoder dec;
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
-	src.OpenRocDig(tb, deserAdjust, false, 10000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 10000);
 
 	InitDAC();
 	tb.roc_SetDAC(Vcal, settings.sensor ? VCAL_LEVEL_SENSOR : VCAL_LEVEL);
@@ -858,7 +858,7 @@ int GetPixelC(unsigned int x)
 	{
 		int res = PixelFired(data, pos);
 		if (res > 0) n++;
-		else if (res < 0) return res; 
+		else if (res < 0) return res;
 	}
 
 	return (n > count/2) ? 1 : 0;
@@ -958,7 +958,7 @@ int test_PUCsC(bool forceDefTest = false)
 
 	CDtbSource src;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	InitDAC();
 	tb.roc_SetDAC(VthrComp, 40); // 20
 	tb.roc_SetDAC(CtrlReg,0x00); // 0x04

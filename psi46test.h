@@ -37,10 +37,6 @@ extern CProtocol Log;  // log file
 
 extern CChip g_chipdata;
 
-extern const int delayAdjust;
-extern const int deserAdjust;
-
-
 void cmd();
 
 

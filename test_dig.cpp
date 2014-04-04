@@ -98,10 +98,10 @@ void InitChip()
 
 void SetMHz(int MHz = 0)
 { PROFILING
-	tb.Sig_SetDelay(SIG_CLK,  delayAdjust);
-	tb.Sig_SetDelay(SIG_SDA,  delayAdjust+15);
-	tb.Sig_SetDelay(SIG_CTR,  delayAdjust);
-	tb.Sig_SetDelay(SIG_TIN,  delayAdjust+5);
+	tb.Sig_SetDelay(SIG_CLK,  settings.deser160_clkDelay);
+	tb.Sig_SetDelay(SIG_SDA,  settings.deser160_clkDelay+15);
+	tb.Sig_SetDelay(SIG_CTR,  settings.deser160_clkDelay);
+	tb.Sig_SetDelay(SIG_TIN,  settings.deser160_clkDelay+5);
 	tb.Flush();
 
 	tct_wbc = 5;
@@ -175,7 +175,7 @@ int test_startup(bool probecard)
 		Log.section("VAOUT", false);
 		Log.printf("%5.3f\n", g_chipdata.probecard.v_aout);
 	}
-	
+
 	return 0;
 }
 
@@ -195,14 +195,14 @@ int test_tout()
 	tb.roc_SetDAC( CtrlReg, 0x04);
 	tb.Pg_SetCmd(0, PG_RESR + 20);
 	tb.Pg_SetCmd(1, PG_TOK);
-	
+
 	unsigned int cnt;
 
 	CDtbSource src;
 	CDataRecordScanner raw;
 	CSink<CDataRecord*> data;
 	src >> raw >> data;
-	src.OpenRocDig(tb, deserAdjust, false, 1000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000);
 
 	try
 	{
@@ -255,7 +255,7 @@ bool CalDelScan(int col, int row)
 	CSink<CDataRecord*> data;
 	src >> raw >> data;
 
-	src.OpenRocDig(tb, deserAdjust, false, 50000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 50000);
 	src.Enable();
 	for (x = 0; x<=max_caldel; x++)
 	{
@@ -271,7 +271,7 @@ bool CalDelScan(int col, int row)
 
 	tb.roc_Pix_Mask(col, row);
 	tb.roc_ClrCal();
-	
+
 	// --- analyze data
 	int pos = 0, count;
 	string s;
@@ -296,7 +296,7 @@ bool CalDelScan(int col, int row)
 	while (x2 < (s.size()-1) && s[x2] == '*') x2++;
 	xdiff = x2 - x1;
 	xmean = (x1 + x2)/2;
-	
+
 	Log.section("CALDELSCAN", false);
 	Log.printf("%i %i %u\n%s\n", col, row, xmean, s.c_str());
 	g_chipdata.InitCalDel = xmean;
@@ -344,7 +344,7 @@ int GetReadback()
 	CSink<CDataRecord*> pump;
 	src >> raw >> rdb >> pump;
 
-	src.OpenRocDig(tb, deserAdjust, false, 10000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 10000);
 	src.Enable();
 	for (i=0; i<32; i++)
 	{
@@ -428,7 +428,7 @@ int test_i2c()
 
 void test_readback()
 { PROFILING
-	if ((settings.port_prober >= 0) && (g_chipdata.mapPos != 3)) return;
+	if ((settings.proberPort >= 0) && (g_chipdata.mapPos != 3)) return;
 
 	tb.Pg_SetCmd(0, PG_TOK);
 
@@ -449,11 +449,11 @@ void test_readback()
 	int iana = GetReadback() & 0xff;
 
 	Log.section("READBACK");
-	
+
 	double vd = tb.GetVD();
 	double va = tb.GetVA();
 	double ia = tb.GetIA()*1000.0;
-		
+
 	if(vdig_u == 0) return;
 	double cal = vd/vdig_u;
 
@@ -567,7 +567,7 @@ void test_pixel()
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	src.Enable();
 
 	// --- scan all pixel ------------------------------------------------------
@@ -657,9 +657,9 @@ void test_pulse_height1()
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	src.Enable();
-	
+
 	int col, row;
 
 	// scan data
@@ -720,7 +720,7 @@ void test_pulse_height2()
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	src.Enable();
 
 	int col, row;
@@ -794,7 +794,7 @@ void test_pulseheight()
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	src.Enable();
 	tb.uDelay(100);
 
@@ -956,7 +956,7 @@ int test_PUCs(bool forceDefTest = false)
 	CRocDigDecoder dec;
 	CSink<CRocEvent*> data;
 	src >> raw >> dec >> data;
-	src.OpenRocDig(tb, deserAdjust, false, 10000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 10000);
 
 	InitDAC();
 	tb.roc_SetDAC(Vcal, settings.sensor ? VCAL_LEVEL_SENSOR : VCAL_LEVEL);
@@ -1021,7 +1021,7 @@ int GetPixelC(unsigned int x)
 	{
 		int res = PixelFired(data, pos);
 		if (res > 0) n++;
-		else if (res < 0) return res; 
+		else if (res < 0) return res;
 	}
 
 	return (n > count/2) ? 1 : 0;
@@ -1121,7 +1121,7 @@ int test_PUCsC(bool forceDefTest = false)
 
 	CDtbSource src;
 
-	src.OpenRocDig(tb, deserAdjust, false, 100000);
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	InitDAC();
 	tb.roc_SetDAC(VthrComp, 40); // 20
 	tb.roc_SetDAC(CtrlReg,0x00); // 0x04

@@ -4,34 +4,50 @@
 #define SETTINGS_H
 
 #include <stdio.h>
+#include <string>
 #include "config.h"
+#include "file.h"
 
 
 #define NUMSETTING 3
 
 class CSettings
 {
-	FILE *f;
-	bool read_int(int &value, int min, int max);
-	bool read_string(char string[], int size);
+	CFileBuffer f;
+	static bool IsNumber(char ch) { return '0' <= ch && ch <= '9'; }
+	static bool IsAlpha(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (ch == '_'); }
+	static bool IsAlphaNum(char ch) { return IsAlpha(ch) || IsNumber(ch); }
+	static bool IsWhitespace(char ch) { return (ch == ' ') || (ch == '\t') || (ch == '\n') || (ch == '\r'); }
+	void CSettings::SkipWhitespace();
+	void SkipComment();
+	void SkipToTag();
+	void ReadTag(std::string &tag);
+
+	bool ReadBool();
+	int  ReadInt(int min, int max);
+	void ReadString(std::string &s);
 public:
-	bool read(const char filename[]);
+	CSettings();
+	bool Read(const char filename[]);
 
 // --- data --------------------------------------------------------------
-	char port_tb[20];   // default USB serial number testboard
-	char path[256];     // command path
-	int  port_prober;	// prober serial port nr (-1 = no prober)
-//	int  tct_wbc;		// tct - wbc offset
-	int  sensor; 		// sensor mounted
-	int  clock;         // clock frequency im MHz
-	int  errorRep;      // # test rep if defect chip
-	int  l1_bl_shift;   // level 1 - black level correction
+	int  dtbId;             // force to open special board (-1 = any connected board)
+	std::string scriptPath; // script path
 
-	int vcomp;
-	int vhlddel;
-	int vthr;
-	int caldel;
-	int vcal;
+	int  proberPort;	    // prober serial port nr (-1 = no prober)
+
+	int rocType;            // 0 = analog ROC, 1 = digital ROC
+	bool sensor; 		    // sensor mounted
+
+	// cable length:           5   48  prober 450 cm  bump bonder
+	int deser160_clkDelay;  //  4    0    19    5       16
+	int deser160_tinDelay;  //  4    4     5    6        5
+
+	int adc_tinDelay;
+	int adc_toutDelay;
+	int cableLength;        // adapter cable length in mm
+
+	int  errorRep;          // # test rep if defect chip
 };
 
 
