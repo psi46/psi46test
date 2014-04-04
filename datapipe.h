@@ -8,6 +8,12 @@
 
 // === data pipe error ======================================================
 
+// error class generator
+#define DATAPIPE_ERROR(name, message) \
+class name : public DataPipeException \
+{ public: name() : DataPipeException(message) {}; };
+
+// base class for all data pipe errors
 class DataPipeException : public std::runtime_error
 {
 public:
@@ -15,12 +21,7 @@ public:
 };
 
 
-class DP_not_connected : public DataPipeException
-{
-public:
-	DP_not_connected() : DataPipeException("Not connected") {};
-};
-
+DATAPIPE_ERROR(DP_not_connected, "Not connected")
 
 
 // === data source ==========================================================

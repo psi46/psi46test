@@ -18,24 +18,9 @@ using namespace std;
 
 // === Error Messages =======================================================
 
-
-class DS_no_dtb_access : public DataPipeException
-{
-public:
-	DS_no_dtb_access() : DataPipeException("No DTB connection") {};
-};
-
-class DS_buffer_overflow : public DataPipeException
-{
-public:
-	DS_buffer_overflow() : DataPipeException("Buffer overflow") {};
-};
-
-class DS_empty : public DataPipeException
-{
-public:
-	DS_empty() : DataPipeException("Buffer empty") {};
-};
+DATAPIPE_ERROR(DS_no_dtb_access, "No DTB connection")
+DATAPIPE_ERROR(DS_buffer_overflow, "Buffer overflow")
+DATAPIPE_ERROR(DS_empty, "Buffer empty")
 
 
 // === Binary Data Record Format ============================================
@@ -77,7 +62,7 @@ public:
 	void Calibrate(int ublackLevel, int blackLevel);
 	static int ExpandSign(uint16_t x) { return (x & 0x0800) ? int(x) - 4096 : int(x); }
 	int Translate(uint16_t x);
-	int CorrectOffset(uint16_t x) { return Translate(x) - level0; }
+	int CorrectOffset(uint16_t x) { return ExpandSign(x) - level0; }
 };
 
 
@@ -185,7 +170,7 @@ public:
 
 // === CStreamDump (uint16_t, uint16_t) ==============
 
-class CStreamDump : public CDataPipe<uint16_t,uint16_t>
+class CStreamDump : public CDataPipe<uint16_t>
 {
 	FILE *f;
 	int row;
@@ -200,7 +185,7 @@ public:
 
 // === CStreamErrorDump (uint16_t, uint16_t) ==============
 
-class CStreamErrorDump : public CDataPipe<uint16_t,uint16_t>
+class CStreamErrorDump : public CDataPipe<uint16_t>
 {
 	FILE *f;	
 	bool good;
@@ -248,7 +233,7 @@ public:
 
 // === CLevelHistogram (CDataRecord*, CDataRecord*) ==============
 
-class CLevelHistogram : public CDataPipe<CDataRecord*, CDataRecord*>
+class CLevelHistogram : public CDataPipe<CDataRecord*>
 {
 	CHistogram h;
 	CDataRecord* x;
@@ -263,7 +248,7 @@ public:
 
 // === CReadBack (CDataRecord*, CDataRecord*) ====================
 
-class CReadBack : public CDataPipe<CDataRecord*, CDataRecord*>
+class CReadBack : public CDataPipe<CDataRecord*>
 {
 	unsigned int count;
 	unsigned int shiftReg;
