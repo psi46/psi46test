@@ -8,6 +8,34 @@
 #include <iostream>
 #endif
 
+
+bool CTestboard::RpcLink(bool verbose)
+{
+	bool error = false;
+	for (unsigned short i = 2; i < rpc_cmdListSize; i++)
+	{
+		try
+		{
+			rpc_GetCallId(i);
+		}
+		catch (CRpcError &e)
+		{
+			e.SetFunction(0);
+			if (verbose)
+			{
+				if (!error) printf("\nMissing DTB functions:\n");
+				std::string fname(rpc_cmdName[i]);
+				std::string fname_pretty;
+				rpc_TranslateCallName(fname, fname_pretty);
+				printf("%s\n", fname_pretty.c_str());
+			}
+			error = true;
+		}
+	}
+	return !error;
+}
+
+
 bool CTestboard::EnumNext(string &name)
 {
 	char s[64];

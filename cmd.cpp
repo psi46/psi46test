@@ -130,6 +130,14 @@ CMD_PROC(close)
 	return true;
 }
 
+
+CMD_PROC(rpclink)
+{
+	if (tb.RpcLink()) printf("ok\n");
+	return true;
+}
+
+
 CMD_PROC(welcome)
 {
 	tb.Welcome();
@@ -3424,6 +3432,7 @@ void cmd()
 	CMD_REG(scan,     "scan                          enumerate USB devices");
 	CMD_REG(open,     "open <name>                   open connection to testboard");
 	CMD_REG(close,    "close                         close connection to testboard");
+	CMD_REG(rpclink,  "rpclink                       checks and links all RPCs");
 	CMD_REG(welcome,  "welcome                       blinks with LEDs");
 	CMD_REG(setled,   "setled                        set atb LEDs"); //give 0-15 as parameter for four LEDs
 	CMD_REG(log,      "log <text>                    writes text to log file");

@@ -91,6 +91,8 @@ public:
 	RPC_EXPORT int32_t GetRpcCallCount();
 	RPC_EXPORT bool    GetRpcCallName(int32_t id, stringR &callName);
 
+	bool RpcLink(bool verbose = true);
+
 	// === DTB connection ====================================================
 
 	bool EnumFirst(unsigned int &nDevices) { return usb.EnumFirst(nDevices); };
@@ -292,8 +294,6 @@ public:
 	RPC_EXPORT void Pg_Single();
 	RPC_EXPORT void Pg_Trigger();
 	RPC_EXPORT void Pg_Loop(uint16_t period);
-
-	RPC_EXPORT uint16_t GetUser1Version();
 
 
 	// --- data aquisition --------------------------------------------------
