@@ -18,7 +18,7 @@ class CSettings
 	static bool IsAlpha(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (ch == '_'); }
 	static bool IsAlphaNum(char ch) { return IsAlpha(ch) || IsNumber(ch); }
 	static bool IsWhitespace(char ch) { return (ch == ' ') || (ch == '\t') || (ch == '\n') || (ch == '\r'); }
-	void CSettings::SkipWhitespace();
+	void SkipWhitespace();
 	void SkipComment();
 	void SkipToTag();
 	void ReadTag(std::string &tag);
