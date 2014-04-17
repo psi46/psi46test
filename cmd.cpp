@@ -1988,6 +1988,39 @@ CMD_PROC(mask)
 // =======================================================================
 
 
+CMD_PROC(daqtest)
+{
+	// setup pg data sequence (0, 1, 2, ... 99)
+	tb.Pg_SetCmd(0, PG_RESR + 4);
+	for (int i=1; i<100; i++) tb.Pg_SetCmd(i, PG_TOK + 4);
+	tb.Pg_SetCmd(100, PG_TOK);
+
+	do
+	{
+		// create data
+		tb.Daq_Open(500000, 0);
+		tb.Daq_Select_Datagenerator(0);
+		tb.Daq_Start(0);
+		for (int i=0; i<1000; i++) tb.Pg_Single();
+		tb.Daq_Stop(0);
+
+		try
+		{
+			uint32_t n;
+			vector<uint16_t> data;
+			do
+			{
+				tb.Daq_Read(data, 32768, n, 0);
+			} while (n != 0);
+		}
+		catch (DataPipeException e) { printf("\nERROR: %s\n", e.what()); return false; }
+	} while (!keypressed());
+
+	tb.Daq_Close(0);
+	return true;
+}
+
+
 class CDemoAnalyzer : public CAnalyzer
 {
 	CRocEvent* Read();
@@ -2110,7 +2143,7 @@ CMD_PROC(analyze)
 //	src.OpenSimulator(tb, true, 1000000);
 	src.Enable();
 	tb.uDelay(100);
-	tb.Pg_Loop(20000);
+	tb.Pg_Loop(2500);
 //	printf("waiting...\n"); tb.mDelay(30000);
 
 	/*	tb.Pg_Single(); tb.uDelay(100);
@@ -2581,15 +2614,14 @@ void PrintScale(int min, int max)
 	Log.puts("\n");
 }
 
-/*
-void Scan1D(int vx, int xmin, int xmax)
+
+void Scan1D(CDtbSource &src, CSink<CRocEvent*> &data, int vx, int xmin, int xmax, int xstep)
 {
 	int x, k;
-	vector<uint16_t> data;
 
 	// --- take data
-	tb.Daq_Start();
-	for (x = xmin; x<=xmax; x++)
+	src.Enable();
+	for (x = xmin; x<=xmax; x)
 	{
 		tb.roc_SetDAC(vx, x);
 		tb.uDelay(100);
@@ -2599,14 +2631,12 @@ void Scan1D(int vx, int xmin, int xmax)
 			tb.uDelay(5);
 		}
 	}
-	tb.Daq_Stop();
-	tb.Daq_Read(data, 10000);
+	src.Disable();
 
 	// --- analyze data
-	int pos = 0, count;
+	int count;
 	int spos = 0;
 	char s[260];
-	PixelReadoutData pix;
 
 	try
 	{
@@ -2615,14 +2645,14 @@ void Scan1D(int vx, int xmin, int xmax)
 			count = 0;
 			for (k=0; k<10; k++)
 			{
-				DecodePixel(data, pos, pix);
-				if (pix.n > 0) count++;
+				CRocEvent *ev = data.Get();
+				if (ev->pixel.size() != 0) count++;
 			}
 			if (count == 0) s[spos++] = '.';
 			else if (count >= 10) s[spos++] = '*';
 			else s[spos++] = count + '0';
 		}
-	} catch (int) {}
+	} catch (DataPipeException e) { printf("\nERROR Scan1D: %s\n", e.what()); return; }
 	s[spos] = 0;
 	Log.printf("%s\n", s);
 	Log.flush();
@@ -2645,8 +2675,12 @@ CMD_PROC(shmoo)
 	Log.printf("regX(%i)=%i:%i;  regY(%i)=%i:%i\n",
 		vx, xmin, xmax, vy, ymin, ymax);
 
-	tb.Daq_Open(50000);
-	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
+	CDtbSource src;
+	CDataRecordScanner raw;
+	CRocDigDecoder dec;
+	CSink<CRocEvent*> data;
+	src >> raw >> dec >> data;
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 8000000);
 
 	PrintScale(xmin, xmax);
 	for (int y=ymin; y<=ymax; y++)
@@ -2654,14 +2688,14 @@ CMD_PROC(shmoo)
 		tb.roc_SetDAC(vy,y);
 		tb.uDelay(100);
 		Log.printf("%5i|", y);
-		Scan1D(vx, xmin, xmax);
+		Scan1D(src, data, vx, xmin, xmax, 1);
 	}
 
 	tb.Daq_Close();
 
 	return true;
 }
-*/
+
 
 
 /*
@@ -3552,6 +3586,7 @@ void cmd()
 	CMD_REG(tbmset,   "tbmset <reg> <value>          set TBM register");
 
 	// --- experimental commands --------------------------------------------
+	CMD_REG(daqtest,  "daqtest");
 	CMD_REG(adcsingle,"adcsingle                     ADC problem test 3");
 	CMD_REG(adchisto, "adchisto                      ADC problem test 1");
 	CMD_REG(adcpeak,  "adcpeak                       ADC problem test 2");
@@ -3563,7 +3598,7 @@ void cmd()
 	CMD_REG(adctest,  "adctest                       check ADC pulse height readout");
 	CMD_REG(ethsend,  "ethsend <string>              send <string> in a Ethernet packet");
 	CMD_REG(ethrx,    "ethrx                         shows number of received packets");
-//	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");
+	CMD_REG(shmoo,    "shmoo vx xrange vy ymin yrange");
 //	CMD_REG(phscan,   "phscan                        ROC pulse height scan");
 //	CMD_REG(readback, "readback                      read out ROC data");
 	CMD_REG(deser160, "deser160                      allign deser160");
