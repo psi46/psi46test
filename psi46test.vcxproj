@@ -159,6 +159,9 @@
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">All</AssemblerOutput>
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>
     </ClCompile>
+    <ClCompile Include="cmd_analyzer.cpp" />
+    <ClCompile Include="cmd_dtb.cpp" />
+    <ClCompile Include="cmd_wafertest.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="command.cpp" />
     <ClCompile Include="datastream.cpp" />
@@ -190,6 +193,10 @@
   <ItemGroup>
     <ClInclude Include="chipdatabase.h" />
     <ClInclude Include="CImg.h" />
+    <ClInclude Include="cmd.h" />
+    <ClInclude Include="cmd_analyzer.h" />
+    <ClInclude Include="cmd_dtb.h" />
+    <ClInclude Include="cmd_wafertest.h" />
     <ClInclude Include="color.h" />
     <ClInclude Include="command.h" />
     <ClInclude Include="config.h" />

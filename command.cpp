@@ -3,6 +3,7 @@
 #include "command.h"
 
 #include <stdio.h>
+#include <string>
 
 #ifdef _WIN32
 #include <conio.h>
@@ -300,9 +301,13 @@ void CInterpreter::help()
 	printf(" exit         exit commander\n");
 	
 	CCommand* p = cmdList.GetFirst();
+
 	while(p)
 	{
-		printf(" %s\n", p->m_help);
+		std::string s = p->m_name;
+		s += " ";
+		s += p->m_parameter;
+		printf(" %-30s %s\n", s.c_str() , p->m_help);
 		p = cmdList.GetNext();
 	}
 }
@@ -314,9 +319,11 @@ void CInterpreter::SetScriptPath(const char path[])
 }
 
 
-void CInterpreter::AddCommand(const char name[], CMDFUNCTION f, const char help[])
+void CInterpreter::AddCommand(const char name[], CMDFUNCTION f, const char parameter[], const char help[])
 {
 	CCommand c;
+	c.m_name = name;
+	c.m_parameter = parameter;
 	c.m_help = help;
 	c.m_exec = f;
 	cmdList.Add(name, c);

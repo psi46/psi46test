@@ -63,6 +63,8 @@ typedef bool(*CMDFUNCTION)(CCmdLine &);
 
 class CCommand
 {
+	const char *m_name;
+	const char *m_parameter;
 	const char *m_help;
 	CMDFUNCTION m_exec;
 public:
@@ -80,7 +82,7 @@ public:
 	CInterpreter();
 	~CInterpreter() {};
 	void SetScriptPath(const char path[]);
-	void AddCommand(const char name[], CMDFUNCTION f, const char help[]);
+	void AddCommand(const char name[], CMDFUNCTION f, const char parameter[], const char help[]);
 	bool run(FILE *f, int iter = 0);
 };
 
@@ -90,7 +92,9 @@ bool cmd_not_implemented(CCmdLine &par);
 extern CInterpreter cmd_intp;
 
 #define CMD_PROC(name) bool cmd_##name(CCmdLine &par)
-#define CMD_REG(name, help) cmd_intp.AddCommand(#name, cmd_##name, help)
+#define CMD_REG(name,parameter,helptext) bool cmd_##name(CCmdLine &par);
+// #define CMD_REGx(name, help) cmd_intp.AddCommand(#name, cmd_##name, help);
+
 #define CMD_NUL(name, help) cmd_intp.AddCommand(#name, cmd_not_implemented, help)
 #define CMD_RUN(file) cmd_intp.run(file);
 #define PAR_INT(var,min,max) if (!par.getInt(var,(min),(max))) \
