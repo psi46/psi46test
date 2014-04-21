@@ -834,13 +834,61 @@ CMD_PROC(dstop)
 	return true;
 }
 
-
 CMD_PROC(dsize)
 {
 	int channel;
 	if (!PAR_IS_INT(channel, 0, 7)) channel = 0;
 	unsigned int size = tb.Daq_GetSize(channel);
 	printf("size = %u\n", size);
+	return true;
+}
+CMD_PROC(dselmod)
+{
+	tb.Daq_Select_Deser400();
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(dmodres)
+{
+	int reset;
+	if (!PAR_IS_INT(reset, 0, 3)) reset = 3;
+	tb.Daq_Deser400_Reset(reset);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(dselroc)
+{
+	int shift;
+	PAR_INT(shift,0,7);
+	tb.Daq_Select_Deser160(shift);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(dselroca)
+{
+	int datasize;
+	PAR_INT(datasize, 1, 2047);
+	tb.Daq_Select_ADC(datasize, 1, 4, 6);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(dselsim)
+{
+	int startvalue;
+	if (!PAR_IS_INT(startvalue, 0, 16383)) startvalue = 0;
+	tb.Daq_Select_Datagenerator(startvalue);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(dseloff)
+{
+	tb.Daq_DeselectAll();
+	DO_FLUSH
 	return true;
 }
 

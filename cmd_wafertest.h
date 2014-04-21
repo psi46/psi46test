@@ -1,17 +1,17 @@
 /* -------------------------------------------------------------
  *
- *  file:        command.cpp
+ *  file:        cmd_wafertest.cpp
  *
- *  description: command line interpreter for Chip/Wafer tester
+ *  description: command line interpreter
+ *               wafer test functions
  *
  *  author:      Beat Meier
- *  modified:    31.8.2007
+ *  modified:    21.4.2014
  *
  *  rev:
  *
  * -------------------------------------------------------------
  */
-
 
 // =======================================================================
 //  chip/wafer test commands

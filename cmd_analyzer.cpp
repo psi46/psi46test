@@ -16,230 +16,6 @@
 #include "cmd.h"
 
 
-CMD_PROC(takedata)
-{
-	FILE *f = fopen("daqdata.bin", "wb");
-	if (f == 0)
-	{
-		printf("Could not open data file\n");
-		return true;
-	}
-
-	uint8_t status = 0;
-	uint32_t n;
-	vector<uint16_t> data;
-
-	unsigned int sum = 0;
-	double mean_n = 0.0;
-	double mean_size = 0.0;
-
-	clock_t t = clock();
-	unsigned int memsize = tb.Daq_Open(10000000);
-	tb.Daq_Start();
-	clock_t t_start = clock();
-	while (!keypressed())
-	{
-		// read data and status from DTB
-		status = tb.Daq_Read(data, 40000, n);
-
-		// make statistics
-		sum += data.size();
-		mean_n    = /* 0.2*mean_n    + 0.8* */ n;
-		mean_size = /* 0.2*mean_size + 0.8* */ data.size();
-
-		// write statistics every second
-//		printf(".");
-		if ((clock() - t) > CLOCKS_PER_SEC/4)
-		{
-			printf("%5.1f%%  %5.0f  %u\n", mean_n*100.0/memsize, mean_size, sum);
-			t = clock();
-		}
-
-		// write data to file
-		if (fwrite(data.data(), sizeof(uint16_t), data.size(), f) != data.size())
-		{ printf("\nFile write error"); break; }
-
-		// abort after overflow error
-//		if (((status & 1) == 0) && (n == 0)) break;
-		if (status & 0x6) break;
-
-//		tb.mDelay(5);
-	}
-	tb.Daq_Stop();
-	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC;
-
-	tb.Daq_Close();
-
-	if (keypressed()) getchar();
-
-	printf("\n");
-	if      (status & 4) printf("FIFO overflow\n");
-	else if (status & 2) printf("Memory overflow\n");
-	printf("Data taking aborted\n%u samples in %0.1f s read (%0.0f samples/s)\n", sum, t_run, sum/t_run);
-
-	fclose(f);
-	return true;
-}
-
-
-
-#define DECBUFFERSIZE 2048
-
-class Decoder
-{
-	int printEvery;
-
-	int nReadout;
-	int nPixel;
-
-	FILE *f;
-	int nSamples;
-	uint16_t *samples;
-
-	int x, y, ph;
-	void Translate(unsigned long raw);
-public:
-    Decoder() : printEvery(0), nReadout(0), nPixel(0), f(0), nSamples(0), samples(0) {}
-	~Decoder() { Close(); }
-	bool Open(const char *filename);
-	void Close() { if (f) fclose(f); f = 0; delete[] samples; }
-	bool Sample(uint16_t sample);
-	void AnalyzeSamples();
-	void DumpSamples(int n);
-};
-
-bool Decoder::Open(const char *filename)
-{
-	samples = new uint16_t[DECBUFFERSIZE];
-	f = fopen(filename, "wt");
-	return f != 0;
-}
-
-void Decoder::Translate(unsigned long raw)
-{
-	ph = (raw & 0x0f) + ((raw >> 1) & 0xf0);
-	raw >>= 9;
-	int c =    (raw >> 12) & 7;
-	c = c*6 + ((raw >>  9) & 7);
-	int r =    (raw >>  6) & 7;
-	r = r*6 + ((raw >>  3) & 7);
-	r = r*6 + ( raw        & 7);
-	y = 80 - r/2;
-	x = 2*c + (r&1);
-}
-
-void Decoder::AnalyzeSamples()
-{
-	if (nSamples < 1) { nPixel = 0; return; }
-	fprintf(f, "%5i: %03X: ", nReadout, (unsigned int)(samples[0] & 0xfff));
-	nPixel = (nSamples-1)/2;
-	int pos = 1;
-	for (int i=0; i<nPixel; i++)
-	{
-		unsigned long raw = (samples[pos++] & 0xfff) << 12;
-		raw += samples[pos++] & 0xfff;
-		Translate(raw);
-		fprintf(f, " %2i", x);
-	}
-
-//	for (pos = 1; pos < nSamples; pos++) fprintf(f, " %03X", int(samples[pos]));
-	fprintf(f, "\n");
-
-}
-
-void Decoder::DumpSamples(int n)
-{
-	if (nSamples < n) n = nSamples;
-	for (int i=0; i<n; i++) fprintf(f, " %04X", (unsigned int)(samples[i]));
-	fprintf(f, " ... %04X\n", (unsigned int)(samples[nSamples-1]));
-}
-
-bool Decoder::Sample(uint16_t sample)
-{
-	if (sample & 0x8000) // start marker
-	{
-		if (nReadout && printEvery >= 1000)
-		{
-			AnalyzeSamples();
-			printEvery = 0;
-		} else printEvery++;
-		nReadout++;
-		nSamples = 0;
-	}
-	if (nSamples < DECBUFFERSIZE)
-	{
-		samples[nSamples++] = sample;
-		return true;
-	}
-	return false;
-}
-
-
-
-CMD_PROC(takedata2)
-{
-	Decoder dec;
-	if (!dec.Open("daqdata2.txt"))
-	{
-		printf("Could not open data file\n");
-		return true;
-	}
-
-	uint8_t status = 0;
-	uint32_t n;
-	vector<uint16_t> data;
-
-	unsigned int sum = 0;
-	double mean_n = 0.0;
-	double mean_size = 0.0;
-
-	clock_t t = clock();
-	unsigned long memsize = tb.Daq_Open(60000000);
-	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
-	tb.Daq_Start();
-	clock_t t_start = clock();
-	while (!keypressed())
-	{
-		// read data and status from DTB
-		status = tb.Daq_Read(data, 8000000, n, 0);
-
-		// make statistics
-		sum += data.size();
-		mean_n    = /* 0.2*mean_n    + 0.8* */ n;
-		mean_size = /* 0.2*mean_size + 0.8* */ data.size();
-
-		// write statistics every second
-//		printf(".");
-		if ((clock() - t) > CLOCKS_PER_SEC)
-		{
-			printf("%5.1f%%  %5.0f  %u\n", mean_n*100.0/memsize, mean_size, sum);
-			t = clock();
-		}
-
-		// decode file
-		for (unsigned int i=0; i<data.size(); i++) dec.Sample(data[i]);
-
-		// abort after overflow error
-		if (((status & 1) == 0) && (n == 0)) break;
-
-//		tb.mDelay(5);
-	}
-	tb.Daq_Stop();
-	double t_run = double(clock() - t_start)/CLOCKS_PER_SEC;
-
-	tb.Daq_Close();
-
-	if (keypressed()) getchar();
-
-	printf("\nstatus: %02X ", int(status));
-	if      (status & 4) printf("FIFO overflow\n");
-	else if (status & 2) printf("Memory overflow\n");
-	printf("Data taking aborted\n%u samples in %0.1f s read (%0.0f samples/s)\n", sum, t_run, sum/t_run);
-
-	return true;
-}
-
-
 CMD_PROC(showclk)
 {
 	const unsigned int nSamples = 20;
@@ -355,19 +131,6 @@ CMD_PROC(showctr)
 	}
 	Scope("CTR", values);
 
-/*
-	FILE *f = fopen("X:\\developments\\adc\\data\\adc.txt", "wt");
-	if (!f) { printf("Could not open File!\n"); return true; }
-	double t = 0.0;
-	for (k=0; k<100; k++) for (i=0; i<20; i++)
-	{
-		int x = (data[i])[k] & 0x0fff;
-		if (x & 0x0800) x |= 0xfffff000;
-		fprintf(f, "%7.2f %6i\n", t, x);
-		t += 1.25;
-	}
-	fclose(f);
-*/
 	return true;
 }
 
@@ -420,56 +183,6 @@ CMD_PROC(showsda)
 	return true;
 }
 
-
-CMD_PROC(dselmod)
-{
-	tb.Daq_Select_Deser400();
-	DO_FLUSH
-	return true;
-}
-
-CMD_PROC(dmodres)
-{
-	int reset;
-	if (!PAR_IS_INT(reset, 0, 3)) reset = 3;
-	tb.Daq_Deser400_Reset(reset);
-	DO_FLUSH
-	return true;
-}
-
-CMD_PROC(dselroc)
-{
-	int shift;
-	PAR_INT(shift,0,7);
-	tb.Daq_Select_Deser160(shift);
-	DO_FLUSH
-	return true;
-}
-
-CMD_PROC(dselroca)
-{
-	int datasize;
-	PAR_INT(datasize, 1, 2047);
-	tb.Daq_Select_ADC(datasize, 1, 4, 6);
-	DO_FLUSH
-	return true;
-}
-
-CMD_PROC(dselsim)
-{
-	int startvalue;
-	if (!PAR_IS_INT(startvalue, 0, 16383)) startvalue = 0;
-	tb.Daq_Select_Datagenerator(startvalue);
-	DO_FLUSH
-	return true;
-}
-
-CMD_PROC(dseloff)
-{
-	tb.Daq_DeselectAll();
-	DO_FLUSH
-	return true;
-}
 
 
 
@@ -535,7 +248,7 @@ CMD_PROC(decoding)
 
 
 // =======================================================================
-//  experimential ROC test commands
+//  experimental ROC test commands
 // =======================================================================
 
 
@@ -543,29 +256,58 @@ CMD_PROC(daqtest)
 {
 	// setup pg data sequence (0, 1, 2, ... 99)
 	tb.Pg_SetCmd(0, PG_RESR + 4);
-	for (int i=1; i<100; i++) tb.Pg_SetCmd(i, PG_TOK + 4);
+	for (int k=1; k<100; k++) tb.Pg_SetCmd(k, PG_TOK + 2);
 	tb.Pg_SetCmd(100, PG_TOK);
 
+	tb.Daq_Open(500000, 0);
+	tb.Daq_Select_Datagenerator(0);
+	tb.Daq_Start(0);
+
+	int errors = 0;
+	int i = 0;
 	do
 	{
 		// create data
-		tb.Daq_Open(500000, 0);
-		tb.Daq_Select_Datagenerator(0);
-		tb.Daq_Start(0);
-		for (int i=0; i<1000; i++) tb.Pg_Single();
-		tb.Daq_Stop(0);
+//		tb.Daq_Start(0);
+		for (int k=0; k<1000; k++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(250);
+		}
+//		tb.Daq_Stop(0);
+		printf("%4i: created %u -> ", i, tb.Daq_GetSize());
 
+		uint32_t n;
+		uint32_t cnt = 0;
+		uint32_t error_cnt = 0;
+		vector<uint16_t> data;
 		try
 		{
-			uint32_t n;
-			vector<uint16_t> data;
+			int dvalue = 0;
 			do
 			{
 				tb.Daq_Read(data, 32768, n, 0);
+				// check data
+				for (unsigned int k=0; k<data.size(); k++)
+				{
+					if (data[k] != dvalue) error_cnt++;
+					dvalue = (dvalue+1)%100;
+				}
+				cnt += data.size();
 			} while (n != 0);
 		}
-		catch (DataPipeException e) { printf("\nERROR: %s\n", e.what()); return false; }
+		catch (DataPipeException e)
+		{
+			printf("\nERROR: %s\n", e.what());
+			errors++;
+		}
+		
+		printf("#samples=%u; #errors=%u\n", cnt, error_cnt);
+		if (error_cnt) errors++;
+		i++;
 	} while (!keypressed());
+
+	printf("#block errors %i\n", errors);
 
 	tb.Daq_Close(0);
 	return true;
@@ -721,418 +463,6 @@ CMD_PROC(analyze)
 }
 
 
-CMD_PROC(analyzeana)
-{ PROFILING
-	int vc;
-	PAR_INT(vc,0,255)
-
-	CDtbSource src;
-	src.Logging(true);
-	CStreamDump srcdump("streamdump.txt");
-	CDataRecordScanner rec;
-	CLevelHistogram hist;
-	CRocRawDataPrinter rawList("raw.txt", true);
-	CRocAnaDecoder decode;
-	decode.Calibrate(-364, -30);
-	CRocEventPrinter evList("eventlist.txt");
-	CSink<CRocEvent*> pump;
-
-	src >> srcdump >> rec >> hist >> rawList >> decode >> evList >> pump;
-
-	src.OpenRocAna(tb, 14, 10, 100, true, 20000);
-	src.Enable();
-	tb.uDelay(100);
-	tb.Pg_Loop(20000);
-
-	try
-	{
-		int i=0;
-		while (i++ < 500000 && !keypressed()) { pump.Get(); /* tb.uDelay(10); */ }
-		tb.Pg_Stop();
-	}
-	catch (DS_empty &) { printf("finished\n"); }
-	catch (DataPipeException &e) { printf("%s\n", e.what()); }
-
-//	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
-
-	src.Disable();
-
-	Log.section("ALEVEL");
-	hist.Report(Log);
-	return true;
-}
-
-
-CMD_PROC(adcsingle)
-{
-/*	CDtbSource src(tb, false);
-	CDataRecordScanner rec;
-	CRocDecoder dec;
-	CPrint print;
-	CDemoAnalyzer print;
-	CSink<CRocEvent*> pump;
-
-	src >> rec >> dec >> print >> pump;
-
-	tb.Daq_Open(1000);
-	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
-	tb.Daq_Start();
-	tb.uDelay(10);
-
-	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
-	tb.Pg_SetCmd(2, PG_SYNC|PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-	tb.uDelay(100);
-	tb.Flush();
-
-	tb.Pg_Single();
-	tb.uDelay(100);
-
-	try { pump.GetAll(); }
-	catch (DS_empty &) {}
-	catch (DataPipeException &e) { printf("%s\n", e.what()); }
-
-	tb.Daq_Stop();
-	tb.Daq_Close();
-	Log.flush();
-	*/
-	return true;
-
-}
-
-
-CMD_PROC(adcpeak)
-{
-/*	CDtbSource src(tb, false);
-	CDataRecordScanner rec;
-	CRocDecoder dec;
-	CLevelHisto l(0);
-	CSink<CRocEvent*> pump;
-
-	src >> rec >> dec >> l >> pump;
-*/
-//	tb.roc_SetDAC(WBC,  15);
-//	tb.roc_SetDAC(CtrlReg,0x04); // high range
-/*
-	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
-	tb.Pg_SetCmd(2, PG_SYNC|PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-	tb.uDelay(100);
-	tb.Flush();
-
-	tb.Daq_Open(2000000);
-	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
-
-	tb.Daq_Start();
-	tb.uDelay(10);
-	tb.roc_Pix_Trim(5, 5, 15);
-	tb.roc_Pix_Cal( 5, 5);
-//	tb.roc_SetDAC();
-	tb.uDelay(100);
-
-	tb.Pg_Loop(2000);
-	try
-	{
-		putchar('#');
-		for (int i=0; i<50; i++)
-		{
-			for (int k=0; k<1000; k++) pump.Get();
-			putchar('.');
-			if (keypressed()) break;
-		}
-	}
-	catch (DS_empty &) { printf("finished\n"); }
-	catch (DataPipeException &e) { printf("%s\n", e.what()); }
-
-	tb.Pg_Stop();
-	printf(" \n");
-	tb.Daq_Stop();
-	tb.Daq_Close();
-
-	Log.section("ADCPEAK");
-	l.Report(Log.File(), 0, 255);
-	FILE *f = fopen("adchisto\\adchisto.txt", "wt");
-	if (f)
-	{
-		l.Report(f, 0, 255);
-		fclose(f);
-	} else printf("Error writing adchisto.txt\n");
-
-	Log.flush();
-*/
-	return true;
-}
-
-
-CMD_PROC(adchisto)
-{
-/*	CDtbSource src(tb, false);
-	CDataRecordScanner rec;
-	CRocDecoder dec;
-	CLevelHisto l(0);
-	CSink<CRocEvent*> pump;
-
-	src >> rec >> dec >> l >> pump;
-
-//	tb.roc_SetDAC(WBC,  15);
-	tb.roc_SetDAC(CtrlReg,0x04); // high range
-
-	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
-	tb.Pg_SetCmd(2, PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-	tb.uDelay(100);
-	tb.Flush();
-
-	tb.Daq_Open(1000000);
-	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
-
-	tb.Daq_Start();
-	tb.uDelay(10);
-	tb.roc_Pix_Trim(5, 5, 15);
-	tb.roc_Pix_Cal( 5, 5);
-
-	tb.uDelay(100);
-
-	tb.roc_SetDAC(Vcal, 0);
-	tb.Pg_Loop(2000);
-	try
-	{
-		for (int t=20; t<120; t++)
-		{
-			tb.roc_SetDAC(Vcal, t);
-			for (int s=100; s<130; s++)
-			{
-				tb.roc_SetDAC(VoffsetRO, s);
-				tb.uDelay(100);
-				for (int i=0; i<500; i++) pump.Get();
-			}
-			putchar('.');
-			if (keypressed()) break;
-		}
-	}
-	catch (DS_empty &) { printf("finished\n"); }
-	catch (DataPipeException &e) { printf("%s\n", e.what()); }
-	printf("\n");
-	tb.Pg_Stop();
-
-	tb.Daq_Stop();
-
-	tb.Daq_Close();
-
-	Log.section("ADCHISTO");
-	l.Report(Log.File(), 0, 255);
-	FILE *f = fopen("adchisto\\adchisto.txt", "wt");
-	if (f)
-	{
-		l.Report(f, 0, 255);
-		fclose(f);
-	} else printf("Error writing adchisto.txt\n");
-
-	Log.flush();
-*/
-	return true;
-}
-
-
-
-class CAdcLevelHisto : public CAnalyzer
-{
-	unsigned int n;
-	unsigned int m;
-	CRocEvent* Read();
-public:
-	unsigned int h[256];
-	CAdcLevelHisto() { Clear(); }
-	void Clear();
-	double Mean() { return n ? double(m)/n : 0.0; }
-	void Report(FILE *f, int min, int max);
-};
-
-
-void CAdcLevelHisto::Clear()
-{
-	n = m = 0;
-	for (int i=0; i<256; i++) h[i] = 0;
-}
-
-CRocEvent* CAdcLevelHisto::Read()
-{
-	CRocEvent* ev = Get();
-	if (ev->pixel.size() > 0)
-	{
-		unsigned int x = ev->pixel[0].ph;
-		if (x < 256)
-		{
-			h[x]++;
-			m += x;
-			n++;
-		}
-	}
-	return ev;
-};
-
-void CAdcLevelHisto::Report(FILE *f, int min, int max)
-{
-	if (min < 0) min = 0;
-	if (max >=256) max = 255;
-	fprintf(f, " %5.1f", Mean());
-	for (int i=min; i<=max; i++) fprintf(f, " %3u", h[i]);
-	fprintf(f, "\n");
-}
-
-
-CMD_PROC(adctransfer)
-{
-/*
-	int mode;
-	PAR_INT(mode, 0, 1);
-
-	FILE *f = fopen("adchisto\\adctransfer.txt", "wt");
-	if (!f)
-	{
-		printf("Error open adctransfer.txt\n");
-		return true;
-	}
-	CDotPlot plot;
-
-	CDtbSource src(tb, false);
-	CDataRecordScanner rec;
-	CRocDecoder dec;
-	CAdcLevelHisto l;
-	CSink<CRocEvent*> pump;
-	src >> rec >> dec >> l >> pump;
-
-	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
-	tb.Pg_SetCmd(2, PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-	tb.uDelay(100);
-	tb.Flush();
-
-	tb.Daq_Open(1000000);
-	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
-
-	tb.Daq_Start();
-	tb.uDelay(10);
-//	tb.roc_Pix_Trim(5, 5, 15);
-//	tb.roc_Pix_Cal( 5, 5);
-
-	tb.uDelay(100);
-	const int cntPerStep = 100;
-	try
-	{
-#define DAC_PARAM
-#ifdef DAC_PARAM
-		for (int offs = 0; offs <= 256; offs += 32)
-		{
-			tb.roc_SetDAC(VoffsetRO, (offs==256)? 255 : offs);
-#endif
-			for (int t=40; t<200; t+=1)
-			{
-				l.Clear();
-				tb.roc_SetDAC(Vcal, t);
-				tb.uDelay(100);
-				int s;
-				for (s=0; s<cntPerStep; s++)
-				{
-					tb.Pg_Single();
-					tb.uDelay(100);
-				}
-				for (s=0; s<cntPerStep; s++) pump.Get();
-
-				if (mode == 1) for (s=0; s<256; s++) plot.Add(t, s, l.h[s]);
-				else plot.AddMean(t, l.Mean());
-
-				fprintf(f, "%3i ", t);
-				l.Report(f, 0, 255);
-				putchar('.');
-				if (keypressed()) break;
-			}
-#ifdef DAC_PARAM
-		}
-#endif
-	}
-	catch (DS_empty &) { printf("finished\n"); }
-	catch (DataPipeException &e) { printf("%s\n", e.what()); }
-	printf("\n");
-
-	tb.Pg_Stop();
-
-	tb.Daq_Stop();
-
-	tb.Daq_Close();
-
-	fclose(f);
-	plot.Show();
-	*/
-	return true;
-}
-
-
-void adctest_single()
-{
-/*	int x, y = 10;
-	tb.Daq_Start();
-	for (x=0; x<ROC_NUMCOLS; x++)
-	{
-		tb.roc_Pix_Trim(x, y, 0);
-		tb.Pg_Single();
-		tb.uDelay(100);
-		tb.roc_Pix_Mask(x, y);
-	}
-	tb.Daq_Stop();
-
-	CReadout data;
-	data.Init();
-
-	int p[ROC_NUMCOLS];
-	for (x=0; x<ROC_NUMCOLS; x++)
-	{
-		data.Read();
-		p[x] = (data.pixel.size() != 0)? (data.pixel.front()).ph : -1;
-	}
-
-	Log.section("ADCTEST");
-	for (x=0; x<ROC_NUMCOLS; x++) Log.printf(" %3i", p[x]);
-	Log.printf("\n");
-*/
-}
-
-
-CMD_PROC(adctest)
-{
-	tb.roc_SetDAC(WBC, 100);
-	tb.roc_SetDAC(Vcal, 20);
-	tb.roc_SetDAC(CtrlReg,0x04); // high range
-
-	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 100);
-	tb.Pg_SetCmd(2, PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-	tb.uDelay(100);
-	tb.Flush();
-
-	tb.Daq_Open(100000);
-	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
-
-	// single pixel readout
-	try
-	{
-		adctest_single();
-	}
-	catch (int e)
-	{
-		printf("ERROR %i\n", e);
-	}
-
-	tb.Daq_Close();
-	return true;
-}
-
-
 CMD_PROC(ethsend)
 {
 	char msg[45];
@@ -1247,89 +577,6 @@ CMD_PROC(shmoo)
 	return true;
 }
 
-
-
-/*
-CMD_PROC(phscan)
-{
-	int col, row;
-	PAR_INT(col, 0, 51)
-	PAR_INT(row, 0, 79)
-
-	const int vcalmin = 0;
-	const int vcalmax = 140;
-
-	// load settings
-//	tb.roc_SetDAC(CtrlReg,0x00); // 0x04
-
-	tb.Pg_Stop();
-	tb.Pg_SetCmd(0, PG_RESR + 15);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
-	tb.Pg_SetCmd(2, PG_TRG  + 16);
-	tb.Pg_SetCmd(3, PG_TOK);
-
-	tb.roc_SetDAC(WBC,  15);
-
-	tb.Daq_Open(50000);
-	tb.Daq_Select_Deser160(settings.deser160_tinDelay);
-	tb.Daq_Start();
-
-	// --- scan vcal
-	tb.roc_Col_Enable(col, true);
-	tb.roc_Pix_Trim(col, row, 15);
-	tb.roc_Pix_Cal (col, row, false);
-
-	for (int cal = vcalmin; cal < vcalmax; cal++)
-	{
-		tb.roc_SetDAC(Vcal, cal);
-		tb.uDelay(100);
-		for (int k=0; k<5; k++)
-		{
-			tb.Pg_Single();
-			tb.uDelay(50);
-		}
-	}
-
-	tb.roc_Pix_Mask(col, row);
-	tb.roc_Col_Enable(col, false);
-	tb.roc_ClrCal();
-
-	tb.Daq_Stop();
-	vector<uint16_t> data;
-	tb.Daq_Read(data, 4000);
-	tb.Daq_Close();
-
-	// --- plot data
-	PixelReadoutData pix;
-	int pos = 0;
-	int dpos = 0;
-	vector<double> y(vcalmax-vcalmin, 0.0);
-	try
-	{
-		for (int cal = vcalmin; cal < vcalmax; cal++)
-		{
-			int cnt = 0;
-			double yi = 0.0;
-			for (int k=0; k<5; k++)
-			{
-				DecodePixel(data, pos, pix);
-				if (pix.n > 0) { yi += pix.p; cnt++; }
-			}
-			y[dpos++] = (cnt > 0) ? yi/cnt : 0.0;
-		}
-	} catch (int e)
-	{
-		printf("Read error %i\n", e);
-		if (data.size() > 5) for (int i=0; i<=5; i++) printf(" %04X", int(data[i]));
-		printf("\n");
-		return true;
-	}
-
-	PlotData("ADC scan", "Vcal", "ADC value", double(vcalmin), double(vcalmax), y);
-
-	return true;
-}
-*/
 
 CMD_PROC(deser160)
 {

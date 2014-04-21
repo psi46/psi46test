@@ -1,11 +1,12 @@
 /* -------------------------------------------------------------
  *
- *  file:        command.cpp
+ *  file:        cmd_dtb.cpp
  *
- *  description: command line interpreter for Chip/Wafer tester
+ *  description: command line interpreter
+ *               DTB base functions
  *
  *  author:      Beat Meier
- *  modified:    31.8.2007
+ *  modified:    21.4.2014
  *
  *  rev:
  *
