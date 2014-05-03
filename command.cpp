@@ -297,18 +297,16 @@ CInterpreter::CInterpreter()
 
 void CInterpreter::help()
 {
-	printf(" help         display this message\n");
-	printf(" exit         exit commander\n");
-	
-	CCommand* p = cmdList.GetFirst();
+	printf(" help                           display this message\n");
+	printf(" exit                           exit commander\n");
 
-	while(p)
+	std::list<CCommand>::iterator i;
+	for (i = helpList.begin(); i != helpList.end(); i++)
 	{
-		std::string s = p->m_name;
+		std::string s = i->m_name;
 		s += " ";
-		s += p->m_parameter;
-		printf(" %-30s %s\n", s.c_str() , p->m_help);
-		p = cmdList.GetNext();
+		s += i->m_parameter;
+		printf(" %-30s %s\n", s.c_str() , i->m_help);
 	}
 }
 
@@ -327,6 +325,7 @@ void CInterpreter::AddCommand(const char name[], CMDFUNCTION f, const char param
 	c.m_help = help;
 	c.m_exec = f;
 	cmdList.Add(name, c);
+	helpList.push_back(c);
 }
 
 

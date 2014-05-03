@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <list>
 #include "htable.h"
 #include "config.h"
 
@@ -75,6 +76,7 @@ public:
 class CInterpreter
 {
 	CHashTable<CCommand> cmdList;
+	std::list<CCommand> helpList;
 	CCmdLine cmdline;
 	char scriptPath[256];
 	void help();
@@ -93,7 +95,6 @@ extern CInterpreter cmd_intp;
 
 #define CMD_PROC(name) bool cmd_##name(CCmdLine &par)
 #define CMD_REG(name,parameter,helptext) bool cmd_##name(CCmdLine &par);
-// #define CMD_REGx(name, help) cmd_intp.AddCommand(#name, cmd_##name, help);
 
 #define CMD_NUL(name, help) cmd_intp.AddCommand(#name, cmd_not_implemented, help)
 #define CMD_RUN(file) cmd_intp.run(file);
