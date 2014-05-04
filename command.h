@@ -73,17 +73,30 @@ public:
 };
 
 
+class CHelpCategory
+{
+	const char *m_name;
+	std::list<CCommand> helpList;
+public:
+	friend class CInterpreter;
+};
+
+
 class CInterpreter
 {
+	CHelpCategory *currentHelpCat;
+	std::list<CHelpCategory> helpCategory;
 	CHashTable<CCommand> cmdList;
-	std::list<CCommand> helpList;
 	CCmdLine cmdline;
 	char scriptPath[256];
+	void ListHelpCategories();
+	void ListHelpText(std::list<CHelpCategory>::iterator cat);
 	void help();
 public:
 	CInterpreter();
 	~CInterpreter() {};
 	void SetScriptPath(const char path[]);
+	void AddHelpCategory(const char name[]);
 	void AddCommand(const char name[], CMDFUNCTION f, const char parameter[], const char help[]);
 	bool run(FILE *f, int iter = 0);
 };
@@ -93,8 +106,9 @@ bool cmd_not_implemented(CCmdLine &par);
 
 extern CInterpreter cmd_intp;
 
-#define CMD_PROC(name) bool cmd_##name(CCmdLine &par)
+#define HELP_CAT(name)
 #define CMD_REG(name,parameter,helptext) bool cmd_##name(CCmdLine &par);
+#define CMD_PROC(name) bool cmd_##name(CCmdLine &par)
 
 #define CMD_NUL(name, help) cmd_intp.AddCommand(#name, cmd_not_implemented, help)
 #define CMD_RUN(file) cmd_intp.run(file);

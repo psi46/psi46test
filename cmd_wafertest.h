@@ -17,6 +17,7 @@
 //  chip/wafer test commands
 // =======================================================================
 
+HELP_CAT("test")
 CMD_REG(roctype, "ana|dig", "choose ROC type for test")
 CMD_REG(pr, "<command>", "send command to prober")
 CMD_REG(sep, "", "prober z-axis separation")

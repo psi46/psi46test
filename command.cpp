@@ -291,17 +291,28 @@ bool CCmdLine::getStringEOL(char *value, int size)
 
 CInterpreter::CInterpreter()
 {
+	currentHelpCat = 0;
 	memset(scriptPath, 0, 256);
 }
 
 
-void CInterpreter::help()
+void CInterpreter::ListHelpCategories()
 {
-	printf(" help                           display this message\n");
+	printf(" help [<category>]              display this message\n");
 	printf(" exit                           exit commander\n");
+	printf("categories:\n");
+	std::list<CHelpCategory>::iterator cat;
+	for (cat = helpCategory.begin(); cat != helpCategory.end(); cat++)
+	{
+		printf("  %s\n", cat->m_name);
+	}
+}
 
+
+void CInterpreter::ListHelpText(std::list<CHelpCategory>::iterator cat)
+{
 	std::list<CCommand>::iterator i;
-	for (i = helpList.begin(); i != helpList.end(); i++)
+	for (i = cat->helpList.begin(); i != cat->helpList.end(); i++)
 	{
 		std::string s = i->m_name;
 		s += " ";
@@ -311,9 +322,37 @@ void CInterpreter::help()
 }
 
 
+void CInterpreter::help()
+{
+	char catName[80];
+	if (cmdline.getString(catName,78))
+	{
+		std::list<CHelpCategory>::iterator cat;
+		for (cat = helpCategory.begin(); cat != helpCategory.end(); cat++)
+		{
+			if (strcmp(catName, cat->m_name) == 0)
+			{
+				ListHelpText(cat);
+				return;
+			}
+		}
+	}
+	ListHelpCategories();
+}
+
+
 void CInterpreter::SetScriptPath(const char path[])
 {
 	strncpy(scriptPath, path, 254);
+}
+
+
+void CInterpreter::AddHelpCategory(const char name[])
+{
+	CHelpCategory h;
+	h.m_name = name;
+	helpCategory.push_back(h);
+	currentHelpCat = &helpCategory.back();
 }
 
 
@@ -325,7 +364,9 @@ void CInterpreter::AddCommand(const char name[], CMDFUNCTION f, const char param
 	c.m_help = help;
 	c.m_exec = f;
 	cmdList.Add(name, c);
-	helpList.push_back(c);
+
+	if (helpCategory.size() == 0) AddHelpCategory("");
+	currentHelpCat->helpList.push_back(c);
 }
 
 

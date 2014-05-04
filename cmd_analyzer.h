@@ -14,6 +14,8 @@
  */
 
 
+HELP_CAT("ext")
+
 CMD_REG(showclk, "", "")
 CMD_REG(showctr, "", "")
 CMD_REG(showsda, "", "")

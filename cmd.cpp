@@ -62,10 +62,13 @@ CMD_PROC(h)
 }
 
 
+
 void cmd()
 {
 #undef  CMD_REG
 #define CMD_REG(name,parameter,helptext) cmd_intp.AddCommand(#name, cmd_##name, parameter, helptext);
+#undef HELP_CAT
+#define HELP_CAT(name) cmd_intp.AddHelpCategory(name);
 
 #include "cmd_dtb.h"
 #include "cmd_wafertest.h"

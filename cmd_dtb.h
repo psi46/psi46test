@@ -17,6 +17,7 @@
 // =======================================================================
 //  connection, communication, startup commands
 // =======================================================================
+HELP_CAT("dtb");
 
 CMD_REG(scan, "", "Get infos of all connected DTBs")
 CMD_REG(open, "[<name>]", "open a DTB (with name)")
@@ -99,6 +100,8 @@ CMD_REG(pgloop, "<period>", "start patterngenerator in loop mode")
 
 // === DAQ ==================================================================
 
+HELP_CAT("daq")
+
 CMD_REG(dopen, "<buffer size> [<ch>]", "Open DAQ and allocate memory")
 CMD_REG(dclose, "[<channel>]", "Close DAQ")
 CMD_REG(dstart, "[<channel>]", "Enable DAQ")
@@ -131,6 +134,8 @@ CMD_REG(tbmgetraw, "", "")
 CMD_REG(tbmregs, "", "")
 CMD_REG(modscan, "", "")
 */
+
+HELP_CAT("roc")
 
 CMD_REG(select, "<addr range>", "set i2c address")
 CMD_REG(dac, "<address> <value>", "set DAC")
