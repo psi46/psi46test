@@ -376,7 +376,7 @@ public:
 //	RPC_EXPORT bool tbm_GetRaw(uint8_t reg, uint32_t &value);
 
 // --- Wafer test functions
-	RPC_EXPORT bool TestColPixel(uint8_t col, uint8_t trimbit, vectorR<uint8_t> &res);
+	RPC_EXPORT bool TestColPixel(uint8_t col, uint8_t trimbit, bool sensor_cal, vectorR<uint8_t> &res);
 
 	// Ethernet test functions
 	RPC_EXPORT void Ethernet_Send(string &message);

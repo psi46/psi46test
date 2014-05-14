@@ -45,6 +45,7 @@ public:
 
 	int adc_tinDelay;
 	int adc_toutDelay;
+	int adc_clkDelay;
 	int cableLength;        // adapter cable length in mm
 
 	int  errorRep;          // # test rep if defect chip

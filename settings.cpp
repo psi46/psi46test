@@ -20,6 +20,7 @@ CSettings::CSettings()
 
 	adc_tinDelay = 14;
 	adc_toutDelay = 10;
+	adc_clkDelay = 16;
 	cableLength = 50; 
 
 	errorRep = 1;
@@ -144,6 +145,7 @@ bool CSettings::Read(const char filename[])
 			else if (s == "DESER160_TIN_DELAY") deser160_tinDelay = ReadInt(0, 63);
 			else if (s == "ADC_TIN_DELAY")      adc_tinDelay  = ReadInt(0, 63);
 			else if (s == "ADC_TOUT_DELAY")     adc_toutDelay = ReadInt(0, 63);
+			else if (s == "ADC_CLK_DELAY")      adc_clkDelay = ReadInt(0, 320);
 		}
 	}
 	catch (int e)

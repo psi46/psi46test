@@ -100,10 +100,10 @@ void InitChip()
 
 void SetMHz(int MHz = 0)
 { PROFILING
-	tb.Sig_SetDelay(SIG_CLK,  16);
-	tb.Sig_SetDelay(SIG_SDA,  16+15);
-	tb.Sig_SetDelay(SIG_CTR,  16);
-	tb.Sig_SetDelay(SIG_TIN,  16+5);
+	tb.Sig_SetDelay(SIG_CLK,  settings.adc_clkDelay );
+	tb.Sig_SetDelay(SIG_SDA,  settings.adc_clkDelay+15);
+	tb.Sig_SetDelay(SIG_CTR,  settings.adc_clkDelay);
+	tb.Sig_SetDelay(SIG_TIN,  settings.adc_clkDelay+5);
 	tb.Flush();
 
 	tct_wbc = 5;
@@ -410,7 +410,9 @@ void test_calibrate_decoding()
 
 	CDtbSource src;
 	CDataRecordScanner raw;
+//	CRocRawDataPrinter debug("debug.txt", true);
 	CSink<CDataRecord*> data;
+//	src >> raw >> debug >> data;
 	src >> raw >> data;
 
 	src.OpenRocAna(tb, 14, 10, 100, false, 1000);
@@ -481,10 +483,12 @@ void test_pixel()
 
 	CDtbSource src;
 	CDataRecordScanner raw;
+//	CLevelHistogram hist;
 	CRocAnaDecoder dec;
 	dec.Calibrate(ub_level, b_level);
 
 	CSink<CRocEvent*> data;
+//	src >> raw >> hist >> dec >> data;
 	src >> raw >> dec >> data;
 
 	src.OpenRocAna(tb, 14, 10, 100, false, 100000);
@@ -515,7 +519,6 @@ void test_pixel()
 	}
 	src.Disable();
 
-
 	// --- analyze data --------------------------------------------------------
 	// for each col, for each row, (masked pixel, unmasked pixel)
 	try
@@ -542,6 +545,7 @@ void test_pixel()
 		}
 	} catch (DataPipeException e) { printf("\nERROR TestPixel: %s\n", e.what()); }
 
+//	hist.Report(Log);
 	src.Close();
 	tb.roc_SetDAC(CtrlReg,0);
 }
@@ -935,7 +939,7 @@ bool testAllPixelC(int vtrim, unsigned int trimbit=4 /* reference */ )
 	int col, row;
 	for (col=0; col<ROC_NUMCOLS; col++)
 	{
-		if (!tb.TestColPixel(col,trimvalue,res)) return false;
+		if (!tb.TestColPixel(col,trimvalue,false,res)) return false;
 
 		for(row=0; row<ROC_NUMROWS; row++)
 		{

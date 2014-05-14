@@ -342,7 +342,8 @@ int GetReadback()
 	CDataRecordScanner raw;
 	CReadBack rdb;
 	CSink<CDataRecord*> pump;
-	src >> raw >> rdb >> pump;
+//	CRocRawDataPrinter debug("debug.txt", false);
+	src >> raw /* >> debug */ >> rdb >> pump;
 
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 10000);
 	src.Enable();
@@ -1098,7 +1099,7 @@ bool testAllPixelC(int vtrim, unsigned int trimbit=4 /* reference */ )
 	int col, row;
 	for (col=0; col<ROC_NUMCOLS; col++)
 	{
-		if (!tb.TestColPixel(col,trimvalue,res)) return false;
+		if (!tb.TestColPixel(col,trimvalue, false, res)) return false;
 
 		for(row=0; row<ROC_NUMROWS; row++)
 		{

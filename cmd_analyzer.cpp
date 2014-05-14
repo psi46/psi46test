@@ -245,11 +245,84 @@ CMD_PROC(decoding)
 }
 
 
+CMD_PROC(showrocdata)
+{
+	const unsigned int nSamples = 30;
+
+	unsigned int i, k;
+	vector<uint16_t> data[20];
+
+	tb.Pg_Stop();
+	tb.Pg_SetCmd( 0, PG_RESR + 10);
+	tb.Pg_SetCmd( 0, PG_SYNC|PG_TOK);
+
+	tb.SignalProbeD1(9);
+	tb.SignalProbeD2(17);
+	tb.SignalProbeA2(PROBEA_SDATA1);
+	tb.uDelay(10);
+	tb.SignalProbeADC(PROBEA_SDATA1, GAIN_4);
+	tb.uDelay(10);
+
+	tb.Daq_Select_ADC(nSamples, 1, 1);
+	tb.uDelay(1000);
+	tb.Daq_Open(1024);
+	for (i=0; i<20; i++)
+	{
+		tb.Sig_SetDelay(SIG_CLK, 20-i);
+		tb.Sig_SetDelay(SIG_CTR, 20-i);
+		tb.Sig_SetDelay(SIG_TIN, 25-i);
+		tb.uDelay(10);
+		tb.Daq_Start();
+		tb.Pg_Single();
+		tb.uDelay(1000);
+		tb.Daq_Stop();
+		tb.Daq_Read(data[i], 1024);
+		if (data[i].size() != nSamples)
+		{
+			printf("Data size %i: %i\n", i, int(data[i].size()));
+			return true;
+		}
+	}
+	tb.Daq_Close();
+	tb.Flush();
+
+	int n = 20*nSamples;
+	vector<double> values(n);
+	int x = 0;
+	for (k=0; k<nSamples; k++) for (i=0; i<20; i++)
+	{
+		int y = (data[i])[k] & 0x0fff;
+		if (y & 0x0800) y |= 0xfffff000;
+		values[x++] = y;
+	}
+	Scope("SDATA1", values);
+
+	return true;
+}
+
 
 
 // =======================================================================
 //  experimental ROC test commands
 // =======================================================================
+
+CMD_PROC(vectortest)
+{
+	int length;
+	PAR_INT(length, 0, 1048576);
+	
+	// test vectors
+	vector<uint16_t> in;
+	vector<uint16_t> out;
+
+	// fill in vector
+	in.reserve(length);
+	for (unsigned int i=0; i<length; i++) in.push_back(int(i));
+
+	tb.VectorTest(in, out);
+
+	// compare vectors
+}
 
 
 CMD_PROC(daqtest)
@@ -259,7 +332,7 @@ CMD_PROC(daqtest)
 	for (int k=1; k<100; k++) tb.Pg_SetCmd(k, PG_TOK + 2);
 	tb.Pg_SetCmd(100, PG_TOK);
 
-	tb.Daq_Open(500000, 0);
+	tb.Daq_Open(60000000, 0);
 	tb.Daq_Select_Datagenerator(0);
 	tb.Daq_Start(0);
 
@@ -269,10 +342,10 @@ CMD_PROC(daqtest)
 	{
 		// create data
 //		tb.Daq_Start(0);
-		for (int k=0; k<1000; k++)
+		for (int k=0; k<10000; k++)
 		{
 			tb.Pg_Single();
-			tb.uDelay(250);
+			tb.uDelay(250); // 250
 		}
 //		tb.Daq_Stop(0);
 		printf("%4i: created %u -> ", i, tb.Daq_GetSize());
