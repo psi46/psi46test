@@ -1473,3 +1473,15 @@ CMD_PROC(mask)
 	return true;
 }
 
+// =======================================================================
+//  Temperature commands
+// =======================================================================
+CMD_PROC(gettemp)
+{
+	uint16_t ref = tb.GetADC(5);
+	uint16_t val = tb.GetADC(4);
+	printf("REF: %d\n",ref);
+	printf("VAL: %d\n",val);
+	printf("DIFF: %d\n",val - ref);
+}
+

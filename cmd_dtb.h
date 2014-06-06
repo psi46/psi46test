@@ -153,3 +153,9 @@ CMD_REG(cal, "<range> <range>", "calibrate pixel")
 CMD_REG(cals, "<range> <range>", "sensor calibrate pixel")
 CMD_REG(cald, "", "clear calibrate")
 CMD_REG(mask, "", "mask all pixel and cols")
+
+
+// =======================================================================
+//  Temperature commands
+// =======================================================================
+CMD_REG(gettemp, "", "Read RTD on the HDI")
