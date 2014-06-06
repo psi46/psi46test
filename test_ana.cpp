@@ -201,7 +201,7 @@ int test_tout()
 	unsigned int cnt;
 
 	CDtbSource src;
-	CDataRecordScanner raw;
+	CDataRecordScannerROC raw;
 	CSink<CDataRecord*> data;
 	src >> raw >> data;
 	src.OpenRocAna(tb, 14, 10, 300, false, 5000);
@@ -261,7 +261,7 @@ int test_i2c()
 	unsigned int mask;
 
 	CDtbSource src;
-	CDataRecordScanner raw;
+	CDataRecordScannerROC raw;
 	CSink<CDataRecord*> data;
 	src >> raw >> data;
 	src.OpenRocAna(tb, 14, 10, 300, false, 1000);
@@ -409,7 +409,7 @@ void test_calibrate_decoding()
 	tb.Flush();
 
 	CDtbSource src;
-	CDataRecordScanner raw;
+	CDataRecordScannerROC raw;
 //	CRocRawDataPrinter debug("debug.txt", true);
 	CSink<CDataRecord*> data;
 //	src >> raw >> debug >> data;
@@ -482,12 +482,12 @@ void test_pixel()
 	tb.Flush();
 
 	CDtbSource src;
-	CDataRecordScanner raw;
+	CDataRecordScannerROC raw;
 //	CLevelHistogram hist;
 	CRocAnaDecoder dec;
 	dec.Calibrate(ub_level, b_level);
 
-	CSink<CRocEvent*> data;
+	CSink<CEvent*> data;
 //	src >> raw >> hist >> dec >> data;
 	src >> raw >> dec >> data;
 
@@ -529,17 +529,17 @@ void test_pixel()
 			{
 				// must be empty readout
 
-				CRocEvent *ev = data.Get();
-				g_chipdata.pixmap.SetMaskedCount(col, row, ev->pixel.size());
+				CEvent *ev = data.Get();
+				g_chipdata.pixmap.SetMaskedCount(col, row, ev->roc[0].pixel.size());
 
 				// must be single pixel hit
 				ev = data.Get();
-				g_chipdata.pixmap.SetUnmaskedCount(col, row, ev->pixel.size());
-				if (ev->pixel.size() > 0)
+				g_chipdata.pixmap.SetUnmaskedCount(col, row, ev->roc[0].pixel.size());
+				if (ev->roc[0].pixel.size() > 0)
 				{
-					g_chipdata.pixmap.SetDefectColCode(col, row, ev->pixel[0].x != col);
-					g_chipdata.pixmap.SetDefectRowCode(col, row, ev->pixel[0].y != row);
-					g_chipdata.pixmap.SetPulseHeight(col, row, ev->pixel[0].ph);
+					g_chipdata.pixmap.SetDefectColCode(col, row, ev->roc[0].pixel[0].x != col);
+					g_chipdata.pixmap.SetDefectRowCode(col, row, ev->roc[0].pixel[0].y != row);
+					g_chipdata.pixmap.SetPulseHeight(col, row, ev->roc[0].pixel[0].ph);
 				}
 			}
 		}
@@ -576,9 +576,9 @@ void test_pulse_height1()
 	tb.Flush();
 
 	CDtbSource src;
-	CDataRecordScanner raw;
+	CDataRecordScannerROC raw;
 	CRocDigDecoder dec;
-	CSink<CRocEvent*> data;
+	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
@@ -612,8 +612,8 @@ void test_pulse_height1()
 	{
 		for (col=0; col<ROC_NUMCOLS; col++)	for (row=0; row<ROC_NUMROWS; row++)
 		{
-			CRocEvent *ev = data.Get();
-			if (ev->pixel.size() != 0)	g_chipdata.pixmap.SetPulseHeight1(col,row, ev->pixel[0].ph);
+			CEvent *ev = data.Get();
+			if (ev->roc[0].pixel.size() != 0)	g_chipdata.pixmap.SetPulseHeight1(col,row, ev->roc[0].pixel[0].ph);
 		}
 	} catch (DataPipeException e) { printf("\nERROR Test Pulse Height 1: %s\n", e.what()); return; }
 
@@ -639,9 +639,9 @@ void test_pulse_height2()
 	tb.Flush();
 
 	CDtbSource src;
-	CDataRecordScanner raw;
+	CDataRecordScannerROC raw;
 	CRocDigDecoder dec;
-	CSink<CRocEvent*> data;
+	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
@@ -675,8 +675,8 @@ void test_pulse_height2()
 	{
 		for (col=0; col<ROC_NUMCOLS; col++)	for (row=0; row<ROC_NUMROWS; row++)
 		{
-			CRocEvent *ev = data.Get();
-			if (ev->pixel.size() != 0)	g_chipdata.pixmap.SetPulseHeight2(col,row, ev->pixel[0].ph);
+			CEvent *ev = data.Get();
+			if (ev->roc[0].pixel.size() != 0)	g_chipdata.pixmap.SetPulseHeight2(col,row, ev->roc[0].pixel[0].ph);
 		}
 	} catch (DataPipeException e) { printf("\nERROR Test Pulse Height 2: %s\n", e.what()); return; }
 
@@ -689,7 +689,7 @@ void test_pulse_height2()
 //  test pixel threshold
 // =======================================================================
 
-bool GetPixel(CDtbSource &src, CSink<CRocEvent*> &data, unsigned int x)
+bool GetPixel(CDtbSource &src, CSink<CEvent*> &data, unsigned int x)
 { PROFILING
 	const unsigned int count = 9;
 	unsigned int i;
@@ -707,15 +707,15 @@ bool GetPixel(CDtbSource &src, CSink<CRocEvent*> &data, unsigned int x)
 
 	for (i=0; i<count; i++)
 	{
-		CRocEvent *ev = data.Get();
-		if (ev->pixel.size() > 0) n++;
+		CEvent *ev = data.Get();
+		if (ev->roc[0].pixel.size() > 0) n++;
 	}
 
 	return n > count/2;
 }
 
 
-unsigned char FindLevel(CDtbSource &src, CSink<CRocEvent*> &data)
+unsigned char FindLevel(CDtbSource &src, CSink<CEvent*> &data)
 { PROFILING
 	static unsigned char x = 20;  // first estimation
 	if (x>80) x = 80; else if (x<1) x=1;
@@ -738,7 +738,7 @@ unsigned char FindLevel(CDtbSource &src, CSink<CRocEvent*> &data)
 }
 
 
-unsigned char test_PUC(CDtbSource &src, CSink<CRocEvent*> &data, unsigned char col, unsigned char row, unsigned char trim)
+unsigned char test_PUC(CDtbSource &src, CSink<CEvent*> &data, unsigned char col, unsigned char row, unsigned char trim)
 { PROFILING
 	tb.roc_Pix_Trim(col, row, trim);
 	tb.roc_Pix_Cal (col, row, 0);
@@ -749,7 +749,7 @@ unsigned char test_PUC(CDtbSource &src, CSink<CRocEvent*> &data, unsigned char c
 }
 
 
-void testColPixel(CDtbSource &src, CSink<CRocEvent*> &data, unsigned char col, unsigned char trimbit, unsigned char res[])
+void testColPixel(CDtbSource &src, CSink<CEvent*> &data, unsigned char col, unsigned char trimbit, unsigned char res[])
 { PROFILING
 	unsigned char row;
 	tb.roc_Col_Enable(col, 1);
@@ -761,7 +761,7 @@ void testColPixel(CDtbSource &src, CSink<CRocEvent*> &data, unsigned char col, u
 }
 
 
-void testAllPixel(CDtbSource &src, CSink<CRocEvent*> &data, int vtrim, unsigned int trimbit=4 /* reference */ )
+void testAllPixel(CDtbSource &src, CSink<CEvent*> &data, int vtrim, unsigned int trimbit=4 /* reference */ )
 { PROFILING
 	unsigned char res[ROC_NUMROWS];
 	tb.roc_SetDAC(Vtrim, vtrim);
@@ -793,9 +793,9 @@ int test_PUCs(bool forceDefTest = false)
 	tb.Flush();
 
 	CDtbSource src;
-	CDataRecordScanner raw;
+	CDataRecordScannerROC raw;
 	CRocDigDecoder dec;
-	CSink<CRocEvent*> data;
+	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 10000);
 

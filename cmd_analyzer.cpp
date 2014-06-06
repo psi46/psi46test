@@ -317,22 +317,26 @@ CMD_PROC(vectortest)
 
 	// fill in vector
 	in.reserve(length);
-	for (unsigned int i=0; i<length; i++) in.push_back(int(i));
+	for (int i=0; i<length; i++) in.push_back(i);
 
 	tb.VectorTest(in, out);
 
 	// compare vectors
+	return true;
 }
+
 
 
 CMD_PROC(daqtest)
 {
+	const int blklen = 220;
 	// setup pg data sequence (0, 1, 2, ... 99)
-	tb.Pg_SetCmd(0, PG_RESR + 4);
-	for (int k=1; k<100; k++) tb.Pg_SetCmd(k, PG_TOK + 2);
-	tb.Pg_SetCmd(100, PG_TOK);
+	tb.SignalProbeD1(PROBE_PG_SYNC);
+	tb.Pg_SetCmd(0, PG_SYNC + PG_RESR + 1);
+	for (int k=1; k<blklen; k++) tb.Pg_SetCmd(k, PG_TOK + 1);
+	tb.Pg_SetCmd(blklen, PG_TOK);
 
-	tb.Daq_Open(60000000, 0);
+	tb.Daq_Open(80000000, 0);
 	tb.Daq_Select_Datagenerator(0);
 	tb.Daq_Start(0);
 
@@ -342,10 +346,10 @@ CMD_PROC(daqtest)
 	{
 		// create data
 //		tb.Daq_Start(0);
-		for (int k=0; k<10000; k++)
+		for (int k=0; k<180000; k++)
 		{
 			tb.Pg_Single();
-			tb.uDelay(250); // 250
+			tb.uDelay(8); // 250
 		}
 //		tb.Daq_Stop(0);
 		printf("%4i: created %u -> ", i, tb.Daq_GetSize());
@@ -364,7 +368,7 @@ CMD_PROC(daqtest)
 				for (unsigned int k=0; k<data.size(); k++)
 				{
 					if (data[k] != dvalue) error_cnt++;
-					dvalue = (dvalue+1)%100;
+					dvalue = (dvalue+1)%blklen;
 				}
 				cnt += data.size();
 			} while (n != 0);
@@ -387,18 +391,213 @@ CMD_PROC(daqtest)
 }
 
 
-class CDemoAnalyzer : public CAnalyzer
+CMD_PROC(daqtest2)
 {
-	CRocEvent* Read();
+	const int blklen = 100;
+	// setup pg data sequence (0, 1, 2, ... 99)
+	tb.SignalProbeD1(PROBE_PG_SYNC);
+	tb.Pg_SetCmd(0, PG_SYNC + PG_RESR + 1);
+	for (int k=1; k<blklen; k++) tb.Pg_SetCmd(k, PG_TOK + 1);
+	tb.Pg_SetCmd(blklen, PG_TOK);
+
+	tb.Daq_Open(80000000, 0);
+	tb.Daq_Select_Datagenerator(0);
+	tb.Daq_Start(0);
+
+	// create continous data
+	tb.Pg_Loop(520);
+
+	uint32_t cnt = 0;
+	uint32_t error_sum = 0;
+	int dvalue = 0;
+	vector<uint16_t> data;
+	do
+	{
+		uint32_t error_cnt = 0;
+		uint32_t n, n_remaining;
+		try
+		{
+			int ret;
+			ret = tb.Daq_Read(data, 1000000, n_remaining, 0);
+			if (ret) { printf("overflow %i\n", ret); break; }
+			// check data
+			n = data.size();
+			for (unsigned int k=0; k<n; k++)
+			{
+				if (data[k] != dvalue) error_cnt++;
+				dvalue = (dvalue+1)%blklen;
+			}
+			error_sum += error_cnt;
+			cnt += n;
+		}
+		catch (DataPipeException e)
+		{
+			printf("\nERROR: %s\n", e.what());
+		}
+		
+		printf("total=%8u;  remaining=%8u;  block=%8u;  #errors=%u\n", cnt, n_remaining, n, error_cnt);
+	} while (!keypressed());
+
+	tb.Pg_Stop();
+	tb.Daq_Stop(0);
+	tb.Daq_Close(0);
+	printf("\ntotal=%8u;  total errors=%u\n", cnt, error_sum);
+
+	return true;
+}
+
+
+
+// === Module error rate test
+
+class CEventCounter : public CAnalyzer
+{
+	CEvent* Read();
+public:
+	unsigned int nEvents;
+	unsigned int nPixels;
+	unsigned int nErrors;
+	void Reset() { nEvents = nPixels = nErrors = 0; }
+	CEventCounter() { Reset(); }
+	void Print() { printf("nEvents: %u;  nPixels: %u;  nErrors: %u\n", nEvents, nPixels, nErrors); }
 };
 
-CRocEvent* CDemoAnalyzer::Read()
+CEvent* CEventCounter::Read()
 {
-	CRocEvent* ev = Get();
+	x = Get();
+	nEvents++;
+	if (x->error) nErrors++;
+	for (unsigned int r = 0; r < x->roc.size(); r++)
+		nPixels += x->roc[r].pixel.size();
+	return x;
+}
+
+
+class CEventMap : public CAnalyzer
+{
+	CEvent* Read();
+public:
+	unsigned int nWrongRocCount;
+	unsigned int nWrongAddress;
+	unsigned int map[8][52][80];
+	void Reset();
+	void Report();
+	CEventMap() { Reset(); }
+};
+
+void CEventMap::Reset()
+{
+	unsigned int r, x, y;
+	for (r=0; r<8; r++) for (x=0; x<52; x++) for (y=0; y<80; y++) map[r][x][y] = 0;
+	nWrongRocCount = nWrongAddress = 0;
+}
+
+void CEventMap::Report()
+{
+	Log.section("PIXELMAP");
+	Log.printf("Errors: RocCount=%u, Address=%u\n", nWrongRocCount, nWrongAddress);
+	int r, x, y;
+	for (r=0; r<8; r++)
+	{
+		Log.printf("ROC %i\n", r);
+		for (y=51; y>=0; y--)
+		{
+			Log.printf("%2i: ", y);
+			for (x=0; x<52; x++)
+			{
+				unsigned int n = map[r][x][y];
+				if (n == 0)           Log.printf("   .");
+				else if (n < 1000)    Log.printf(" %3u", n);
+				else if (n < 1000000) Log.printf("%3uk", n/1000);
+				else                  Log.printf("%3uM", n/10000000);
+			}
+			Log.printf("\n");
+		}
+	}
+}
+
+CEvent* CEventMap::Read()
+{
+	x = Get();
+	bool error = false;
+	if (x->roc.size() == 8)
+	{
+		for (unsigned int r = 0; r < x->roc.size(); r++)
+		{
+			unsigned int nP = x->roc[r].pixel.size();
+			for (unsigned int p = 0; p < nP; p++)
+			{
+				unsigned int px = x->roc[r].pixel[p].x;
+				unsigned int py = x->roc[r].pixel[p].y;
+				if (px < 52 && py < 80) map[r][px][py]++;
+				else { nWrongAddress++; error = true; }
+			}
+		}
+	}
+	else { nWrongRocCount++; error = true; }
+
+	if (error) x->error |= 0x0800;
+	return x;
+}
+
+
+CMD_PROC(daqreadm)
+{ PROFILING
+	int period;
+	PAR_INT(period,0,65535)
+
+	CDtbSource src;  src.Logging(false);
+//	CStreamDump srcdump("xxx_stream.txt");
+	CDataRecordScannerMODD rec;
+	CRocRawDataPrinter rawList("xxx_raw.txt");
+	CModDigDecoder decoder;
+	CEventMap pxmap;
+	CEventPrinter evList("xxx_event.txt");
+	evList.ListOnlyErrors(true);
+	CEventCounter counter;
+	CSink<CEvent*> pump;
+
+	src >> /* srcdump >> */ rec >> rawList >> decoder >> pxmap >> evList >> counter >> pump;
+
+	src.OpenModDig(tb, true, 20000000);
+	src.Enable();
+	tb.uDelay(100);
+	tb.Pg_Loop(period);
+
+	try
+	{
+		int i=0;
+		while (i++ < 500000 && !keypressed())
+		{
+			pump.Get();
+			if (i % 1000 == 0) counter.Print();
+		}
+		tb.Pg_Stop();
+		pxmap.Report();
+	}
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+
+//	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
+	printf("\n");
+	src.Disable();
+	return true;
+}
+
+
+/*
+class CDemoAnalyzer : public CAnalyzer
+{
+	CEvent* Read();
+};
+
+CEvent* CDemoAnalyzer::Read()
+{
+	CEvent* ev = Get();
 
 	Log.printf("Header: %03X\n", int(ev->header));
-	for (unsigned int i=0; i<ev->pixel.size(); i++)
-		Log.printf("[%3i %3i %3i]\n", ev->pixel[i].x, ev->pixel[i].y, ev->pixel[i].ph);
+	for (unsigned int i=0; i<ev->roc[0].pixel.size(); i++)
+		Log.printf("[%3i %3i %3i]\n", ev->roc[0].pixel[i].x, ev->roc[0].pixel[i].y, ev->roc[0].pixel[i].ph);
 	Log.printf("\n");
 	return ev;
 };
@@ -406,21 +605,21 @@ CRocEvent* CDemoAnalyzer::Read()
 
 class CDemoAnalyzer2 : public CAnalyzer
 {
-	CRocEvent* Read();
+	CEvent* Read();
 };
 
 
-CRocEvent* CDemoAnalyzer2::Read()
+CEvent* CDemoAnalyzer2::Read()
 {
-	CRocEvent* ev = Get();
+	CEvent* ev = Get();
 
 	Log.printf("%03X ", int(ev->header));
-	for (unsigned int i=0; i<ev->pixel.size(); i++)
-		Log.printf(" %3i", ev->pixel[i].ph);
+	for (unsigned int i=0; i<ev->roc[0].pixel.size(); i++)
+		Log.printf(" %3i", ev->roc[0].pixel[i].ph);
 	Log.printf("\n");
 	return ev;
 };
-
+*/
 
 // --- Level Histo
 
@@ -428,7 +627,7 @@ class CLevelHisto : public CAnalyzer
 {
 	unsigned int pos;
 	unsigned int h[256];
-	CRocEvent* Read();
+	CEvent* Read();
 public:
 	CLevelHisto(unsigned int ro_pos);
 	void Clear();
@@ -453,12 +652,12 @@ void CLevelHisto::Report(FILE *f, int min, int max)
 }
 
 
-CRocEvent* CLevelHisto::Read()
+CEvent* CLevelHisto::Read()
 {
-	CRocEvent* ev = Get();
-	if (ev->pixel.size() > pos)
+	CEvent* ev = Get();
+	if (ev->roc[0].pixel.size() > pos)
 	{
-		unsigned int x = ev->pixel[pos].ph;
+		unsigned int x = ev->roc[0].pixel[pos].ph;
 		if (x < 256) h[x]++;
 	}
 	return ev;
@@ -468,16 +667,16 @@ CRocEvent* CLevelHisto::Read()
 // ---
 class CPrint : public CAnalyzer
 {
-	CRocEvent* Read();
+	CEvent* Read();
 };
 
 
-CRocEvent* CPrint::Read()
+CEvent* CPrint::Read()
 {
-	CRocEvent* ev = Get();
-	for (unsigned int i = 0; i < ev->pixel.size(); i++)
+	CEvent* ev = Get();
+	for (unsigned int i = 0; i < ev->roc[0].pixel.size(); i++)
 	{
-		printf(" %3u", ev->pixel[i].ph);
+		printf(" %3u", ev->roc[0].pixel[i].ph);
 	}
 	printf("\n");
 	return ev;
@@ -492,14 +691,14 @@ CMD_PROC(analyze)
 	CDtbSource src;
 	src.Logging(true);
 	CStreamDump srcdump("streamdump.txt");
-	CDataRecordScanner rec;
+	CDataRecordScannerROC rec;
 	CRocRawDataPrinter rawList("raw.txt");
 
 //	CSink<CDataRecord*> pump;
 
 	CRocDigDecoder decoder;
-	CRocEventPrinter evList("eventlist.txt");
-	CSink<CRocEvent*> pump;
+	CEventPrinter evList("eventlist.txt");
+	CSink<CEvent*> pump;
 //	CLevelHisto l(0);
 
 //	src >> rec >> decoder >> pump;
@@ -569,7 +768,7 @@ void PrintScale(int min, int max)
 }
 
 
-void Scan1D(CDtbSource &src, CSink<CRocEvent*> &data, int vx, int xmin, int xmax, int xstep)
+void Scan1D(CDtbSource &src, CSink<CEvent*> &data, int vx, int xmin, int xmax, int xstep)
 {
 	int x, k;
 
@@ -599,8 +798,8 @@ void Scan1D(CDtbSource &src, CSink<CRocEvent*> &data, int vx, int xmin, int xmax
 			count = 0;
 			for (k=0; k<10; k++)
 			{
-				CRocEvent *ev = data.Get();
-				if (ev->pixel.size() != 0) count++;
+				CEvent *ev = data.Get();
+				if (ev->roc[0].pixel.size() != 0) count++;
 			}
 			if (count == 0) s[spos++] = '.';
 			else if (count >= 10) s[spos++] = '*';
@@ -630,9 +829,9 @@ CMD_PROC(shmoo)
 		vx, xmin, xmax, vy, ymin, ymax);
 
 	CDtbSource src;
-	CDataRecordScanner raw;
+	CDataRecordScannerROC raw;
 	CRocDigDecoder dec;
-	CSink<CRocEvent*> data;
+	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 8000000);
 
