@@ -1483,5 +1483,6 @@ CMD_PROC(gettemp)
 	printf("REF: %d\n",ref);
 	printf("VAL: %d\n",val);
 	printf("DIFF: %d\n",val - ref);
+	return true;
 }
 
