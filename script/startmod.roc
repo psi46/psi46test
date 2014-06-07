@@ -23,9 +23,6 @@ mdelay 400
 resoff
 mdelay 200
 
-getid
-getia
-
 --- setup TBM -------------------------------
 modsel b11111
 
@@ -77,11 +74,15 @@ dac  $fd  4  CtrlReg
 flush
 
 mask
+cald
+
+mdelay 100
+getid
+getia
 
 --- setup probe outputs ---------------------
 d1 9  sync
 a1 1  sdata
-
 
 --- setup readout timing --------------------
 pgstop
@@ -91,12 +92,55 @@ pgsingle
 
 pgset 0 b010000  15  pg_rest
 pgset 1 b000100  30  pg_cal
-pgset 2 b100010  30  pg_trg pg_sync
+pgset 2 b100010   0  pg_trg pg_sync
 pgset 3 b000100  30  pg_cal
 pgset 4 b000010  30  pg_trg
 pgset 5 b000100  30  pg_cal
 pgset 6 b000010   0  pg_trg
 
-pgloop 20000
+- pgloop 20000
+
+select :
+
+vcal 180
+dac 26 50  caldel
+wbc 24
+
+cole :
+pixe : 10:25 0
+
+select 0
+cal  0:20 10
+select 1
+cal  0:20 11
+select 2
+cal  0:20 12
+select 3
+cal  0:20 13
+select 4
+cal  0:20 14
+select 5
+cal  0:20 15
+select 6
+cal  0:20 16
+select 7
+cal  0:20 17
+select 8
+cal  0:20 18
+select 9
+cal  0:20 19
+select 10
+cal  0:20 20
+select 11
+cal  0:20 21
+select 12
+cal  0:20 22
+select 13
+cal  0:20 23
+select 14
+cal  0:20 24
+select 15
+cal  0:20 25
+
 
 flush

@@ -45,9 +45,10 @@ public:
 	bool IsStartError() { return (flags & 1) != 0; }
 	bool IsEndError()   { return (flags & 2) != 0; }
 	bool IsOverflow()   { return (flags & 4) != 0; }
-	
-	unsigned int GetSize() { return data.size(); }
+
+	unsigned int recordNr;
 	void Add(uint16_t value) { data.push_back(value); }
+	unsigned int GetSize() { return data.size(); }
 	uint16_t& operator[](int index) { return data[index]; }
 };
 
@@ -68,7 +69,7 @@ public:
 
 struct CRocPixel
 {
-// error bits:{ ph | x | y | c1 | c0 | r2 | r1 | r0 }
+// error bits:{ R5 || R4 | R3 | R2 | R1 || ph | x | y | c1 || c0 | r2 | r1 | r0 }
 	int error;
 	int raw;
 	int x;
@@ -81,11 +82,23 @@ struct CRocPixel
 
 struct CRocEvent
 {
+// error bits:{ pixel }
+	unsigned int error;
 	unsigned short header;
 	vector<CRocPixel> pixel;
 };
 
 
+struct CEvent
+{
+	unsigned int recordNr;
+// error bits:{ h0 | h1 | h2 | h3 || t0 | t1 | t2 | t3 || 0 | 0 | 0 | pixel }
+	int error;
+	enum DeviceType { ROCD, ROCA, MODD, MODA } deviceType;
+	unsigned short header;
+	unsigned short trailer;
+	vector<CRocEvent> roc;
+};
 
 
 
@@ -128,6 +141,7 @@ public:
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
 	bool OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
+	bool OpenModDig(CTestboard &dtb, bool endless = true, unsigned int dtbBufferSize = 5000000);
 	bool OpenSimulator(CTestboard &dtb,
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
 
@@ -201,16 +215,31 @@ public:
 };
 
 
-// === CDataRecordScanner (CDataPipe<uint16_t>, CDataRecord*) ==============
+// === CDataRecordScannerROCD (uint16_t, CDataRecord*) ==============
 
-class CDataRecordScanner : public CDataPipe<uint16_t, CDataRecord*>
+class CDataRecordScannerROC : public CDataPipe<uint16_t, CDataRecord*>
 {
+	unsigned int recCounter;
 	bool nextStartDetected;
 	CDataRecord record;
 	CDataRecord* Read();
 	CDataRecord* ReadLast() { return &record; }
 public:
-	CDataRecordScanner() : nextStartDetected(false) {}
+	CDataRecordScannerROC() : recCounter(0), nextStartDetected(false) {}
+};
+
+
+// === CDataRecordScannerMODD (uint16_t, CDataRecord*) ==============
+
+class CDataRecordScannerMODD : public CDataPipe<uint16_t, CDataRecord*>
+{
+	unsigned int recCounter;
+	bool nextStartDetected;
+	CDataRecord record;
+	CDataRecord* Read();
+	CDataRecord* ReadLast() { return &record; }
+public:
+	CDataRecordScannerMODD() : recCounter(0), nextStartDetected(false) {}
 };
 
 
@@ -268,49 +297,62 @@ public:
 };
 
 
-// === CRocDigDecoder (CDataRecord*, CRocEvent*) ============================
+// === CRocDigDecoder (CDataRecord*, CEvent*) ============================
 
-class CRocDigDecoder : public CDataPipe<CDataRecord*, CRocEvent*>
+class CRocDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
 {
-	CRocEvent x;
-	CRocEvent* Read();
-	CRocEvent* ReadLast() { return &x; }
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
 };
 
 
-// === CRocAnaDecoder (CDataRecord*, CRocEvent*) ============================
+// === CRocAnaDecoder (CDataRecord*, CEvent*) ============================
 
-class CRocAnaDecoder : public CDataPipe<CDataRecord*, CRocEvent*>
+class CRocAnaDecoder : public CDataPipe<CDataRecord*, CEvent*>
 {
 	CAnalogLevelDecoder dec;
-	CRocEvent x;
-	CRocEvent* Read();
-	CRocEvent* ReadLast() { return &x; }
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
 public:
 	void Calibrate(int ublackLevel, int blackLevel)
 	{ dec.Calibrate(ublackLevel, blackLevel); }
 };
 
 
-// === CRocEventPrinter (CRocEvent*, CRocEvent*) ============================
+// === CModDigDecoder (CDataRecord*, CEvent*) ============================
 
-class CRocEventPrinter : public CDataPipe<CRocEvent*, CRocEvent*>
+class CModDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
+{
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
+};
+
+
+// === CAnalyzer (CEvent*, CEvent*) ===================================
+
+class CAnalyzer : public CDataPipe<CEvent*>
+{
+protected:
+	CEvent* x;
+	CEvent* Read() { return x = Get(); };
+	CEvent* ReadLast() { return x; }
+};
+
+
+// === CRocEventPrinter (CEvent*, CEvent*) ============================
+
+class CEventPrinter : public CAnalyzer
 {
 	FILE *f;
-	CRocEvent* x;
-	CRocEvent* Read();
-	CRocEvent* ReadLast() { return x; }
+	bool listAll;
+	CEvent* Read();
 public:
-	CRocEventPrinter(const char *filename) { x = 0; f = fopen(filename, "wt"); }
-	~CRocEventPrinter() { fclose(f); }
+	CEventPrinter(const char *filename) { x = 0; listAll = true; f = fopen(filename, "wt"); }
+	~CEventPrinter() { fclose(f); }
+	void ListOnlyErrors(bool on) { listAll = !on; }
 };
 
 
-// === CAnalyzer (CRocEvent*, CRocEvent*) ===================================
-
-class CAnalyzer : public CDataPipe<CRocEvent*, CRocEvent*>
-{
-	CRocEvent* x;
-	CRocEvent* Read() { return x = Get(); };
-	CRocEvent* ReadLast() { return x; }
-};

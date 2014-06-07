@@ -994,7 +994,7 @@ CMD_PROC(dreadm)
 	vector<uint16_t> data;
 //	int TBM_eventnr,TBM_stackinfo,ColAddr,RowAddr,PulseHeight,TBM_trailerBits,TBM_readbackData;
 
-	tb.Daq_Read(data, 4096, words_remaining, channel);
+	tb.Daq_Read(data, 20000, words_remaining, channel);
 	int size = data.size();
 	printf("#samples: %i  remaining: %u\n", size, (unsigned int)(words_remaining));
 
@@ -1039,11 +1039,12 @@ CMD_PROC(dreadm)
 	{
 		int x = data[i] & 0xffff;
 		Log.printf("%04X", x);
-		if (i%100 == 9) printf("\n");
+		if (i%100 == 9) Log.printf("\n");
 	}
 	printf("\n");
 	Log.printf("\n");
 	Log.flush();
+	printf("#samples: %i  remaining: %u\n", size, (unsigned int)(words_remaining));
 
 	return true;
 }
@@ -1469,6 +1470,19 @@ CMD_PROC(mask)
 	}
 
 	DO_FLUSH
+	return true;
+}
+
+// =======================================================================
+//  Temperature commands
+// =======================================================================
+CMD_PROC(gettemp)
+{
+	uint16_t ref = tb.GetADC(5);
+	uint16_t val = tb.GetADC(4);
+	printf("REF: %d\n",ref);
+	printf("VAL: %d\n",val);
+	printf("DIFF: %d\n",val - ref);
 	return true;
 }
 

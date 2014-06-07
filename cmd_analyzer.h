@@ -29,6 +29,9 @@ CMD_REG(showrocdata, "", "")
 
 CMD_REG(vectortest, "<length>", "send/receive a vector")
 CMD_REG(daqtest, "", "test DAQ read function")
+CMD_REG(daqtest2, "", "test DAQ read function in continous mode")
+CMD_REG(daqreadm, "", "read, decode and list continous data stream from module")
+
 CMD_REG(analyze, "", "test analyzer chain")
 CMD_REG(ethsend, "<string>", "send <string> in a Ethernet packet")
 CMD_REG(ethrx, "", "shows number of received packets")
