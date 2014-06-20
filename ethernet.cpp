@@ -9,6 +9,7 @@
 #include "rpc_error.h"
 #include "config.h"
 
+#define DEBUG_ETH 
 using namespace std;
 
 void print_eth_packet(const unsigned char* packet, int len){
@@ -192,13 +193,13 @@ void CEthernet::Flush(){
     tx_frame[17] = tx_payload_size >> 8;
     tx_frame[18] = tx_payload_size;
     
-    /*
+    #ifdef DEBUG_ETH    
 	printf("Sent packet: ");
 	for(int i = 0; i < tx_payload_size + ETH_HEADER_SIZE; i++){
 		printf("%02X:",tx_frame[i]);
 	}
 	printf("\n\n");
-    */
+    #endif
     
     pcap_sendpacket(descr, tx_frame, tx_payload_size + ETH_HEADER_SIZE);
     tx_payload_size = 0;
@@ -222,14 +223,15 @@ void CEthernet::Read(void *buffer, unsigned int size){
                     printf("Error reading from ethernet.\n");
                     throw CRpcError(CRpcError::TIMEOUT);
                 }
+                continue;
             }
-            /*
-			printf("Received packet: ");
+            #ifdef DEBUG_ETH
+			printf("Received packet: %d, %02X \n",header.len, rx_frame);
             for(int i = 0; i < header.len; i++){
 				printf("%02X:",rx_frame[i]);
 			}
 			printf("\n");
-			*/
+            #endif
             if(header.len < ETH_HEADER_SIZE){ // malformed message
                 i--;
                 continue;
@@ -241,10 +243,6 @@ void CEthernet::Read(void *buffer, unsigned int size){
 				   i--;
 				   continue;
 			   }
-            
-            /*
-			printf("Passed Filter\n\n");
-			*/
 			
             unsigned int rx_payload_size = rx_frame[17];
             rx_payload_size = (rx_payload_size << 8) | rx_frame[18];
@@ -283,7 +281,7 @@ bool CEthernet::EnumNext(char name[]){
 	string MAC = MAC_addresses[MAC_counter];
 	MAC_counter = (MAC_counter + 1) % MAC_addresses.size();
 	
-	for(int i = 0; i < MAC.size(); i++){
+	for(unsigned int i = 0; i < MAC.size(); i++){
 		name[i] = MAC[i];
 	}
 	return true;
@@ -299,7 +297,7 @@ bool CEthernet::Enum(char name[], unsigned int pos){
 
 bool CEthernet::Open(char MAC_address[]){
 	if(is_open) Close();
-	bool success = Claim(((unsigned char*)MAC_address)+7);
+	bool success = Claim(((unsigned char*)MAC_address)+7, true);
 	if(!success) return false;
 	for(int i =0; i < 6; i++){
 		dtb_mac[i] = MAC_address[7+i];
@@ -359,7 +357,7 @@ void CEthernet::Hello(){
 	}
 }
 
-bool CEthernet::Claim(const unsigned char* MAC){
+bool CEthernet::Claim(const unsigned char* MAC, bool force){
     unsigned char packet[17];
 	
 	for(int i = 0; i < 6; i++){
@@ -370,7 +368,7 @@ bool CEthernet::Claim(const unsigned char* MAC){
 	packet[13] = 0x09;
 	packet[14] = host_pid[0];
 	packet[15] = host_pid[1];
-	packet[16] = 0x2;
+	packet[16] = (force) ? 0x4 : 0x2;
 	
     pcap_sendpacket(descr, packet, sizeof(packet));
 	

@@ -32,7 +32,7 @@ class CEthernet : public CRpcIo
     void InitInterface();
     
     void Hello();
-    bool Claim(const unsigned char* MAC);
+    bool Claim(const unsigned char* MAC, bool force);
     bool Unclaim();
 
     //pcap data structures
