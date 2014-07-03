@@ -791,9 +791,11 @@ void test_pulseheight()
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
+//	CRocRawDataPrinter rawPrint("raw.txt");
 	CRocDigDecoder dec;
+//	CEventPrinter evPrint("event.txt");
 	CSink<CEvent*> data;
-	src >> raw >> dec >> data;
+	src >> raw /* >> rawPrint */ >> dec /* >> evPrint */ >> data;
 
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 	src.Enable();

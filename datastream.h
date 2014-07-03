@@ -231,6 +231,18 @@ public:
 
 // === CDataRecordScannerMODD (uint16_t, CDataRecord*) ==============
 
+class CDataRecordScannerMODD_old : public CDataPipe<uint16_t, CDataRecord*>
+{
+	unsigned int recCounter;
+	bool nextStartDetected;
+	CDataRecord record;
+	CDataRecord* Read();
+	CDataRecord* ReadLast() { return &record; }
+public:
+	CDataRecordScannerMODD_old() : recCounter(0), nextStartDetected(false) {}
+};
+
+
 class CDataRecordScannerMODD : public CDataPipe<uint16_t, CDataRecord*>
 {
 	unsigned int recCounter;
@@ -321,6 +333,16 @@ public:
 };
 
 
+// === CModDigDecoder_old (CDataRecord*, CEvent*) ============================
+
+class CModDigDecoder_old : public CDataPipe<CDataRecord*, CEvent*>
+{
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
+};
+
+
 // === CModDigDecoder (CDataRecord*, CEvent*) ============================
 
 class CModDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
@@ -342,7 +364,7 @@ protected:
 };
 
 
-// === CRocEventPrinter (CEvent*, CEvent*) ============================
+// === CEventPrinter (CEvent*, CEvent*) ============================
 
 class CEventPrinter : public CAnalyzer
 {
@@ -350,9 +372,36 @@ class CEventPrinter : public CAnalyzer
 	bool listAll;
 	CEvent* Read();
 public:
-	CEventPrinter(const char *filename) { x = 0; listAll = true; f = fopen(filename, "wt"); }
+	CEventPrinter(const char *filename)
+	{ x = 0; listAll = true; f = fopen(filename, "wt"); }
 	~CEventPrinter() { fclose(f); }
 	void ListOnlyErrors(bool on) { listAll = !on; }
 };
 
+// === CReadBackLogger(CEvent*, CEvent*) ============================
 
+class CReadbackValue
+{
+	bool updated;
+	unsigned short n;
+	unsigned short shift;
+
+	unsigned short value;
+public:
+	CReadbackValue() : updated(false), n(0), shift(0), value(0) {}
+	void Reset() { updated = false; n = 0; shift = 0; value = 0;  }
+	void Add(unsigned int v);
+	bool Get(unsigned short &rdbValue);
+};
+
+
+class CReadbackLogger : public CAnalyzer
+{
+	FILE *f;
+	CReadbackValue rdb[8];
+
+	CEvent* Read();
+public:
+	CReadbackLogger(const char *filename) { f = fopen(filename, "wt"); }
+	~CReadbackLogger() { fclose(f); }
+};

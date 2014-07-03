@@ -547,17 +547,18 @@ CMD_PROC(daqreadm)
 	PAR_INT(period,0,65535)
 
 	CDtbSource src;  src.Logging(false);
-//	CStreamDump srcdump("xxx_stream.txt");
+	CStreamDump srcdump("xxx_stream.txt");
 	CDataRecordScannerMODD rec;
 	CRocRawDataPrinter rawList("xxx_raw.txt");
 	CModDigDecoder decoder;
-	CEventMap pxmap;
+//	CEventMap pxmap;
 	CEventPrinter evList("xxx_event.txt");
-	evList.ListOnlyErrors(true);
+//	evList.ListOnlyErrors(true);
+	CReadbackLogger rdb("xxx_readback.txt");
 	CEventCounter counter;
 	CSink<CEvent*> pump;
 
-	src >> /* srcdump >> */ rec >> rawList >> decoder >> pxmap >> evList >> counter >> pump;
+	src >> srcdump >> rec >> rawList >> decoder >> /* pxmap >> */ evList >> rdb >> counter >> pump;
 
 	src.OpenModDig(tb, true, 20000000);
 	src.Enable();
@@ -573,7 +574,7 @@ CMD_PROC(daqreadm)
 			if (i % 1000 == 0) counter.Print();
 		}
 		tb.Pg_Stop();
-		pxmap.Report();
+//		pxmap.Report();
 	}
 	catch (DS_empty &) { printf("finished\n"); }
 	catch (DataPipeException &e) { printf("%s\n", e.what()); }

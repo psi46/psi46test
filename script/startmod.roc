@@ -26,25 +26,33 @@ mdelay 200
 --- setup TBM -------------------------------
 modsel b11111
 
-tbmset $E4 $F0    Init TBM, Reset ROC
-tbmset $F4 $F0
-tbmset $E0 $01    Disable PKAM Counter
-tbmset $F0 $01
-tbmset $E2 $C0    Mode = Calibration
-tbmset $F2 $C0
-tbmset $E8 $10    Set PKAM Counter
-tbmset $F8 $10
-tbmset $EA b00000000 Delays
-tbmset $FA b00000000
-tbmset $EC $00    Temp measurement control
-tbmset $FC $00
+tbmset $E4 b11110000    Init TBM, Reset ROC
+tbmset $F4 b11110000
+
+tbmset $E0 b0_000000_1  Disable Auto Reset, Disable PKAM Counter
+tbmset $F0 b0_000000_0
+
+tbmset $E2 b11_000000   Mode: Calibration
+tbmset $F2 b11_000000
+
+tbmset $E8 0            Set PKAM Counter (x+1)*6.4us
+tbmset $F8 16
+
+tbmset $EA b0_0_000_000 Delays: Tok _ Hdr/Trl _ Port 1 _ Port 0
+tbmset $FA b0_0_000_000
+
+tbmset $EC 10           Auto reset rate (x+1)*256
+tbmset $FC 0
+
+tbmset $EE $5a          Temp measurement control
+tbmset $FE $00
 
 mdelay 100
 
 --- setup all ROCs --------------------------
 select :
 
-dac   1   8  Vdig 
+dac   1  12  Vdig 
 dac   2 120  Vana
 dac   3  40  Vsf
 dac   4  12  Vcomp
@@ -66,10 +74,10 @@ dac  18 115  VIon
 dac  19  50  Vcomp_ADC 100
 dac  20  70  VIref_ADC 160
 
-dac  25  70  Vcal
-dac  26  68  CalDel
+dac  25 180  Vcal
+dac  26  50  CalDel
 
-dac  $fe 25  WBC
+dac  $fe 24  WBC
 dac  $fd  4  CtrlReg
 flush
 
@@ -86,11 +94,12 @@ a1 1  sdata
 
 --- setup readout timing --------------------
 pgstop
-pgset 0 b010000  20  pg_rest
-pgset 1 b000000   0
+pgset 0 b010000  50  pg_rest
+pgset 1 b001000   0  pg_resr
 pgsingle
+udelay 100
 
-pgset 0 b010000  15  pg_rest
+pgset 0 b000000  15  pg_rest
 pgset 1 b000100  30  pg_cal
 pgset 2 b100010   0  pg_trg pg_sync
 pgset 3 b000100  30  pg_cal
@@ -101,46 +110,15 @@ pgset 6 b000010   0  pg_trg
 - pgloop 20000
 
 select :
-
-vcal 180
-dac 26 50  caldel
-wbc 24
-
 cole :
-pixe : 10:25 0
+- pixe : 10:25 0
 
-select 0
-cal  0:20 10
 select 1
-cal  0:20 11
-select 2
-cal  0:20 12
-select 3
-cal  0:20 13
-select 4
-cal  0:20 14
-select 5
-cal  0:20 15
-select 6
-cal  0:20 16
-select 7
-cal  0:20 17
-select 8
-cal  0:20 18
-select 9
-cal  0:20 19
-select 10
-cal  0:20 20
-select 11
-cal  0:20 21
-select 12
-cal  0:20 22
-select 13
-cal  0:20 23
-select 14
-cal  0:20 24
-select 15
-cal  0:20 25
+pixe 1:4 8 0
+cal  1:4 8
 
+select 5
+pixe 1:3 10:11 0
+cal  1:3 10:11
 
 flush

@@ -186,6 +186,7 @@ bool CCmdLine::getNumber(int &value)
 
 	for (i=0; i<cnt; i++)
 	{
+		while (par[0] == '_') par++;
 		x = GetHex(par[0]);
 		if (0 <= x && x < base) value = value*base + x;
 		else break;

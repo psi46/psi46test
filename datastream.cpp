@@ -212,9 +212,9 @@ CDataRecord* CDataRecordScannerROC::Read()
 }
 
 
-// === CDataRecordScannerMODD (CDataPipe<uint16_t, CRecord*>) =============
+// === CDataRecordScannerMODD_old (CDataPipe<uint16_t, CRecord*>) =============
 
-CDataRecord* CDataRecordScannerMODD::Read()
+CDataRecord* CDataRecordScannerMODD_old::Read()
 { PROFILING
 	record.Clear();
 
@@ -236,6 +236,37 @@ CDataRecord* CDataRecordScannerMODD::Read()
 		if (record.GetSize() < 40000) record.Add(GetLast() & 0x0fff);
 		else record.SetOverflow();
 	}
+	return &record;
+}
+
+
+// === CDataRecordScannerMODD (CDataPipe<uint16_t, CRecord*>) =============
+
+CDataRecord* CDataRecordScannerMODD::Read()
+{ PROFILING
+	record.Clear();
+
+	if (!nextStartDetected) Get();
+	nextStartDetected = false;
+
+	while ((GetLast() & 0xe000) != 0xa000) Get();
+	record.Add(GetLast());
+
+	record.recordNr = recCounter++;
+
+	while ((Get() & 0xe000) != 0xc000)
+	{
+		if ((GetLast() & 0xe000) == 0xa000)
+		{
+			record.SetEndError();
+			nextStartDetected = true;
+			return &record;
+		}
+		if (record.GetSize() < 40000) record.Add(GetLast());
+		else record.SetOverflow();
+	}
+	record.Add(GetLast());
+
 	return &record;
 }
 
@@ -309,7 +340,7 @@ CDataRecord* CRocRawDataPrinter::Read()
 				fprintf(f, " %5i", CAnalogLevelDecoder::ExpandSign((*x)[i]));
 		else
 		for (unsigned int i=0; i<n; i++)
-			fprintf(f, " %03X", (unsigned int)((*x)[i]));
+			fprintf(f, " %04X", (unsigned int)((*x)[i]));
 
 		fprintf(f, "\n");
 	}
@@ -366,6 +397,8 @@ CDataRecord* CReadBack::Read()
 
 CEvent* CRocDigDecoder::Read()
 { PROFILING
+	x.roc.clear();
+
 	CDataRecord *sample = Get();
 	x.recordNr = sample->recordNr;
 	x.deviceType = CEvent::ROCD;
@@ -395,6 +428,8 @@ CEvent* CRocDigDecoder::Read()
 
 CEvent* CRocAnaDecoder::Read()
 { PROFILING
+	x.roc.clear();
+
 	CDataRecord *sample = Get();
 	x.recordNr = sample->recordNr;
 	x.deviceType = CEvent::ROCA;
@@ -420,9 +455,9 @@ CEvent* CRocAnaDecoder::Read()
 }
 
 
-// === CModDigDecoder (CDataRecord*, CEvent*) ===============================
+// === CModDigDecoder_old (CDataRecord*, CEvent*) ===============================
 
-CEvent* CModDigDecoder::Read()
+CEvent* CModDigDecoder_old::Read()
 { PROFILING
 	x.roc.clear();
 
@@ -536,11 +571,110 @@ CEvent* CModDigDecoder::Read()
 }
 
 
+// === CModDigDecoder (CDataRecord*, CEvent*) ===============================
+
+#define MDD_ERROR_MARKER 0x6000
+
+CEvent* CModDigDecoder::Read()
+{ PROFILING
+	x.roc.clear();
+
+	CDataRecord *sample = Get();
+	x.recordNr = sample->recordNr;
+	x.deviceType = CEvent::MODD;
+	x.header = x.trailer = 0;
+	x.roc.reserve(8);
+	x.error = 0;
+
+	unsigned int pos = 0;
+	unsigned int size = sample->GetSize();
+	uint16_t v;
+
+	// --- decode TBM header ---------------------------------
+	unsigned int raw = 0;
+
+	// H1
+	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+	if ((v & 0xe000) != 0xa000) x.error |= 0x0800;
+	raw = (v & 0x00ff) << 8;
+
+	// H2
+	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+	if ((v & 0xe000) != 0x8000) x.error |= 0x0400;
+	raw += v & 0x00ff;
+
+	x.header = raw;
+
+	// --- decode ROC data -----------------------------------
+	CRocEvent roc;
+
+	// while ROC header
+	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+	while ((v & 0xe000) == 0x4000) // RH
+	{
+		roc.pixel.clear();
+		roc.header = v & 0x0fff;
+		roc.error = 0;
+
+		int px_error;
+		CRocPixel pixel;
+		v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+		while ((v & 0xe000) <= 0x2000) // R0 ... R1
+		{
+			px_error = 0;
+			pixel.raw = 0;
+			for (unsigned int i=0; i<=1; i++)
+			{
+				if ((v >> 13) != i) // R<i>
+				{
+					px_error |= (1<<i);
+					if (v & 0x8000) // TBM header/trailer
+					{
+						pixel.error = 0x1fff;
+						roc.error |= 0x0001;
+						roc.pixel.push_back(pixel);
+						x.roc.push_back(roc);
+						v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+						goto trailer;
+					}
+				}
+				pixel.raw = (pixel.raw << 12) + (v & 0x0fff);
+				v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+			}
+			pixel.DecodeRaw();
+			pixel.error |= (px_error << 8);
+			if (pixel.error) roc.error |= 0x0001;
+			roc.pixel.push_back(pixel);
+		}
+		if (roc.error) x.error |= 0x0001;
+		x.roc.push_back(roc);
+	}
+
+	// --- decode TBM trailer --------------------------------
+	trailer:
+	raw = 0;
+
+	// T1
+	if ((v & 0xe000) != 0xe000) x.error |= 0x0080;
+	raw = (v & 0x00ff) << 8;
+
+	// T2
+	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+	if ((v & 0xe000) != 0xc000) x.error |= 0x0040;
+	raw += v & 0x00ff;
+
+	x.trailer = raw;
+
+	return &x;
+}
+
+
 // === CEventPrinter (CEvent*, CEvent*) ============================
 
 CEvent* CEventPrinter::Read()
 { PROFILING
 	x = Get();
+	unsigned int d;
 	if (f && (listAll || x->error))
 	{
 		switch (x->deviceType)
@@ -555,22 +689,104 @@ CEvent* CEventPrinter::Read()
 				fprintf(f, "\n");
 				break;
 			case CEvent::MODD:
-				fprintf(f, "\nEvent: %u\nHeader: %04X", x->recordNr, (unsigned int)(x->header));
+				// print TBM header
+				fprintf(f, "\nEvent: %u\nHeader: ", x->recordNr);
+				d = x->header;
+				fprintf(f, " EVENT(%u) DATA(%u:%u)",
+					(unsigned int)((d>>8) & 0x00ff), // Event
+					(unsigned int)((d>>6) & 0x0003), // Data ID
+					(unsigned int)(d & 0x003f));     // Data
 				if (x->error) fprintf(f, "  ERROR %03x", int(x->error));
 				fprintf(f, "\n");
+
+				// print ROC header and pixel data
 				for (unsigned int r = 0; r < x->roc.size(); r++)
 				{
-					fprintf(f, "  ROC%2u:%c%03X(%3u):", r, x->roc[r].error ? '*':' ', int(x->header), (unsigned int)(x->roc[r].pixel.size()));
+					fprintf(f, "  ROC%2u:%c%03X(%3u):", r, x->roc[r].error ? '*':' ', int(x->roc[r].header), (unsigned int)(x->roc[r].pixel.size()));
 					for (unsigned int i=0; i<x->roc[r].pixel.size(); i++)
 					{
 						fprintf(f, " (%2i/%2i%c%3i)", x->roc[r].pixel[i].x, x->roc[r].pixel[i].y, x->roc[r].error ? '*':'/', x->roc[r].pixel[i].ph);
 					}
 					fprintf(f, "\n");
 				}
-				fprintf(f, "Trailer: %04X\n", (unsigned int)(x->trailer));
+
+				// print TBM trailer
+				fprintf(f, "Trailer: ");
+				d = x->trailer;
+				fprintf(f, " NTOK(%c) RES(%c%c) SYN(%c%c) CTC(%c) CAL(%c) STK(%c%c%2u) PKMR(%c)",
+					(d & 0x8000)?'1':'0', // NTOK
+					(d & 0x4000)?'T':' ', // RES
+					(d & 0x2000)?'R':' ',
+					(d & 0x1000)?'E':' ', // SYN
+					(d & 0x0800)?'T':' ',
+					(d & 0x0400)?'1':'0', // CTC
+					(d & 0x0200)?'1':'0', // CAL
+					(d & 0x0100)?'F':' ', // STK
+					(d & 0x0080)?'N':' ',
+					(unsigned int)(d & 0x003f),
+					(d & 0x0040)?'1':'0');
+				fprintf(f, "\n");
+
 				break;
 			default: break;
 		}
 	}
 	return x;
 }
+
+
+// === CReadBackLogger(CEvent*, CEvent*) ============================
+
+
+void CReadbackValue::Add(unsigned int v)
+{
+	shift <<= 1; n++;
+	if (v&1) shift++;
+	if (v&2)
+	{
+		value = shift;
+		updated = true;
+		shift = 0; n = 0;
+	}
+}
+
+bool CReadbackValue::Get(unsigned short &rdbValue)
+{
+	rdbValue = value;
+	bool upd = updated;
+	updated = false;
+	return upd;
+}
+
+
+CEvent* CReadbackLogger::Read()
+{
+	x = Get();
+	unsigned int r;
+	if (!x->error)
+	{
+		for (r = 0; r < 8; r++)
+		{
+			if (r < x->roc.size())
+			{
+				rdb[r].Add(x->roc[r].header);
+			} else rdb[r].Reset();
+		}
+	}
+	else for (r = 0; r < 8; r++) rdb[r].Reset();
+
+	if (f)
+	{
+		fprintf(f, "%4u:", x->recordNr);
+		unsigned short value;
+		for (r = 0; r < 8; r++)
+		{
+			if (rdb[r].Get(value))
+				fprintf(f, " %04X", int(value));
+			else fputs(" ----", f);
+		}
+		fputs("\n", f);
+	}
+	return x;
+}
+

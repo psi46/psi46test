@@ -196,6 +196,7 @@ public:
 	RPC_EXPORT void Sig_SetOffset(uint8_t offset);
 	RPC_EXPORT void Sig_SetLVDS();
 	RPC_EXPORT void Sig_SetLCDS();
+	RPC_EXPORT void Sig_SetRdaToutDelay(uint8_t delay);
 
 
 	// --- digital signal probe ---------------------------------------------
@@ -323,6 +324,7 @@ public:
 
 	RPC_EXPORT void Daq_Select_Deser400();
 	RPC_EXPORT void Daq_Deser400_Reset(uint8_t reset = 3);
+	RPC_EXPORT void Daq_Deser400_OldFormat(bool old);
 
 	RPC_EXPORT void Daq_Select_Datagenerator(uint16_t startvalue);
 

@@ -398,16 +398,6 @@ CMD_PROC(sda)
 	return true;
 }
 
-/*
-CMD_PROC(rda)
-{
-	int ns;
-	PAR_INT(ns,0,400);
-	tb.SetDelay(DELAYSIG_RDA, ns);
-	DO_FLUSH
-	return true;
-}
-*/
 
 CMD_PROC(ctr)
 {
@@ -425,6 +415,15 @@ CMD_PROC(tin)
 	PAR_INT(ns,0,400);
 	if (!PAR_IS_INT(duty, -8, 8)) duty = 0;
 	tb.Sig_SetDelay(SIG_TIN, ns, duty);
+	DO_FLUSH
+	return true;
+}
+
+CMD_PROC(rda)
+{
+	int ns;
+	PAR_INT(ns,0,19);
+	tb.Sig_SetRdaToutDelay(ns);
 	DO_FLUSH
 	return true;
 }

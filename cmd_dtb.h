@@ -49,15 +49,15 @@ CMD_REG(mdelay, "<ms>", "waits <ms> milliseconds")
 //  test board commands
 // =======================================================================
 
-CMD_REG(clksrc, "<source>", "Select clock source")
+CMD_REG(clksrc, "<source>", "Select clock source (1=ext, 0=int)")
 CMD_REG(clkok, "clkok", "Check if ext clock is present")
 CMD_REG(fsel, "<freqdiv>", "clock frequency select")
 CMD_REG(stretch, "<src> <delay> <width>", "stretch clock")
 CMD_REG(clk, "<delay>", "clk delay")
 CMD_REG(sda, "<delay>", "sda delay")
-// CMD_REG(rda, "", "")
 CMD_REG(ctr, "<delay>", "ctr delay")
 CMD_REG(tin, "<delay>", "tin delay")
+CMD_REG(rda, "<delay>", "rda/tout delay")
 CMD_REG(clklvl, "<level>", "clk signal level")
 CMD_REG(sdalvl, "<level>", "sda signel level")
 CMD_REG(ctrlvl, "<level>", "ctr signel level")
