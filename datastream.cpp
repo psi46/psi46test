@@ -713,7 +713,7 @@ CEvent* CEventPrinter::Read()
 				// print TBM trailer
 				fprintf(f, "Trailer: ");
 				d = x->trailer;
-				fprintf(f, " NTOK(%c) RES(%c%c) SYN(%c%c) CTC(%c) CAL(%c) STK(%c%c%2u) PKMR(%c)",
+				fprintf(f, " NTOK(%c) RES(%c%c) SYN(%c%c) CTC(%c) CAL(%c) STK(%c%2u) RES(%c%c)",
 					(d & 0x8000)?'1':'0', // NTOK
 					(d & 0x4000)?'T':' ', // RES
 					(d & 0x2000)?'R':' ',
@@ -722,9 +722,9 @@ CEvent* CEventPrinter::Read()
 					(d & 0x0400)?'1':'0', // CTC
 					(d & 0x0200)?'1':'0', // CAL
 					(d & 0x0100)?'F':' ', // STK
-					(d & 0x0080)?'N':' ',
 					(unsigned int)(d & 0x003f),
-					(d & 0x0040)?'1':'0');
+					(d & 0x0080)?'A':' ',
+					(d & 0x0040)?'P':' ');
 				fprintf(f, "\n");
 
 				break;
