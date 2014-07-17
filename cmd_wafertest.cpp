@@ -33,8 +33,6 @@ CMD_PROC(roctype)
 	if (strcmp(s, "ana") == 0) settings.rocType = 0;
 	else if (strcmp(s, "dig") == 0) settings.rocType = 1;
 	else printf("choose ana or dig\n");
-
-	return true;
 }
 
 
@@ -125,21 +123,18 @@ CMD_PROC(pr)
 	printf(" REQ %s\n", s);
 	char *answer = prober.printf("%s", s);
 	printf(" RSP %s\n", answer);
-	return true;
 }
 
 
 CMD_PROC(sep)
 {
 	prober.printf("MoveChuckSeparation");
-	return true;
 }
 
 
 CMD_PROC(contact)
 {
 	prober.printf("MoveChuckContact");
-	return true;
 }
 
 
@@ -220,8 +215,6 @@ CMD_PROC(test)
 
 //	FILE *f = fopen("g_chipdata.txt", "wt");
 //	if (f) { g_chipdata.Save(f);  fclose(f); }
-
-	return true;
 }
 
 
@@ -264,7 +257,7 @@ CMD_PROC(chippos)
 	char s[4];
 	PAR_STRING(s,2);
 	if (s[0] >= 'a') s[0] -= 'a' - 'A';
-	if (s[0] == 'B') return true; // chip B not existing
+	if (s[0] == 'B') return; // chip B not existing
 
 	int i;
 	for (i=0; i<4; i++)
@@ -272,10 +265,9 @@ CMD_PROC(chippos)
 		if (s[0] == chipPosChar[i])
 		{
 			ChangeChipPos(i);
-			return true;
+			return;
 		}
 	}
-	return true;
 }
 
 
@@ -429,7 +421,7 @@ CMD_PROC(go)
 	{
 		if (strcmp(s,"init") == 0) { isRunning = false; }
 		else if (strcmp(s,"cont") == 0) { isRunning = true; }
-		else { printf(" illegal parameter");  return true; }
+		else { printf(" illegal parameter");  return; }
 	}
 
 	if (!isRunning)
@@ -441,7 +433,7 @@ CMD_PROC(go)
 	}
 
 	printf(" wafer test running\n");
-	if (!ReportWafer()) return true;
+	if (!ReportWafer()) return;
 
 	while (true)
 	{
@@ -480,21 +472,18 @@ CMD_PROC(go)
 			break;
 		}
 	}
-	return true;
 }
 
 
 CMD_PROC(first)
 {
 	printf(" RSP %s\n", prober.printf("StepFirstDie"));
-	return true;
 }
 
 
 CMD_PROC(next)
 {
 	printf(" RSP %s\n", prober.printf("StepNextDie"));
-	return true;
 }
 
 
@@ -506,7 +495,6 @@ CMD_PROC(goto)
 
 	char *msg = prober.printf("StepNextDie %i %i", x, y);
 	printf(" RSP %s\n", msg);
-	return true;
 }
 
 
@@ -517,20 +505,17 @@ CMD_PROC(vdreg)    // regulated VD
 {
 	double v = tb.GetVD_Reg();
 	printf("\n VD_reg = %1.3fV\n", v);
-	return true;
 }
 
 CMD_PROC(vdcap)    // unregulated VD for contact test
 {
 	double v = tb.GetVD_CAP();
 	printf("\n VD_cap = %1.3fV\n", v);
-	return true;
 }
 
 CMD_PROC(vdac)     // regulated VDAC
 {
 	double v = tb.GetVDAC_CAP();
 	printf("\n V_dac = %1.3fV\n", v);
-	return true;
 }
 */

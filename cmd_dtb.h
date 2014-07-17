@@ -128,12 +128,12 @@ CMD_REG(tbmsel, "<hub> <port>", "set hub and port address")
 CMD_REG(modsel, "<hub>", "set hub address for module")
 CMD_REG(tbmset, "<reg> <value>", "set TBM register")
 
-/*
+
 CMD_REG(tbmget, "", "")
 CMD_REG(tbmgetraw, "", "")
-CMD_REG(tbmregs, "", "")
-CMD_REG(modscan, "", "")
-*/
+// CMD_REG(tbmregs, "", "")
+// CMD_REG(modscan, "", "")
+
 
 HELP_CAT("roc")
 

@@ -60,7 +60,7 @@ public:
 };
 
 
-typedef bool(*CMDFUNCTION)(CCmdLine &);
+typedef void(*CMDFUNCTION)(CCmdLine &);
 
 class CCommand
 {
@@ -107,24 +107,24 @@ bool cmd_not_implemented(CCmdLine &par);
 extern CInterpreter cmd_intp;
 
 #define HELP_CAT(name)
-#define CMD_REG(name,parameter,helptext) bool cmd_##name(CCmdLine &par);
-#define CMD_PROC(name) bool cmd_##name(CCmdLine &par)
+#define CMD_REG(name,parameter,helptext) void cmd_##name(CCmdLine &par);
+#define CMD_PROC(name) void cmd_##name(CCmdLine &par)
 
 #define CMD_NUL(name, help) cmd_intp.AddCommand(#name, cmd_not_implemented, help)
 #define CMD_RUN(file) cmd_intp.run(file);
 #define PAR_INT(var,min,max) if (!par.getInt(var,(min),(max))) \
-{ printf("illegal integer parameter!\n"); return false; }
+{ printf("illegal integer parameter!\n"); return; }
 #define PAR_IS_INT(var,min,max) par.getInt(var,(min),(max))
 
 #define PAR_RANGE(varmin,varmax,min,max) if (!par.getIntRange(varmin,varmax,(min),(max))) \
-{ printf("illegal range parameter!\n"); return false; }
+{ printf("illegal range parameter!\n"); return; }
 
 #define PAR_STRING(var,size) if (!par.getString(var,size)) \
-{ printf("illegal string parameter!\n"); return false; }
+{ printf("illegal string parameter!\n"); return; }
 
 #define PAR_IS_STRING(var,size) (par.getString(var,size))
 
 #define PAR_STRINGEOL(var,size) if (!par.getStringEOL(var,size)) \
-{ printf("illegal string parameter!\n"); return false; }
+{ printf("illegal string parameter!\n"); return; }
 
 #endif // !defined(AFX_COMMAND_H__CE717DC8_3D70_42BB_AA0A_B9F4C73250A5__INCLUDED_)

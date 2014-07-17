@@ -55,7 +55,7 @@ CMD_PROC(showclk)
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
-			return true;
+			return;
 		}
 	}
 	tb.Daq_Close();
@@ -71,8 +71,6 @@ CMD_PROC(showclk)
 		values[x++] = y;
 	}
 	Scope("CLK", values);
-
-	return true;
 }
 
 CMD_PROC(showctr)
@@ -114,7 +112,7 @@ CMD_PROC(showctr)
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
-			return true;
+			return;
 		}
 	}
 	tb.Daq_Close();
@@ -130,8 +128,6 @@ CMD_PROC(showctr)
 		values[x++] = y;
 	}
 	Scope("CTR", values);
-
-	return true;
 }
 
 
@@ -163,7 +159,7 @@ CMD_PROC(showsda)
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
-			return true;
+			return;
 		}
 	}
 	tb.Daq_Close();
@@ -179,8 +175,6 @@ CMD_PROC(showsda)
 		values[x++] = y;
 	}
 	Scope("SDA", values);
-
-	return true;
 }
 
 
@@ -241,7 +235,6 @@ CMD_PROC(decoding)
 	}
 	tb.Daq_Close();
 	Log.flush();
-	return true;
 }
 
 
@@ -280,7 +273,7 @@ CMD_PROC(showrocdata)
 		if (data[i].size() != nSamples)
 		{
 			printf("Data size %i: %i\n", i, int(data[i].size()));
-			return true;
+			return;
 		}
 	}
 	tb.Daq_Close();
@@ -296,8 +289,6 @@ CMD_PROC(showrocdata)
 		values[x++] = y;
 	}
 	Scope("SDATA1", values);
-
-	return true;
 }
 
 
@@ -322,7 +313,6 @@ CMD_PROC(vectortest)
 	tb.VectorTest(in, out);
 
 	// compare vectors
-	return true;
 }
 
 
@@ -387,7 +377,6 @@ CMD_PROC(daqtest)
 	printf("#block errors %i\n", errors);
 
 	tb.Daq_Close(0);
-	return true;
 }
 
 
@@ -442,8 +431,6 @@ CMD_PROC(daqtest2)
 	tb.Daq_Stop(0);
 	tb.Daq_Close(0);
 	printf("\ntotal=%8u;  total errors=%u\n", cnt, error_sum);
-
-	return true;
 }
 
 
@@ -582,7 +569,6 @@ CMD_PROC(daqreadm)
 //	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
 	printf("\n");
 	src.Disable();
-	return true;
 }
 
 
@@ -732,7 +718,6 @@ CMD_PROC(analyze)
 //	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
 
 	src.Disable();
-	return true;
 }
 
 
@@ -743,14 +728,12 @@ CMD_PROC(ethsend)
 	string message = msg;
 	tb.Ethernet_Send(message);
 	DO_FLUSH
-	return true;
 }
 
 CMD_PROC(ethrx)
 {
 	unsigned int n = tb.Ethernet_RecvPackets();
 	printf("%u packets received\n", n);
-	return true;
 }
 
 
@@ -823,7 +806,7 @@ CMD_PROC(shmoo)
 	PAR_RANGE(ymin,ymax, 0,255);
 
 	int count = xmax-xmin;
-	if (count < 1 || count > 256) return true;
+	if (count < 1 || count > 256) return;
 
 	Log.section("SHMOO",false);
 	Log.printf("regX(%i)=%i:%i;  regY(%i)=%i:%i\n",
@@ -846,8 +829,6 @@ CMD_PROC(shmoo)
 	}
 
 	tb.Daq_Close();
-
-	return true;
 }
 
 
@@ -896,8 +877,6 @@ CMD_PROC(deser160)
 		printf("\n");
 	}
 	tb.Daq_Close();
-
-	return true;
 }
 
 
@@ -983,7 +962,5 @@ CMD_PROC(readback)
 	case 12: printf("IA = %02X\n", x); break;
 	default: printf("? = %04X\n", value); break;
 	}
-
-	return true;
 }
 */

@@ -58,7 +58,6 @@ void cmdHelp()
 CMD_PROC(h)
 {
 	cmdHelp();
-	return true;
 }
 
 

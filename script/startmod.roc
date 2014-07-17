@@ -29,8 +29,8 @@ modsel b11111
 tbmset $E4 b11110000    Init TBM, Reset ROC
 tbmset $F4 b11110000
 
-tbmset $E0 b0_000000_1  Disable Auto Reset, Disable PKAM Counter
-tbmset $F0 b0_000000_0
+tbmset $E0 b1_000000_1  Disable Auto Reset, Disable PKAM Counter
+tbmset $F0 b1_000000_1
 
 tbmset $E2 b11_000000   Mode: Calibration
 tbmset $F2 b11_000000
@@ -38,21 +38,21 @@ tbmset $F2 b11_000000
 tbmset $E8 0            Set PKAM Counter (x+1)*6.4us
 tbmset $F8 16
 
-tbmset $EA b0_0_000_000 Delays: Tok _ Hdr/Trl _ Port 1 _ Port 0
-tbmset $FA b0_0_000_000
+tbmset $EA b1_1_100_100 Delays: Tok _ Hdr/Trl _ Port 1 _ Port 0
+tbmset $FA b1_1_100_100
 
 tbmset $EC 10           Auto reset rate (x+1)*256
 tbmset $FC 0
 
-tbmset $EE $5a          Temp measurement control
-tbmset $FE $00
+tbmset $EE b001_001_00  160/400 MHz phase adjust  
+tbmset $FE $00          Temp measurement control
 
 mdelay 100
 
 --- setup all ROCs --------------------------
 select :
 
-dac   1  12  Vdig 
+dac   1   8  Vdig 
 dac   2 120  Vana
 dac   3  40  Vsf
 dac   4  12  Vcomp
@@ -89,8 +89,10 @@ getid
 getia
 
 --- setup probe outputs ---------------------
-d1 9  sync
-a1 1  sdata
+d1  3  sync
+d2 12  rda
+a1  6  sdata
+lcds
 
 --- setup readout timing --------------------
 pgstop

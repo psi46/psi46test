@@ -373,9 +373,9 @@ public:
 
 	RPC_EXPORT void tbm_Set(uint8_t reg, uint8_t value);
 
-//	RPC_EXPORT bool tbm_Get(uint8_t reg, uint8_t &value);
+	RPC_EXPORT bool tbm_Get(uint8_t reg, uint8_t &value);
 
-//	RPC_EXPORT bool tbm_GetRaw(uint8_t reg, uint32_t &value);
+	RPC_EXPORT bool tbm_GetRaw(uint8_t reg, uint32_t &value);
 
 	// --- Wafer test functions
 	RPC_EXPORT bool TestColPixel(uint8_t col, uint8_t trimbit, bool sensor_cal, vectorR<uint8_t> &res);
