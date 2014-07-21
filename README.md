@@ -28,7 +28,7 @@ make
 Copy the file `pixel_dtb.h` from your copy of psi46test into this directory.
 Then issue
 
-         `./rpcgen ../pixel_dtb.h -hrpc_calls.cpp`
+         ./rpcgen ../pixel_dtb.h -hrpc_calls.cpp
 
 which gives you the file `rpc_calls.cpp`. Copy this back into your psi46test
 source area.
