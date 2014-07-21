@@ -19,7 +19,7 @@ Prerequisites:
      working installation of pXar or make your own. To do this, install a working 
      copy of `rpcgen`. For this, do
 
-         ```git clone git@github.com:psi46/tools.git psi46tools`
+         ```git clone git@github.com:psi46/tools.git psi46tools
 	 cd psi46tools
 	 make
 	 ```
