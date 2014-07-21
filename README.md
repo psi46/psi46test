@@ -7,29 +7,31 @@ psi46test README
 Prerequisites:
 --------------
 
-  1. The FTDI D2XX drivers for USB are needed. If not yet installed, download
-     them from
+The FTDI D2XX drivers for USB are needed. If not yet installed, download them from
 
 	http://www.ftdichip.com/Drivers/D2XX.htm
 
-     and follow the instructions in the ReadMe file there. You only need to install
-     the shared library. No need for the examples.
+and follow the instructions in the ReadMe file there. You only need to install
+the shared library. No need for the examples.
 
-  2. You need the header file for the rpc calls. You can either take it from a
-     working installation of pXar or make your own. To do this, install a working 
-     copy of `rpcgen`. For this, do
+rpc header file:
+----------------
+
+You need the header file for the rpc calls. You can either take it from a
+working installation of pXar or make your own. To do this, install a working 
+copy of `rpcgen`. For this, do
 ```
 git clone git@github.com:psi46/tools.git psi46tools
 cd psi46tools
 make
 ```
-     Copy the file `pixel_dtb.h` from your copy of psi46test into this directory.
-     Then issue
+Copy the file `pixel_dtb.h` from your copy of psi46test into this directory.
+Then issue
 
          `./rpcgen ../pixel_dtb.h -hrpc_calls.cpp`
 
-     which gives you the file `rpc_calls.cpp`. Copy this back into your psi46test
-     source area.
+which gives you the file `rpc_calls.cpp`. Copy this back into your psi46test
+source area.
     
 
 Installation:
