@@ -17,12 +17,12 @@ Prerequisites:
 
   2. You need the header file for the rpc calls. You can either take it from a
      working installation of pXar or make your own. To do this, install a working 
-     copy of `rpcgen'. For this, do
+     copy of `rpcgen`. For this, do
 
          ```git clone git@github.com:psi46/tools.git psi46tools
 	 cd psi46tools
 	 make
-	 '''
+	 ``` 
 
      Copy the file `pixel_dtb.h` from your copy of psi46test into this directory.
      Then issue
