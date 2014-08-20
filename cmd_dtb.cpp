@@ -211,6 +211,7 @@ bool UpdateDTB(const char *filename)
 	}
 
 	printf("ERROR UPGRADE: Could not upgrade this DTB version!\n");
+	return false;
 }
 
 
