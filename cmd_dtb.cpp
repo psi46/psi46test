@@ -648,7 +648,7 @@ CMD_PROC(rocaddr)
 CMD_PROC(d1)
 {
 	int sig;
-	PAR_INT(sig, 0, 31)
+	PAR_INT(sig, 0, 255)
 	tb.SignalProbeD1(sig);
 	DO_FLUSH
 }
@@ -657,7 +657,7 @@ CMD_PROC(d1)
 CMD_PROC(d2)
 {
 	int sig;
-	PAR_INT(sig, 0, 31)
+	PAR_INT(sig, 0, 255)
 	tb.SignalProbeD2(sig);
 	DO_FLUSH
 }
@@ -1048,12 +1048,16 @@ CMD_PROC(tbmgetraw)
 	int reg;
 	uint32_t value;
 	PAR_INT(reg,0,255);
-	if (tb.tbm_GetRaw(reg,value))
-	{
-		printf("value=0x%02X (Hub=%2i; Port=%i; Reg=0x%02X; inv=0x%X; stop=%c)\n",
-			value & 0xff, (value>>19)&0x1f, (value>>16)&0x07,
-			(value>>8)&0xff, (value>>25)&0x1f, (value&0x1000)?'1':'0');
-	} else puts("error\n");
+	tb.tbm_GetRaw(reg,value);
+	printf("value = 0x%04X\n", value);
+
+//	if (tb.tbm_GetRaw(reg,value))
+//	{
+//		printf("value = 0x%04X\n", value);
+//		printf("value=0x%02X (Hub=%2i; Port=%i; Reg=0x%02X; inv=0x%X; stop=%c)\n",
+//			value & 0xff, (value>>19)&0x1f, (value>>16)&0x07,
+//			(value>>8)&0xff, (value>>25)&0x1f, (value&0x1000)?'1':'0');
+//	} else puts("error\n");
 }
 
 /*
