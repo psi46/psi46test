@@ -29,7 +29,9 @@ void cmdHelp()
 	 "| h                  display this text                         |\n"
 	 "| exit               exit commander                            |\n"
 	 "+-- wafer test ------------------------------------------------+\n"
-	 "| go                 start wafer test (press <cr> to stop)     |\n"
+ 	 "| go - disabled      start wafer test (press <cr> to stop)     |\n" //---new 
+	 "| initestdiced <ABCD> initialize chip wafer test after dicing   |\n" //---new
+	 "| testdiced           run chip test after dicing                |\n" //---new
 	 "| test               run chip test                             |\n"
 	 "| pr <command>       send command to prober                    |\n"
 	 "| sep                prober z-axis separation                  |\n"
@@ -41,6 +43,18 @@ void cmdHelp()
 	 "+--------------------------------------------------------------+\n",
 	 stdout);
 	}
+	else if (settings.proberPort == -2) //---new to alessi (no rs232 communication)
+	{
+	 fputs("\n"
+	 "+-- control commands ------------------------------------------+\n"
+	 "| h                  display this text                         |\n"
+	 "| exit               exit commander                            |\n"
+	 "+-- chip test -------------------------------------------------+\n"
+	 "| test <x y ABCD posx(mm) posy(mm)>    - wafer test on Alessi  |\n"
+	 "+--------------------------------------------------------------+\n",
+	 stdout);
+	}
+	//::::::::::::::::::::::::::::::::::::::::
 	else
 	{
 	 fputs("\n"

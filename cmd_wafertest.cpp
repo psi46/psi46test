@@ -5,7 +5,7 @@
  *  description: command line interpreter for Chip/Wafer tester
  *
  *  author:      Beat Meier
- *  modified:    25.11.2014
+ *  modified:    31.8.2007
  *
  *  rev:
  *
@@ -23,10 +23,7 @@
 
 int chipPos = 0;
 
-//  23
-//  01
-
-char chipPosChar[] = "CDAB";
+char chipPosChar[] = "ABCD";
 
 CMD_PROC(roctype)
 {
@@ -58,7 +55,7 @@ bool ReportWafer()
 	msg = prober.printf("GetProductID");
 	if (strlen(msg)<=3)
 	{
-		printf("missing wafer product id!\n");
+		printf("missing product id!\n"); //--new  tolto 'wafer'.
 		Log.printf("productId?\n");
 		return false;
 	}
@@ -96,7 +93,12 @@ bool ReportChip(int &x, int &y)
 {
 	char *pos = prober.printf("ReadMapPosition");
 	int len = strlen(pos);
-	if (len<3) return false;
+	if (len<3)
+	{ 
+		printf(" error reading chip information - strlen<3 \n"); //---new
+		return false; 
+	}
+
 	pos += 3;
 
 	float posx, posy;
@@ -172,15 +174,18 @@ bool test_wafer()
 
 bool test_chip(char chipid[])
 {
-	nEntry++;
+	if (settings.proberPort != -2)  //---new to alessi. aggiunto questo if!
+	{
+		nEntry++;
 
-	g_chipdata.Invalidate();
-	g_chipdata.nEntry = nEntry;
-	printf("#%05i: %s -> ", nEntry, chipid);
-	fflush(stdout);
-	Log.section("CHIP1", false);
-	Log.printf(" %s\n", chipid);
-	strcpy(g_chipdata.chipId, chipid);
+		g_chipdata.Invalidate();
+		g_chipdata.nEntry = nEntry;
+		printf("#%05i: %s -> ", nEntry, chipid);
+		fflush(stdout);
+		Log.section("CHIP1", false);
+		Log.printf(" %s\n", chipid);
+		strcpy(g_chipdata.chipId, chipid);
+	}
 
 	GetTimeStamp(g_chipdata.startTime);
 	Log.timestamp("BEGIN");
@@ -209,6 +214,37 @@ CMD_PROC(test)
 	{
 		test_wafer();
 	}
+		//::::::::::::::::::::::::::::::::::::::::::::::::::
+	else if (settings.proberPort == -2) //---new to Alessi
+	{
+		// per inserire numero chip nel log file
+		char id[42];
+		PAR_STRINGEOL(id,40);
+									
+		//va bene qui?
+		g_chipdata.Invalidate();
+		nEntry++;
+		g_chipdata.nEntry = nEntry;
+
+		int x, y;
+		float posx, posy;
+		if (sscanf(id, "%i %i %c %f %f", &x, &y, &chipPosChar[chipPos], &posx, &posy) != 5)
+		{
+		printf("%i %i %c %9.1f %9.1f\n", x, y, chipPosChar[chipPos], posx, posy);
+		printf(" error reading chip information\n");
+		return; //false
+		}
+		printf("#%05i: %i%i%c -> ", nEntry, x, y, chipPosChar[chipPos]);
+		fflush(stdout);
+		Log.section("CHIP", false);
+		Log.printf(" %i %i %c %9.1f %9.1f\n", x, y, chipPosChar[chipPos], posx, posy);
+		g_chipdata.mapX   = x;
+		g_chipdata.mapY   = y;
+		g_chipdata.mapPos = chipPos;
+		
+		test_chip(id);
+	}
+	//::::::::::::::::::::::::::::::::::::::::::::::::::
 	else
 	{
 		char id[42];
@@ -221,8 +257,9 @@ CMD_PROC(test)
 }
 
 
-#define CSX   8050
-#define CSY  10451
+//---new
+#define CSX   8610  //old 8050
+#define CSY  10840  //old 10451
 
 const int CHIPOFFSET[4][4][2] =
 {	// from -> to  0           1           2           3
@@ -260,6 +297,7 @@ CMD_PROC(chippos)
 	char s[4];
 	PAR_STRING(s,2);
 	if (s[0] >= 'a') s[0] -= 'a' - 'A';
+	//---new if (s[0] == 'B') return; // chip B not existing
 
 	int i;
 	for (i=0; i<4; i++)
@@ -413,8 +451,132 @@ bool go_TestChips()
 	return false;
 }
 
+//:::::::::::::::::::::::::::::::
+CMD_PROC(testdiced)  //---new
+{
+	prober.printf("MoveChuckContact");
+	tb.mDelay(200);  //controllare i delay...
 
-CMD_PROC(go)
+	while(true)
+	{
+		int bin = 0;
+		bool repeat;
+		
+		if (!TestSingleChip(bin,repeat)) break;  //torna sempre true a parte quando non trova info del Chip.
+
+		if(repeat)
+		{
+			int nRep = settings.errorRep;
+			for (nRep; nRep > 0; nRep--)  //inserito da me.
+			{
+				prober.printf("BinMapDie %i", bin);
+				printf(" test will be repeated\n");
+				prober.printf("MoveChuckSeparation");
+				tb.mDelay(100);
+				prober.printf("MoveChuckContact");
+				tb.mDelay(200);
+				if (!TestSingleChip(bin,repeat)) break;   //torna sempre true a parte quando non trova info del Chip.
+				if(!repeat) break;
+			}
+		}
+
+		if (keypressed())  //OK. funziona solo dopo fine test
+		{
+			prober.printf("BinMapDie %i", bin);
+			prober.printf("MoveChuckSeparation");
+			printf(" wafer test interrupted!\n");
+			printf(" to continue run again 'testdiced'\n");
+			break;
+		}
+
+   		// prober step  
+		int rsp;
+		prober.printf("MoveChuckSeparation");
+		tb.mDelay(100); //-- controllare delay
+		printf(" test ended, moving on next die\n");
+		char *answer = prober.printf("BinStepDie %i", bin);
+		if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
+		if (rsp != 0) printf(" RSP %s\n", answer);  //è risposta attesa?
+		tb.mDelay(100);
+
+		// check if last chip
+		if (rsp == 0) // ok -> next chip
+		{
+			prober.printf("MoveChuckSeparation"); //-- ridondante.....
+		    printf(" align this chip and run 'testdiced'\n");
+			return; // true
+		}
+		if (rsp == 703) // end of wafer -> return
+		{
+			if (chipPos < 3) //funziona
+			{
+			   prober.printf("MoveChuckSeparation"); //-- ridondante .....
+			   printf(" WARNING! chip %c test completed\n", chipPosChar[chipPos]);
+			   printf(" RUN: initestdiced %c\n", chipPosChar[chipPos+1]);
+			   return; // true
+			}
+			else
+			{
+			   prober.printf("MoveChuckSeparation"); //-- ridondante........
+			   printf(" WARNING! chip %c test completed\n", chipPosChar[chipPos]);
+			   printf(" End of Wafer Test - Good Job!\n");
+			   prober.printf("MoveChuckLoad");
+			   return; // true
+			 }
+		}
+
+		printf(" prober error! rsp not valid\n");
+		break;
+	}
+	prober.printf("MoveChuckSeparation");
+	return; // true
+}
+
+CMD_PROC(initestdiced)  //---new
+{
+	char s[4];
+	PAR_STRING(s,2);
+	if (s[0] >= 'a') s[0] -= 'a' - 'A'; //cambia minuscole in maiuscole..
+	
+	int i;
+	bool sgood = false;
+	for (i=0; i<4; i++)
+	{
+		if (s[0] == chipPosChar[i])
+		{
+			printf(" probes on new home die\n"); //vedere se fermarlo qui...
+			ChangeChipPos(i);
+			chipPos = i;
+			sgood = true;
+		}
+	}
+
+	if(!sgood) 
+	{
+		printf(" ERROR - invalid argument, it must be: A,B,C or D\n"); 
+		return; // false
+	}
+
+	//far fare align manuale e poi far partire con un tasto?...
+	tb.mDelay(100);
+	prober.printf("StepFirstDie");
+	printf(" probes on first die\n");
+	
+	if (s[0] == 'A')
+	{  
+		printf(" wafer test running\n");
+		if (!ReportWafer())	return; // true
+	}
+
+	tb.mDelay(200); //non so se ha senso..
+	printf(" Begin Chip %c Test\n", chipPosChar[chipPos]);
+	printf(" initialization done -> align this chip and run 'testdiced'\n");
+	
+	return; // true
+}
+//:::::::::::::::::::::::::
+
+CMD_PROC(go) //---new disabled
 {
 	static bool isRunning = false;
 
