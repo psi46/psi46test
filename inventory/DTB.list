@@ -4,7 +4,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
   9  DTB1.1   1.1   1.7 DTB_WQSUMF 40:D8:55:11:80:09  pixelDTB009 UNL      Prototype, CMOS Buffer inserted by PSI
  16  DTB1.2   1.1   1.7 DTB_WR8LGD 40:D8:55:11:80:10  pixelDTB016 UNL      CMOS Buffer inserted by ETH
  17  DTB1.2   1.1   1.7 DTB_WRBNTI 40:D8:55:11:80:11  pixelDTB017 FNAL
- 19  DTB1.2   1.1   1.7 DTB_WRBVG4 40:D8:55:11:80:13  pixelDTB019 FNAL     CMOS Buffer inserted by ETH, early delivery to FNAL. Overheating problem, modified with fans, forwarded to PSI for investigation.
+ 19  DTB1.2   1.1   1.7 DTB_WRBVG4 40:D8:55:11:80:13  pixelDTB019 FNAL     CMOS Buffer inserted by ETH, early delivery to FNAL. Overheating problem, modified with fans, forwarded to PSI for investigation (Nov 10, 2014).
  21  DTB1.2   1.1   1.7 DTB_WRE2WB 40:D8:55:11:80:15  pixelDTB021 FNAL     CMOS Buffer inserted by ETH, early delivery to FNAL. Defective, received back for repair from FNAL Feb 3, 2014. Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93
  22  DTB1.2   1.1   1.7 DTB_WRE4TS 40:D8:55:11:80:16  pixelDTB022 UNL      CMOS Buffer inserted by ETH, early delivery to UNL
  23  DTB1.2   1.1   1.7 DTB_WREGZ0 40:D8:55:11:80:17  pixelDTB023 FNAL
@@ -12,7 +12,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
  26  DTB1.2   1.1   1.7 DTB_WRECOM 40:D8:55:11:80:1A  pixelDTB026 UNL      CMOS Buffer inserted by ETH, early delivery to UNL
  27  DTB1.2   1.1   1.7 DTB_WREE8J 40:D8:55:11:80:1B  pixelDTB027 FNAL
  28  DTB1.2   1.1   1.7 DTB_WREEXI 40:D8:55:11:80:1C  pixelDTB028 FNAL
- 29  DTB1.2   1.1   1.7 DTB_WREGK0 40:D8:55:11:80:1D  pixelDTB029 UIC
+ 29  DTB1.2   1.1   1.7 DTB_WREGK0 40:D8:55:11:80:1D  pixelDTB029 UIC      Requires new SCSI connector. Handed over to PSI for repair (Jul 28, 2014)
  30  DTB1.2   1.1   1.7 DTB_WREHUL 40:D8:55:11:80:1E  pixelDTB030 UIC
  31  DTB1.2   1.1   1.7 DTB_WREJHJ 40:D8:55:11:80:1F  pixelDTB031 UIC
  32  DTB1.2   1.1   1.7 DTB_WREK4U 40:D8:55:11:80:20  pixelDTB032 UIC
@@ -21,7 +21,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
  37  DTB1.2   1.1   1.7 DTB_WRMIFT 40:D8:55:11:80:25  pixelDTB037 UIC      SDcard empty on delivery, initialized and ok now
  38  DTB1.2   1.1   1.7 DTB_WRMUGK 40:D8:55:11:80:26  pixelDTB038 FNAL
  41  DTB1.2   1.1   1.7 DTB_WRMLUE 40:D8:55:11:80:29  pixelDTB041 KU
- 43  DTB1.2   1.1   1.7 DTB_WRMNMR 40:D8:55:11:80:2B  pixelDTB043 KU       Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93
+ 43  DTB1.2   1.1   1.7 DTB_WRMNMR 40:D8:55:11:80:2B  pixelDTB043 KU       Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93; got back from KU, still flaky. Handed over to PSI for repair (Nov 10)
  44  DTB1.2   1.1   1.7 DTB_WRMOQG 40:D8:55:11:80:2C  pixelDTB044 Purdue
  45  DTB1.2   1.1   1.7 DTB_WRMPSF 40:D8:55:11:80:2D  pixelDTB045 Purdue
  47  DTB1.2   1.1   1.7 DTB_WRMS4N 40:D8:55:11:80:2F  pixelDTB047 Purdue

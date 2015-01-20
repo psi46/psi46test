@@ -5,7 +5,7 @@
  *  description: command line interpreter for Chip/Wafer tester
  *
  *  author:      Beat Meier
- *  modified:    31.8.2007
+ *  modified:    25.11.2014
  *
  *  rev:
  *
@@ -23,7 +23,10 @@
 
 int chipPos = 0;
 
-char chipPosChar[] = "ABCD";
+//  23
+//  01
+
+char chipPosChar[] = "CDAB";
 
 CMD_PROC(roctype)
 {
@@ -257,7 +260,6 @@ CMD_PROC(chippos)
 	char s[4];
 	PAR_STRING(s,2);
 	if (s[0] >= 'a') s[0] -= 'a' - 'A';
-	if (s[0] == 'B') return; // chip B not existing
 
 	int i;
 	for (i=0; i<4; i++)

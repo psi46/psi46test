@@ -531,6 +531,8 @@ CEvent* CEventMap::Read()
 CMD_PROC(daqreadm)
 { PROFILING
 	int period;
+	int channel;
+	PAR_INT(channel, 0, 8);
 	PAR_INT(period,0,65535)
 
 	CDtbSource src;  src.Logging(false);
@@ -547,7 +549,7 @@ CMD_PROC(daqreadm)
 
 	src >> srcdump >> rec >> rawList >> decoder >> /* pxmap >> */ evList >> rdb >> counter >> pump;
 
-	src.OpenModDig(tb, true, 20000000);
+	src.OpenModDig(tb, channel, true, 20000000);
 	src.Enable();
 	tb.uDelay(100);
 	tb.Pg_Loop(period);

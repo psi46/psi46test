@@ -113,9 +113,9 @@ bool CDtbSource::OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 }
 
 
-bool CDtbSource::OpenModDig(CTestboard &dtb, bool endless, unsigned int dtbBufferSize)
+bool CDtbSource::OpenModDig(CTestboard &dtb, unsigned int channel, bool endless, unsigned int dtbBufferSize)
 { PROFILING
-	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
+	if (!Open(dtb, channel, endless, dtbBufferSize)) return false;
 	tb->Daq_Select_Deser400();
 	return true;
 }
@@ -696,16 +696,21 @@ CEvent* CEventPrinter::Read()
 					(unsigned int)((d>>8) & 0x00ff), // Event
 					(unsigned int)((d>>6) & 0x0003), // Data ID
 					(unsigned int)(d & 0x003f));     // Data
-				if (x->error) fprintf(f, "  ERROR %03x", int(x->error));
+				if (x->error) fprintf(f, "  ERROR <%03x>", int(x->error));
 				fprintf(f, "\n");
 
 				// print ROC header and pixel data
 				for (unsigned int r = 0; r < x->roc.size(); r++)
 				{
-					fprintf(f, "  ROC%2u:%c%03X(%3u):", r, x->roc[r].error ? '*':' ', int(x->roc[r].header), (unsigned int)(x->roc[r].pixel.size()));
+					fprintf(f, "  ROC%2u:%c%03X(%3u):", r, x->roc[r].error ? '*':' ',
+						int(x->roc[r].header), (unsigned int)(x->roc[r].pixel.size()));
 					for (unsigned int i=0; i<x->roc[r].pixel.size(); i++)
 					{
-						fprintf(f, " (%2i/%2i%c%3i)", x->roc[r].pixel[i].x, x->roc[r].pixel[i].y, x->roc[r].error ? '*':'/', x->roc[r].pixel[i].ph);
+						if (x->roc[r].pixel[i].error)
+							fprintf(f, " (%2i/%2i*%3i<%04X>)", x->roc[r].pixel[i].x, x->roc[r].pixel[i].y,
+								x->roc[r].pixel[i].ph, x->roc[r].pixel[i].error);
+						else
+							fprintf(f, " (%2i/%2i/%3i)", x->roc[r].pixel[i].x, x->roc[r].pixel[i].y, x->roc[r].pixel[i].ph);
 					}
 					fprintf(f, "\n");
 				}

@@ -200,29 +200,66 @@ public:
 
 
 	// --- digital signal probe ---------------------------------------------
-	#define PROBE_OFF          0
-	#define PROBE_CLK          1
-	#define PROBE_SDA          2
-	#define PROBE_SDA_SEND     3
-	#define PROBE_PG_TOK       4
-	#define PROBE_PG_TRG       5
-	#define PROBE_PG_CAL       6
-	#define PROBE_PG_RES_ROC   7
-	#define PROBE_PG_RES_TBM   8
-	#define PROBE_PG_SYNC      9
-	#define PROBE_CTR         10
-	#define PROBE_TIN         11
-	#define PROBE_TOUT        12
-	#define PROBE_CLK_PRESEN  13
-	#define PROBE_CLK_GOOD    14
-	#define PROBE_DAQ0_WR     15
-	#define PROBE_CRC         16
-	#define PROBE_ADC_RUNNING 19
-	#define PROBE_ADC_RUN     20
-	#define PROBE_ADC_PGATE   21
-	#define PROBE_ADC_START   22
-	#define PROBE_ADC_SGATE   23
-	#define PROBE_ADC_S       24
+	#define PROBE_OFF            0
+
+	#define PROBE_CLK            1
+	#define PROBE_SDA            2
+	#define PROBE_SDA_SEND       3
+	#define PROBE_PG_TOK         4
+	#define PROBE_PG_TRG         5
+	#define PROBE_PG_CAL         6
+	#define PROBE_PG_RES_ROC     7
+	#define PROBE_PG_RES_TBM     8
+	#define PROBE_PG_SYNC        9
+	#define PROBE_CTR           10
+	#define PROBE_TIN           11
+	#define PROBE_TOUT          12
+	#define PROBE_CLK_PRESEN    13
+	#define PROBE_CLK_GOOD      14
+	#define PROBE_DAQ0_WR       15
+	#define PROBE_CRC           16
+	#define PROBE_ADC_RUNNING   19
+	#define PROBE_ADC_RUN       20
+	#define PROBE_ADC_PGATE     21
+	#define PROBE_ADC_START     22
+	#define PROBE_ADC_SGATE     23
+	#define PROBE_ADC_S         24
+
+	#define PROBE_TBM0_GATE    100
+	#define PROBE_TBM0_DATA    101
+	#define PROBE_TBM0_TBMHDR  102
+	#define PROBE_TBM0_ROCHDR  103
+	#define PROBE_TBM0_TBMTRL  104
+
+	#define PROBE_TBM1_GATE    105
+	#define PROBE_TBM1_DATA    106
+	#define PROBE_TBM1_TBMHDR  107
+	#define PROBE_TBM1_ROCHDR  108
+	#define PROBE_TBM1_TBMTRL  109
+
+	#define PROBE_TBM2_GATE    110
+	#define PROBE_TBM2_DATA    111
+	#define PROBE_TBM2_TBMHDR  112
+	#define PROBE_TBM2_ROCHDR  113
+	#define PROBE_TBM2_TBMTRL  114
+
+	#define PROBE_TBM3_GATE    115
+	#define PROBE_TBM3_DATA    116
+	#define PROBE_TBM3_TBMHDR  117
+	#define PROBE_TBM3_ROCHDR  118
+	#define PROBE_TBM3_TBMTRL  119
+
+	#define PROBE_TBM4_GATE    120
+	#define PROBE_TBM4_DATA    121
+	#define PROBE_TBM4_TBMHDR  122
+	#define PROBE_TBM4_ROCHDR  123
+	#define PROBE_TBM4_TBMTRL  124
+
+	#define PROBE_TBM5_GATE    125
+	#define PROBE_TBM5_DATA    126
+	#define PROBE_TBM5_TBMHDR  127
+	#define PROBE_TBM5_ROCHDR  128
+	#define PROBE_TBM5_TBMTRL  129
 
 	RPC_EXPORT void SignalProbeD1(uint8_t signal);
 	RPC_EXPORT void SignalProbeD2(uint8_t signal);

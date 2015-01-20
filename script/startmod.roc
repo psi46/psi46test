@@ -89,9 +89,9 @@ getid
 getia
 
 --- setup probe outputs ---------------------
-d1  3  sync
-d2 12  rda
-a1  6  sdata
+d1  9  sync
+d2  0  
+a1  1  sdata1
 lcds
 
 --- setup readout timing --------------------
@@ -103,7 +103,7 @@ udelay 100
 
 pgset 0 b000000  15  pg_rest
 pgset 1 b000100  30  pg_cal
-pgset 2 b100010   0  pg_trg pg_sync
+pgset 2 b100010  30  pg_trg pg_sync
 pgset 3 b000100  30  pg_cal
 pgset 4 b000010  30  pg_trg
 pgset 5 b000100  30  pg_cal
