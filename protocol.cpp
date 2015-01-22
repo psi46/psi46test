@@ -21,7 +21,7 @@
 
 bool CProtocol::open(const char filename[])
 {
-	f = fopen(filename, "wt");
+	f = fopen(filename, "at"); //wt
 	if (f != NULL)
 	{
 		timestamp("OPEN");

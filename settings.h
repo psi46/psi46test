@@ -33,7 +33,16 @@ public:
 // --- data --------------------------------------------------------------
 	int  dtbId;             // force to open special board (-1 = any connected board)
 	std::string scriptPath; // script path
-
+	std::string rocName;     // roc type(entire name)	
+	std::string waferId; 
+	std::string waferNum;
+	std::string rocsorted_filename;
+	std::string coord_filename;
+	std::string homedie;
+	std::string oldlog_filename;
+	
+	int totRocs;
+	
 	int  proberPort;	    // prober serial port nr (-1 = no prober)
 
 	int rocType;            // 0 = analog ROC, 1 = digital ROC

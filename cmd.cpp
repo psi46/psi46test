@@ -6,7 +6,6 @@
  *
  *  author:      Beat Meier
  *  modified:    31.8.2007
- *  modified:    10.12.2014 M.Dall'Osso --new
  *
  *  rev:
  *
@@ -30,21 +29,20 @@ void cmdHelp()
 	 "| h                  display this text                         |\n"
 	 "| exit               exit commander                            |\n"
 	 "+-- wafer test ------------------------------------------------+\n"
-	 "| go - disabled      start wafer test (press <cr> to stop)     |\n" //---new 
-	 "| initestdiced <ABCD> initialize chip wafer test after dicing  |\n" //---new
-	 "| testdiced           run chip test after dicing               |\n" //---new
+	 "| initdiced          initialize chip wafer test after dicing   |\n" //---new
+	 "| testdiced          run chip test after dicing                |\n" //---new
+ 	 "| createmap          create sorted roc coordinates file        |\n" //---new
 	 "| test               run chip test                             |\n"
 	 "| pr <command>       send command to prober                    |\n"
 	 "| sep                prober z-axis separation                  |\n"
 	 "| contact            prober z-axis contact                     |\n"
-	 "| first              go to first die and clear wafer map       |\n"
-	 "| next               go to next die                            |\n"
-	 "| goto <x> <y>       go to specifed die                        |\n"
-	 "| chippos <ABCD>     move to chip A, B, C or D                 |\n"
+	 "| firs               go to first die-not for entire wafer test |\n"
+	 "| next               go to next die-not for entire wafer test  |\n"
+	 "| goto <x> <y>       go to die-not for entire wafer test       |\n"
 	 "+--------------------------------------------------------------+\n",
 	 stdout);
 	}
-	else if (settings.proberPort == -2) //---new to alessi (no rs232 communication)
+	else if (settings.proberPort == -2) //---new to manual Alessi (no rs232 communication)
 	{
 	 fputs("\n"
 	 "+-- control commands ------------------------------------------+\n"

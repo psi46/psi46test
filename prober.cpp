@@ -24,7 +24,8 @@
 bool CProber::open (int portNr)
 {
 	if (isOpen()) return false;
-	rs232 = rs232_open(portNr, 9600, 'N', 8, 1, 0);
+	//rs232 = rs232_open(portNr, 9600, 'N', 7, 1, 0);
+	rs232 = rs232_open(portNr, 9600, 'E', 8, 1, 0);
 	return rs232 >= 0;
 }
 
@@ -51,7 +52,7 @@ char* CProber::read(int ms)
 	int cnt;
 	cnt = rs232_gets(rs232, readback, sizeof(readback)-1, "\n", ms);
 
-	if (cnt>=2) readback[cnt-2] = 0;
+	if (cnt>=2) readback[cnt-1] = 0; //bug - era '-2'.
 	else readback[0] = 0;
 
 	return readback;
@@ -76,7 +77,7 @@ char* CProber::printf(const char *fmt, ...)
 	va_end(ap);
 
 	rs232_puts(rs232,cmd);
-	rs232_puts(rs232,"\r\n");
+	rs232_puts(rs232,"\n"); // \r
 
 	return read();
 }

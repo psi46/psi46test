@@ -18,9 +18,9 @@
 #define VCAL_LEVEL         40	//  135 vcal for level test without sensor
 #define VCAL_LEVEL_SENSOR  45	//  45 vcal for level test with sensor
 #define VCAL_LEVEL_EXT    150	// 150 vcal for external calibrate
-#define VANA0             100   // default vana value
-#define VDIG0               4
-#define VSH0              150   // 225
+#define VANA0             144   // default vana value
+#define VDIG0               6
+#define VSH0               30   // 225
 
 
 
@@ -62,25 +62,25 @@ void InitDAC(bool reset)
 
 	tb.roc_SetDAC(  7, 150);    // VwllPr
 	tb.roc_SetDAC(  9, 150);    // VwllSh
-	tb.roc_SetDAC( 10, 117);    // VhldDel
-	tb.roc_SetDAC( 11,  40);    // Vtrim
-	tb.roc_SetDAC( 12,  80);    // VthrComp
+	tb.roc_SetDAC( 10, 250);    // VhldDel
+	tb.roc_SetDAC( 11,   0);    // Vtrim
+	tb.roc_SetDAC( 12,  51);    // VthrComp
 
 	tb.roc_SetDAC( 13,  30);    // VIBias_Bus
 //	tb.roc_SetDAC( 14,   6);    // Vbias_sf
-	tb.roc_SetDAC( 22,  99);    // VIColOr
+	tb.roc_SetDAC( 22,  10);    // VIColOr
 
-//	tb.roc_SetDAC( 15,  40);    // VoffsetOp
+//	tb.roc_SetDAC( 15,  50);    // VoffsetOp
 	tb.roc_SetDAC( 17, 170);    // VoffsetRO
 //	tb.roc_SetDAC( 18, 115);    // VIon
 
 	tb.roc_SetDAC( 19,  50);    // Vcomp_ADC
 	tb.roc_SetDAC( 20,  90);    // VIref_ADC
 
-	tb.roc_SetDAC( 25,   2);    // Vcal
+	tb.roc_SetDAC( 25, 200);    // Vcal
 	tb.roc_SetDAC( 26,  g_chipdata.InitCalDel);  // CalDel
 
-	tb.roc_SetDAC( 0xfe, 14);   // WBC
+	tb.roc_SetDAC( 0xfe, 15);   // WBC
 	tb.roc_SetDAC( 0xfd,  4);   // CtrlReg
 
 	tb.Flush();

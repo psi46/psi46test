@@ -6,7 +6,7 @@
  *
  *  author:      Beat Meier
  *  modified:    25.11.2014
- *  modified:    10.12.2014 M.Dall'Osso --new
+ *  modified:    15.01.2015 Martino Dall'Osso --new
  *
  *  rev:
  *
@@ -15,6 +15,12 @@
 
 
 #include "cmd.h"
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <array>
+#include <stdlib.h>
 
 
 // =======================================================================
@@ -28,6 +34,16 @@ int chipPos = 0;
 //  01
 
 char chipPosChar[] = "CDAB";
+
+struct coordinates
+	{
+	int N, X, Y;
+	char Letter;
+	float posX, posY;
+	};
+
+coordinates * crd = new coordinates [500]; //--new
+int NROC;
 
 CMD_PROC(roctype)
 {
@@ -52,56 +68,46 @@ void GetTimeStamp(char datetime[])
 
 bool ReportWafer()
 {
-	char *msg;
 	Log.section("WAFER", false);
 
 	// ProductID
-	msg = prober.printf("GetProductID");
-	if (strlen(msg)<=3)
+	if (strlen(settings.rocName.c_str())<=3)
 	{
-		printf("missing product id!\n"); //--new  removed 'wafer'.
+		printf("missing product id! set it into '.ini' file\n");
 		Log.printf("productId?\n");
 		return false;
 	}
-	Log.printf("%s", msg+3);
-	strcpy(g_chipdata.productId, msg+3);
+	Log.printf("%s ", settings.rocName.c_str());
+	strcpy(g_chipdata.productId, settings.rocName.c_str());
 
 	// WaferID
-	msg = prober.printf("GetWaferID");
-	if (strlen(msg)<=3)
+	if (strlen(settings.waferId.c_str())<=3)
 	{
-		printf(" missing wafer id!\n");
-		Log.printf(" waferId?\n");
+		printf("missing waferID! set it into '.ini' file\n");
+		Log.printf("waferId?\n");
 		return false;
 	}
-	Log.printf(" %s", msg+3);
-	strcpy(g_chipdata.waferId, msg+3);
+	Log.printf("%s", settings.waferId.c_str());
+	strcpy(g_chipdata.waferId, settings.waferId.c_str());
 
 	// Wafer Number
-	int num;
-	msg = prober.printf("GetWaferNum");
-	if (strlen(msg)>3) if (sscanf(msg+3, "%i", &num) == 1)
+	if (strlen(settings.waferNum.c_str())>=1)
 	{
-		Log.printf(" %i\n", num);
-		strcpy(g_chipdata.waferNr, msg+3);
+		Log.printf(" %s\n", settings.waferNum.c_str());
+		strcpy(g_chipdata.waferNr, settings.waferNum.c_str());
 		return true;
 	}
 
-	printf(" missing wafer number!\n");
-	Log.printf(" wafernum?\n");
-	return false;
+	printf("missing waferNum! set it into '.ini' file\n");
+	Log.printf("waferNum?\n");
+	return false;	
 }
 
-
-bool ReportChip(int &x, int &y)
+bool ReportChip(int &x, int &y) //old - not for Alessi
 {
 	char *pos = prober.printf("ReadMapPosition");
 	int len = strlen(pos);
-	if (len<3)
-	{ 
-		printf(" error reading chip information - strlen<3 \n"); //---new
-		return false; 
-	}
+	if (len<3) return false;
 	pos += 3;
 
 	float posx, posy;
@@ -122,31 +128,179 @@ bool ReportChip(int &x, int &y)
 	return true;
 }
 
-
-CMD_PROC(pr)
+bool ReadPosition(float &posx, float &posy)  //---new
 {
-	char s[256];
-	PAR_STRINGEOL(s,250);
+	char st1[] = "QM D X POSI";
+	char *psx = prober.printf("%s", st1);
+	int lenx = strlen(psx);
+	if (lenx<12)
+	{ 
+		printf(" error reading chip information - strlen<12 \n");
+		return false; 
+	}
+	psx += 12;
+	if (sscanf(psx, "%f", &posx) != 1)
+	{		
+		printf(" error reading chip information - sscanf != 1\n");
+		return false;
+	}
 
-	printf(" REQ %s\n", s);
-	char *answer = prober.printf("%s", s);
-	printf(" RSP %s\n", answer);
+	//psx & psy splitted to avoid strange overwriting
+	char st2[] = "QM D Y POSI";
+	char *psy = prober.printf("%s", st2);
+	int leny = strlen(psy);
+	if (leny<12)
+	{ 
+		printf(" error reading chip information - strlen<12 \n");
+		return false; 
+	}
+	psy += 12;
+	if (sscanf(psy, "%f", &posy) != 1)
+	{		
+		printf(" error reading chip information - sscanf != 1\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool ReportChip_Alessi(int &x, int &y, char &letter)  //---new
+{
+	float posx, posy;
+	if(!ReadPosition(posx, posy)) return false;
+
+	nEntry++;
+	printf("posX %f   posY %f \n", posx, posy);
+	printf("#%05i: %i%i%c -> ", NROC, x, y, letter);
+	fflush(stdout);
+	Log.section("CHIP", false);
+	Log.printf(" %i %i %c %9.1f %9.1f\n",
+		x, y, letter, posx, posy);
+	g_chipdata.mapX   = x;
+	g_chipdata.mapY   = y;
+	g_chipdata.mapPos = letter;
+	return true;
 }
 
 
-CMD_PROC(sep)
+bool TestSingleChip(int &bin, bool &repeat)
 {
-	prober.printf("MoveChuckSeparation");
+	int x = crd[NROC].X;
+	int y = crd[NROC].Y;
+	char letter = crd[NROC].Letter;
+
+	g_chipdata.Invalidate();
+
+	if (!ReportChip_Alessi(x,y,letter)) return false;  //DEBUG - only for Alessi..
+	GetTimeStamp(g_chipdata.startTime);
+	Log.timestamp("BEGIN");
+	tb.SetLed(0x10);
+	bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+	tb.SetLed(0x00);
+	tb.Flush();
+	//		if (0<bin && bin<13) deflist[chipPos].add(x,y);
+	GetTimeStamp(g_chipdata.endTime);
+	Log.timestamp("END");
+	Log.puts("\n");
+	Log.flush();
+	printf("%3i\n", bin);
+	return true;
 }
 
-
-CMD_PROC(contact)
+bool test_dicedwafer()  //---new 
 {
-	prober.printf("MoveChuckContact");
+	if(crd[0].posX == 0) 
+	{
+		printf("ERROR: no coordinates stored - please run 'initdiced' before \n");
+		return false;
+	}
+
+	cout << NROC << endl;
+	prober.printf("MZ D C");
+	tb.mDelay(200);
+
+	while(true)
+	{
+		int bin = 0;
+		bool repeat;
+		
+		//WARNING - look for 'official' changes in this function
+		if (!TestSingleChip(bin,repeat)) break;  //return always true except when chip infos not found
+
+		if (keypressed())
+		{
+			prober.printf("MZ D S");
+			printf(" wafer test interrupted!\n");
+			printf(" to continue run again 'testdiced'\n");
+			break;
+		}
+
+		if(repeat)
+		{
+			int nRep = settings.errorRep;
+			for (nRep; nRep > 0; nRep--)  //added 
+			{
+				printf(" test will be automatically repeated %i time \n", nRep+1);
+				printf(" going to separation \n");
+				prober.printf("MZ D S");
+				tb.mDelay(400);
+				printf(" going to contact \n");
+				prober.printf("MZ D C");
+				tb.mDelay(400);
+				if (!TestSingleChip(bin,repeat)) break;
+				if(!repeat) break;
+				if (keypressed())  //redundant
+				{
+					prober.printf("MZ D S");
+					printf(" wafer test interrupted!\n");
+					printf(" to continue run again 'testdiced'\n");
+					break;
+				}
+			}
+		}	
+
+   		// prober step  
+		printf(" test result: %i \n", bin);
+		prober.printf("MZ D S");
+		tb.mDelay(100);
+			
+		// check if last chip  
+		if (NROC < settings.totRocs-1) // ok -> next chip
+		{
+			printf(" test ended, press Enter to move on next die ('s' to stop)\n");
+			char c;		
+			cin.get(c);
+			if(c=='s') return true;
+
+			NROC ++;
+			std::stringstream sstr1, sstr2;
+			sstr1 << "MM D X " << crd[NROC].posX;
+			sstr2 << " Y " << crd[NROC].posY;
+			string cmdxy = sstr1.str() + sstr2.str();
+  		    prober.printf(cmdxy.c_str());
+
+			tb.mDelay(100);
+
+			printf(" align this chip and run 'testdiced'\n");
+			return true;
+		}
+		else // end of wafer -> return
+		{
+		   prober.printf("MZ D S"); //redundant
+		   printf(" End of Wafer Test - Good Job!\n");
+		   printf(" press Enter to move to load position ('s' to stop)\n");
+			char c;		
+			cin.get(c);
+			if(c=='s') return true;
+		   prober.printf("ML D");  // move to load
+		   return true;
+		}
+	}
+	prober.printf("MZ D S");
+	return true;
 }
 
-
-bool test_wafer()
+bool test_wafer() //old!! (not for Alessi)
 {
 	int x, y;
 
@@ -169,15 +323,14 @@ bool test_wafer()
 	Log.flush();
 	printf("%3i\n", bin);
 
-	printf(" RSP %s\n", prober.printf("BinMapDie %i", bin));
+	//printf(" RSP %s\n", prober.printf("BinMapDie %i", bin));
 
 	return true;
 }
 
-
 bool test_chip(char chipid[])
 {
-	if (settings.proberPort != -2)  //---new to alessi. 'if' added
+	if (settings.proberPort != -2)  //---new. 'if' added (to manual Alessi)
 	{
 		nEntry++;
 
@@ -209,21 +362,20 @@ bool test_chip(char chipid[])
 	return true;
 }
 
-
 CMD_PROC(test)
 {
 
 	if (settings.proberPort >= 0)
 	{
-		test_wafer();
+		test_dicedwafer(); //--new to Alessi
+		//test_wafer(); //old
 	}
-	else if (settings.proberPort == -2) //---new to Alessi
+	else if (settings.proberPort == -2) //---new. 'if' added (to manual Alessi)
 	{
 		// to add chip number in log file
 		char id[42];
 		PAR_STRINGEOL(id,40);
 									
-		//debug...va bene qui?
 		g_chipdata.Invalidate();
 		nEntry++;
 		g_chipdata.nEntry = nEntry;
@@ -234,7 +386,7 @@ CMD_PROC(test)
 		{
 		printf("%i %i %c %9.1f %9.1f\n", x, y, chipPosChar[chipPos], posx, posy);
 		printf(" error reading chip information\n");
-		return; //false
+		return;
 		}
 		printf("#%05i: %i%i%c -> ", nEntry, x, y, chipPosChar[chipPos]);
 		fflush(stdout);
@@ -252,13 +404,10 @@ CMD_PROC(test)
 		PAR_STRINGEOL(id,40);
 		test_chip(id);
 	}
-
-//	FILE *f = fopen("g_chipdata.txt", "wt");
-//	if (f) { g_chipdata.Save(f);  fclose(f); }
 }
 
 
-//---new
+//---new offset
 #define CSX   8610  //old 8050
 #define CSY  10840  //old 10451
 
@@ -269,47 +418,6 @@ const int CHIPOFFSET[4][4][2] =
 	/*   2  */ { {   0, CSY},{-CSX, CSY},{   0,   0},{-CSX,   0} },
 	/*   3  */ { { CSX, CSY},{   0, CSY},{ CSX,   0},{   0,   0} },
 };
-
-bool ChangeChipPos(int pos)
-{
-	int rsp;
-	char *answer = prober.printf("MoveChuckSeparation");
-	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
-	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
-
-	int x = CHIPOFFSET[chipPos][pos][0];
-	int y = CHIPOFFSET[chipPos][pos][1];
-
-	answer = prober.printf("MoveChuckPosition %i %i H", x, y);
-	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
-	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
-
-	answer = prober.printf("SetMapHome");
-	if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
-	if (rsp != 0) { printf(" RSP %s\n", answer); return false; }
-
-	chipPos = pos;
-	return true;
-}
-
-
-CMD_PROC(chippos)
-{
-	char s[4];
-	PAR_STRING(s,2);
-	if (s[0] >= 'a') s[0] -= 'a' - 'A';
-
-	int i;
-	for (i=0; i<4; i++)
-	{
-		if (s[0] == chipPosChar[i])
-		{
-			ChangeChipPos(i);
-			return;
-		}
-	}
-}
-
 
 CDefectList deflist[4];
 
@@ -372,30 +480,6 @@ bool go_TestDefects()
 	return true;
 }
 
-
-bool TestSingleChip(int &bin, bool &repeat)
-{
-	int x, y;
-	g_chipdata.Invalidate();
-
-	if (!ReportChip(x,y)) return false;
-	GetTimeStamp(g_chipdata.startTime);
-	Log.timestamp("BEGIN");
-	tb.SetLed(0x10);
-	bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
-	tb.SetLed(0x00);
-	tb.Flush();
-
-	//		if (0<bin && bin<13) deflist[chipPos].add(x,y);
-	GetTimeStamp(g_chipdata.endTime);
-	Log.timestamp("END");
-	Log.puts("\n");
-	Log.flush();
-	printf("%3i\n", bin);
-	return true;
-}
-
-
 bool go_TestChips()
 {
 	printf(" Begin Chip %c Test\n", chipPosChar[chipPos]);
@@ -451,201 +535,370 @@ bool go_TestChips()
 	return false;
 }
 
-CMD_PROC(testdiced)  //---new 
+bool ReadMap(bool offset)  //---new to get wafer coordinates.
 {
-	prober.printf("MoveChuckContact");
-	tb.mDelay(200);  //debug ... check delay
-
-	while(true)
+	int k = 0;
+	string filename;
+	if(offset)	filename = settings.coord_filename + "_offset.dat";
+	else	 	filename = settings.coord_filename + ".dat";
+	ifstream infile(filename);
+	if(!infile)
 	{
-		int bin = 0;
-		bool repeat;
-		
-		if (!TestSingleChip(bin,repeat)) break;  //return always true except when chip infos not found
+		printf( "ERROR: no input file %s \n", filename);
+		return false;
+	}
+    while (!infile.eof())
+	{
+	  infile >> crd[k].N >> crd[k].X >> crd[k].Y >> crd[k].Letter >> crd[k].posX >> crd[k].posY;
+	  k++;
+    }
+    infile.close();  
+	printf(" default wafer coordinates read from file %s \n", filename.c_str());
+	printf(" %i ROCs found \n", k-1);
+	settings.totRocs = k-1;
 
-		if(repeat)
+  return true;
+}
+
+bool OffsetMap()  //---new to add offset to wafer coordinates wrt the new home.
+{
+	//leggere home die
+	bool match = false;
+	coordinates home;
+
+	string sst;
+	sst = settings.homedie[0];
+	home.X = atoi(sst.c_str());
+	sst = settings.homedie[1];
+	home.Y = atoi(sst.c_str());
+	home.Letter = settings.homedie[2];
+
+	for(int i=0; i < settings.totRocs; i++)
+	{
+	 if(crd[i].X == home.X && crd[i].Y==home.Y && crd[i].Letter == home.Letter)
+	 {
+		 match = true;
+		 home.posX = crd[i].posX;
+ 		 home.posY = crd[i].posY;
+  		 home.N = crd[i].N;
+		 break;		
+	 }
+	}
+	if(!match) 
+	{
+		printf("ERROR: no match coordinates for HOME DIE %i %i %c \n", home.X, home.Y, home.Letter);
+		return false;
+	}
+
+	cout << home.N << endl;
+	float newposx, newposy;
+	float oldposx, oldposy;
+
+	oldposx = home.posX;
+	oldposy = home.posY;	
+	if(!ReadPosition(newposx, newposy)) return false;
+	
+	//-- offset calculation  -- DEBUG, ok like this if new and old are both negative (HOME = 04A!).
+	float offx = newposx - oldposx; 
+	float offy = newposy - oldposy;
+	
+	printf("old %f %f \n", oldposx, oldposy);
+	printf("new %f %f \n", newposx, newposy);
+	printf("offset %f %f \n", offx, offy);
+
+	//rewriting coord
+	for(int i= 0; i < settings.totRocs; i++)
+	{
+		crd[i].posX += offx;
+		crd[i].posY += offy;
+	}
+		
+	//save in new file
+	ofstream outfile;
+	string filename = settings.coord_filename + "_offset.dat";
+    outfile.open(filename.c_str());
+	printf( " writing new coordinates on %s \n", filename.c_str());
+	int k = 0;
+	for (int i = 0; i < settings.totRocs; i++)
+	{
+		outfile << crd[i].N << "    " << crd[i].X << " " << crd[i].Y << " " << crd[i].Letter << "    " << crd[i].posX << "    " << crd[i].posY << endl;
+		k = i;
+	}
+	printf(" %i ROCs coordinates printed \n", k+1);
+	outfile.close();
+
+  return true;
+}
+
+CMD_PROC(pr)
+{
+	char s[256];
+	PAR_STRINGEOL(s,250);
+
+	printf(" REQ %s\n", s);
+	char *answer = prober.printf("%s", s);
+	printf(" RSP %s\n", answer);
+}
+
+CMD_PROC(sep)
+{
+	printf(" RSP %s\n", prober.printf("MZ D S"));
+}
+
+CMD_PROC(contact)
+{
+	printf(" RSP %s\n", prober.printf("MZ D C"));
+}
+
+CMD_PROC(createmap)  //---new to extract coordinates from  previous test
+{
+	coordinates * c = new coordinates [500];
+	coordinates * cOrd = new coordinates [500];
+	coordinates * rocOrd = new coordinates [500];
+	
+  //READ COORDINATES FROM LOG FILE
+	string filename;
+    filename = settings.oldlog_filename + ".dat";
+	ifstream infile(filename);
+	if(!infile)
+	{
+		printf( "input file %s is missing \n", filename);
+		return;
+	}
+	printf( "reading coordinates from %s \n", filename);
+	string line, chip;
+	int nCord = 0;
+	while(!infile.eof())
+	{
+	  infile >> chip;
+	  if(chip.compare("[CHIP]") == 0)
+	  {
+		infile >> c[nCord].X >> c[nCord].Y >> c[nCord].Letter >> c[nCord].posX >> c[nCord].posY;
+		c[nCord].N = nCord;
+		nCord++;
+	  }
+  	  else getline(infile, line);
+    }
+	printf("%i ROCs found (double test included) \n", nCord-1),
+    infile.close();  
+
+  //READ ROCS SORTED FROM FILE
+	string fname;
+    fname = settings.rocsorted_filename + ".dat";
+	ifstream inf(fname);
+	if(!inf)
+	{
+		printf( "input file %s is missing \n", fname);
+		return;
+	}
+	printf( "reading ROC order from %s \n", fname);
+	int nSort = 0;
+	while(!inf.eof()) //
+	{
+      inf >> rocOrd[nSort].N >> rocOrd[nSort].X >> rocOrd[nSort].Y >> rocOrd[nSort].Letter;
+	  rocOrd[nSort].posX = rocOrd[nSort].posY = 0.; //variables not needed now
+	  nSort++;
+    }
+    inf.close();
+	printf("%i ROCs found \n", nSort-1); //last term null
+    if (nCord<nSort-1) 
+	{
+		printf("ERROR: coordinates less than default roc sorted - please check the input files \n");
+		return;
+	}
+
+  //SORTED COORDINATES
+	int z = 0;
+	for(int j= 0; j < nSort-1; j++)
+	{
+		bool match = false;
+		for(int i= 0; i < nCord; i++)
 		{
-			int nRep = settings.errorRep;
-			for (nRep; nRep > 0; nRep--)  //added 
+			if(c[i].X==rocOrd[j].X && c[i].Y==rocOrd[j].Y && c[i].Letter==rocOrd[j].Letter) 
 			{
-				prober.printf("BinMapDie %i", bin);
-				printf(" test will be repeated\n");
-				prober.printf("MoveChuckSeparation");
-				tb.mDelay(100);
-				prober.printf("MoveChuckContact");
-				tb.mDelay(200);
-				if (!TestSingleChip(bin,repeat)) break;   //return always true except when chip infos not found
-				if(!repeat) break;
+					cOrd[z].N = z;
+					cOrd[z].X  = rocOrd[j].X ;
+					cOrd[z].Y  = rocOrd[j].Y ;
+					cOrd[z].Letter  = rocOrd[j].Letter ;
+					cOrd[z].posX  = c[i].posX ;
+					cOrd[z].posY  = c[i].posY ;
+					match = true;
+					z++;
+					break;
 			}
 		}
-
-		if (keypressed())  //OK. it works only at the end of the ROC test
+		if(!match)
 		{
-			prober.printf("BinMapDie %i", bin);
-			prober.printf("MoveChuckSeparation");
-			printf(" wafer test interrupted!\n");
-			printf(" to continue run again 'testdiced'\n");
+			printf("WARNING: no matching coordinates for ROC %i %i %c \n", rocOrd[j].X, rocOrd[j].Y, rocOrd[j].Letter);
+		}
+	}
+	
+  //WRITE SORTED COORDINATES ON FILE
+	FILE *f;
+	fname.clear();
+	fname = settings.coord_filename + ".dat";
+	f = fopen(fname.c_str(),"wt");    
+
+	printf( "writing sorted coordinates on %s \n", fname.c_str());
+	for (int i = 0; i < nSort-1; i++)
+	{
+		fprintf(f,"%-i\t%i %i %c  %8.1f  %8.1f\n", cOrd[i].N, cOrd[i].X, cOrd[i].Y, cOrd[i].Letter, cOrd[i].posX, cOrd[i].posY);
+		nCord = i;
+	}
+	printf("%i ROCs coordinates printed \n", nCord+1);
+	fclose(f);
+	return;	
+}
+
+CMD_PROC(initdiced)  //---new
+{
+	coordinates cc;
+	printf("Welcome!\n");
+	printf("Enter 'h' to start from the beginning \n");
+	printf("or enter the ROC ID (xyL) do you want to start from. \n");
+	
+	string line, s;
+	std::getline(std::cin,line);
+	bool home = false;
+	int cnt = 0, i = 0;
+	for (std::string::iterator it = line.begin(); it != line.end(); ++it)
+	{
+		s.assign(line,i,1);
+		i++;
+		if(s[0]==' ') continue;
+		else if (s[0]=='H' || s[0]=='h') {
+			cc.X = cc.Y = 0;
+			cc.Letter = 'x';
+			home = true;
 			break;
 		}
-
-   		// prober step  
-		int rsp;
-		prober.printf("MoveChuckSeparation");
-		tb.mDelay(100); //-- debug.... check delay
-		printf(" test ended, moving on next die\n");
-		char *answer = prober.printf("BinStepDie %i", bin);
-		if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
-		if (rsp != 0) printf(" RSP %s\n", answer);  //debug.. right answer?..
+		else {
+   			if(cnt == 0) cc.X = atoi(s.c_str());
+			else if(cnt == 1) cc.Y = atoi(s.c_str());
+			else if(cnt == 2) cc.Letter = s[0];
+			else break;
+			cnt++;
+		}		
+	}
+	//changes caps
+	if (cc.Letter >= 'a') cc.Letter -= 'a' - 'A'; 
+	else if (cc.Letter >= 'b') cc.Letter -= 'b' - 'B';
+	else if (cc.Letter >= 'c') cc.Letter -= 'c' - 'C';
+	else if (cc.Letter >= 'd') cc.Letter -= 'd' - 'D';
+		
+	if(home)
+	{
+		printf("moving to default home position. \n");
+		prober.printf("MH D");
 		tb.mDelay(100);
 
-		// check if last chip
-		if (rsp == 0) // ok -> next chip
+		printf(" please, align home die (%s) \n", settings.homedie.c_str());
+		printf(" press Enter when ok ('s' to stop)");
+		char s;
+		cin.get(s);
+		if(s=='\n')  cin.get(s); //bug ?
+		if(s=='s') return;
+
+		//save new home
+		prober.printf("SH D");
+		printf("new home set \n");
+
+		//read coordinates from file
+		if(!ReadMap(0)) return;
+		
+		//scaling coordinates to the new home
+		if(!OffsetMap()) return;
+
+		printf(" init done -> press Enter to move on first die ('s' to stop)\n");
+			char c;		
+			cin.get(c);
+			if(c=='s') return;
+
+		printf("moving on first die \n");
+		NROC = 0;
+		std::stringstream sstr1, sstr2;
+		sstr1 << "MM D X " << crd[NROC].posX;
+		sstr2 << " Y " << crd[NROC].posY;
+		string cmdxy = sstr1.str() + sstr2.str();
+		prober.printf(cmdxy.c_str());
+		tb.mDelay(100);
+
+		if (!ReportWafer())	return;
+		tb.mDelay(200);
+
+		printf(" align this chip and run 'testdiced'\n");		
+	}
+	else{
+		if(!ReadMap(1))
 		{
-			prober.printf("MoveChuckSeparation"); //-- redundant.....
-		    printf(" align this chip and run 'testdiced'\n");
-			return; // true
+			printf("Please, run initdiced and start from home die to set offset.\n");
+			return;
 		}
-		if (rsp == 703) // end of wafer -> return
+		tb.mDelay(100);
+		bool match = false;
+		for(int i= 0; i < settings.totRocs; i++)
 		{
-			if (chipPos < 3) //ok
+			if(crd[i].X==cc.X && crd[i].Y==cc.Y && crd[i].Letter==cc.Letter) 
 			{
-			   prober.printf("MoveChuckSeparation"); //-- redundant.....
-			   printf(" WARNING! chip %c test completed\n", chipPosChar[chipPos]);
-			   printf(" RUN: initestdiced %c\n", chipPosChar[chipPos+1]);
-			   return; // true
-			}
-			else
-			{
-			   prober.printf("MoveChuckSeparation"); //-- redundant.....
-			   printf(" WARNING! chip %c test completed\n", chipPosChar[chipPos]);
-			   printf(" End of Wafer Test - Good Job!\n");
-			   prober.printf("MoveChuckLoad");
-			   return; // true
-			 }
-		}
-
-		printf(" prober error! rsp not valid\n");
-		break;
-	}
-	prober.printf("MoveChuckSeparation");
-	return; // true
-}
-
-CMD_PROC(initestdiced)  //---new
-{
-	char s[4];
-	PAR_STRING(s,2);
-	if (s[0] >= 'a') s[0] -= 'a' - 'A'; //changes caps
-	
-	int i;
-	bool sgood = false;
-	for (i=0; i<4; i++)
-	{
-		if (s[0] == chipPosChar[i])
-		{
-			printf(" probes on new home die\n"); //debug...stop here?
-			ChangeChipPos(i);
-			chipPos = i;
-			sgood = true;
-		}
-	}
-
-	if(!sgood) 
-	{
-		printf(" ERROR - invalid argument, it must be: A,B,C or D\n"); 
-		return; // false
-	}
-
-	//debug... manual alignment and then start with button?far fare align manuale e poi far partire con un tasto?...
-	tb.mDelay(100);
-	prober.printf("StepFirstDie");
-	printf(" probes on first die\n");
-	
-	if (s[0] == 'A')
-	{  
-		printf(" wafer test running\n");
-		if (!ReportWafer())	return; // true
-	}
-
-	tb.mDelay(200); //debug... right?
-	printf(" Begin Chip %c Test\n", chipPosChar[chipPos]);
-	printf(" initialization done -> align this chip and run 'testdiced'\n");
-	
-	return; // true
-}
-
-CMD_PROC(go)
-{
-	static bool isRunning = false;
-
-	char s[12];
-	if (PAR_IS_STRING(s, 10))
-	{
-		if (strcmp(s,"init") == 0) { isRunning = false; }
-		else if (strcmp(s,"cont") == 0) { isRunning = true; }
-		else { printf(" illegal parameter");  return; }
-	}
-
-	if (!isRunning)
-	{
-		ChangeChipPos(0);
-		for (int k=0; k<4; k++) deflist[k].clear();
-		prober.printf("StepFirstDie");
-		isRunning = true;
-	}
-
-	printf(" wafer test running\n");
-	if (!ReportWafer()) return;
-
-	while (true)
-	{
-		// test chips
-		if (!go_TestChips()) break;
-
-		// test defect chips
-		prober.printf("StepFirstDie");
-		if (!go_TestDefects()) break;
-
-		// next chip position
-		if (chipPos < 3)
-		{
-			if (chipPos != 0) // exclude chip B (1)
-			{
-				if (!ChangeChipPos(chipPos+1)) break;
-			}
-			else
-			{
-				if (!ChangeChipPos(chipPos+1)) break;
-//				if (!ChangeChipPos(chipPos+2)) break; // exclude chip B (1)
-			}
-			char *answer = prober.printf("StepFirstDie");
-			int rsp;
-			if (sscanf(answer, "%i", &rsp)!=1) rsp = -1;
-			if (rsp != 0)
-			{
-				printf(" RSP %s\n", answer);
+				NROC = crd[i].N;
+				match = true;
 				break;
 			}
 		}
-		else
+		if(!match)
 		{
-			ChangeChipPos(0);
-			isRunning = false;
-			break;
+			printf("ERROR: no match coordinates for this ROC %i %i %c \n", cc.X, cc.Y, cc.Letter);
+			return;
 		}
-	}
+		printf("moving on ROC %i %i %c \n", crd[NROC].X, crd[NROC].Y, crd[NROC].Letter);
+		std::stringstream sstr1, sstr2;
+		sstr1 << "MM D X " << crd[NROC].posX;
+		sstr2 << " Y " << crd[NROC].posY;
+		string cmdxy = sstr1.str() + sstr2.str();
+		prober.printf(cmdxy.c_str());
+		tb.mDelay(100);
+		printf(" align this chip and run 'testdiced'\n");	
+	}	
+	return;
 }
 
+CMD_PROC(testdiced)  //---new 
+{
+	if(!test_dicedwafer()) return;
+
+	return;	
+}
 
 CMD_PROC(first)
 {
-	printf(" RSP %s\n", prober.printf("StepFirstDie"));
+	if(crd[0].posX == 0.)	{ if(!ReadMap(1)) return; }
+	tb.mDelay(100);
+	printf("WARNING: to start wafer test run 'initdiced' \n");
+	printf("moving on first die \n");
+	NROC = 0;
+	std::stringstream sstr1, sstr2;
+	sstr1 << "MM D X " << crd[NROC].posX;
+	sstr2 << " Y " << crd[NROC].posY;
+	string cmdxy = sstr1.str() + sstr2.str();
+	prober.printf(cmdxy.c_str());
+	tb.mDelay(100);
 }
 
 
 CMD_PROC(next)
 {
-	printf(" RSP %s\n", prober.printf("StepNextDie"));
+	if(crd[0].posX == 0.)	{ if(!ReadMap(1)) return; }
+	tb.mDelay(100);
+	printf("WARNING: to start wafer test run 'initdiced' \n");
+	printf("moving on next die \n");
+	NROC++;
+	std::stringstream sstr1, sstr2;
+	sstr1 << "MM D X " << crd[NROC].posX;
+	sstr2 << " Y " << crd[NROC].posY;
+	string cmdxy = sstr1.str() + sstr2.str();
+	prober.printf(cmdxy.c_str());
+	tb.mDelay(100);
+	printf("NROC = %i \n", NROC);
 }
 
 
@@ -655,29 +908,30 @@ CMD_PROC(goto)
 	PAR_INT(x, -100, 100);
 	PAR_INT(y, -100, 100);
 
-	char *msg = prober.printf("StepNextDie %i %i", x, y);
-	printf(" RSP %s\n", msg);
+	if(crd[0].posX == 0.)	{ if(!ReadMap(1)) return; }
+	tb.mDelay(100);
+	bool match = false;
+	for(int i= 0; i < settings.totRocs; i++)
+	{
+		if((int)crd[i].X==x && (int)crd[i].Y==y && crd[i].Letter=='A') 
+		{
+			NROC = crd[i].N; //new struct
+			match = true;
+			break;
+		}
+	}
+	if(!match)
+	{
+		printf("ERROR: no match coordinates for this ROC %i %i \n", x, y);
+		return;
+	}
+	printf("moving on ROC %i %i %c \n", crd[NROC].X, crd[NROC].Y, crd[NROC].Letter);
+	std::stringstream sstr1, sstr2;
+	sstr1 << "MM D X " << crd[NROC].posX;
+	sstr2 << " Y " << crd[NROC].posY;
+	string cmdxy = sstr1.str() + sstr2.str();
+	prober.printf(cmdxy.c_str());
+
+	printf("WARNING: to start wafer test run 'initdiced' \n");
+	tb.mDelay(100);
 }
-
-
-
-// -- Wafer Test Adapter commands ----------------------------------------
-/*
-CMD_PROC(vdreg)    // regulated VD
-{
-	double v = tb.GetVD_Reg();
-	printf("\n VD_reg = %1.3fV\n", v);
-}
-
-CMD_PROC(vdcap)    // unregulated VD for contact test
-{
-	double v = tb.GetVD_CAP();
-	printf("\n VD_cap = %1.3fV\n", v);
-}
-
-CMD_PROC(vdac)     // regulated VDAC
-{
-	double v = tb.GetVDAC_CAP();
-	printf("\n V_dac = %1.3fV\n", v);
-}
-*/

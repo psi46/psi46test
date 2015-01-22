@@ -23,13 +23,13 @@ CMD_REG(pr, "<command>", "send command to prober")
 CMD_REG(sep, "", "prober z-axis separation")
 CMD_REG(contact, "", "prober z-axis contact")
 CMD_REG(test, "<chip id>", "run chip test")
-CMD_REG(chippos, "<ABCD>", "move to chip A, B, C or D")
-CMD_REG(go, "init|cont", "start wafer test (press <cr> to stop)")
-CMD_REG(initestdiced,"initestdiced <ABCD>", "to initialize chip-wafer-test-after-dicing"); //---new
+CMD_REG(initdiced,"initdiced", "to initialize chip-wafer-test-after-dicing"); //---new
 CMD_REG(testdiced,   "", "to run chip-test-after-dicing");  //---new
-CMD_REG(first, "", "go to first die and clear wafer map")
-CMD_REG(next, "", "go to next die")
-CMD_REG(goto, "", "go to specified die")
+CMD_REG(createmap, "", "to create sorted coordinates file from previous tests") //---new
+CMD_REG(first, "", "go to first die - not for complete wafer test")
+CMD_REG(next, "", "go to next die - not for complete wafer test")
+CMD_REG(goto, "", "go to specified die - not for complete wafer test")
+
 
 // -- Wafer Test Adapter commands ----------------------------------------
 /*

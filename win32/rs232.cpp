@@ -51,7 +51,8 @@ int rs232_open(int portNr, int baud, char parity,
 
 	commDCB.BaudRate = baudrate;	// current baud rate
 	commDCB.fBinary = true;			// binary mode, no EOF check
-	commDCB.fParity = false;		// enable parity checking
+	commDCB.fParity = true;		// enable parity checking
+	//commDCB.fParity = false;		// enable parity checking
 	commDCB.fOutxCtsFlow = false;	// CTS output flow control
 	commDCB.fOutxDsrFlow = false;	// DSR output flow control
 	commDCB.fDtrControl = DTR_CONTROL_DISABLE;	// DTR flow control type
@@ -66,7 +67,8 @@ int rs232_open(int portNr, int baud, char parity,
 	commDCB.XonLim = 0;				// transmit XON threshold
 	commDCB.XoffLim = 0;			// transmit XOFF threshold
 	commDCB.ByteSize = 8;			// number of bits/byte, 4-8
-	commDCB.Parity = NOPARITY;		// 0-4=no,odd,even,mark,space
+	commDCB.Parity = 2;		// 0-4=no,odd,even,mark,space
+	//commDCB.Parity = NOPARITY;		// 0-4=no,odd,even,mark,space
 	commDCB.StopBits = ONESTOPBIT;	// 0,1,2 = 1, 1.5, 2
 
 	if (!SetCommState(hComm,&commDCB))

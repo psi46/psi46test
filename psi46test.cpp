@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 		return 1;
 	} */
 	if (!Log.open(filename))
-	{
+	{	
 		printf("log: error creating file\n");
 		return 3;
 	}
@@ -74,9 +74,16 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		if (!tb.FindDTB(usbId)) {}
-		else if (tb.Open(usbId))
+		//--new to allow 'dummy' mode
+		if(settings.dtbId == -2)
 		{
+			printf("\n warning, no DTB connected (dtb_id = -2)! \n");			
+			Log.puts(" debug mode - no DTB connected (dtb_id = -2). \n");
+		}
+		//------------
+		else if (!tb.FindDTB(usbId)) {}
+		else if (tb.Open(usbId))
+		{	
 			printf("\nDTB %s opened\n", usbId.c_str());
 			string info;
 			try
@@ -103,7 +110,7 @@ int main(int argc, char* argv[])
 			printf("Connect testboard and try command 'scan' to find connected devices.\n");
 			printf("Make sure you have permission to access USB devices.\n");
 		}
-
+		
 		// --- open prober ------------------------------------
 		if (settings.proberPort>=0)
 			if (!prober.open(settings.proberPort))
