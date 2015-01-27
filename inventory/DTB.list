@@ -12,7 +12,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
  26  DTB1.2   1.1   1.7 DTB_WRECOM 40:D8:55:11:80:1A  pixelDTB026 UNL      CMOS Buffer inserted by ETH, early delivery to UNL
  27  DTB1.2   1.1   1.7 DTB_WREE8J 40:D8:55:11:80:1B  pixelDTB027 FNAL
  28  DTB1.2   1.1   1.7 DTB_WREEXI 40:D8:55:11:80:1C  pixelDTB028 FNAL
- 29  DTB1.2   1.1   1.7 DTB_WREGK0 40:D8:55:11:80:1D  pixelDTB029 UIC      Requires new SCSI connector. Handed over to PSI for repair (Jul 28, 2014)
+ 29  DTB1.2   1.1   1.7 DTB_WREGK0 40:D8:55:11:80:1D  pixelDTB029 UIC      Requires new SCSI connector. Handed over to PSI for repair (Jul 28, 2014). Received back on Jan 22, 2015
  30  DTB1.2   1.1   1.7 DTB_WREHUL 40:D8:55:11:80:1E  pixelDTB030 UIC
  31  DTB1.2   1.1   1.7 DTB_WREJHJ 40:D8:55:11:80:1F  pixelDTB031 UIC
  32  DTB1.2   1.1   1.7 DTB_WREK4U 40:D8:55:11:80:20  pixelDTB032 UIC
