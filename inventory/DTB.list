@@ -35,7 +35,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
  57  DTB1.2   1.1   1.7 DTB_WRPQJV 40:D8:55:11:80:39  pixelDTB057 FNAL     Backorder, delivered to FNAL on May 28
  58  DTB1.2   1.1   1.7 DTB_WRPRHI 40:D8:55:11:80:3A  pixelDTB058 KU       Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93
  61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 KU
- 64  DTB1.2   1.1   1.7 DTB_WRQ0UZ 40:D8:55:11:80:40  pixelDTB064 FNAL     Should be at FNAL, to be checked, reported as missing by Marco
+ 64  DTB1.2   1.1   1.7 DTB_WRQ0UZ 40:D8:55:11:80:40  pixelDTB064 FNAL     It is at UNL
  68  DTB1.2   1.1   1.7 DTB_WRQ2WG 40:D8:55:11:80:44  pixelDTB068 FNAL
  69  DTB1.2   1.1   1.7 DTB_WRQ3EG 40:D8:55:11:80:45  pixelDTB069 Rice
  70  DTB1.2   1.1   1.7 DTB_WRQ43T 40:D8:55:11:80:46  pixelDTB070 Rice
@@ -43,6 +43,6 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location comme
  87  DTB1.2   1.1   1.7 DTB_WV2QWE 40:D8:55:11:80:57  pixelDTB087 UNLstock
  88  DTB1.2   1.1   1.7 DTB_WVS33S 40:D8:55:11:80:58  pixelDTB088 Cornell
 165  DTB1.2   1.1   1.7 DTB_WXHFQ4 40:D8:55:11:80:A5  pixelDTB165 KU       In exchange for a faulty DTB, which will be shipped to us on Aug 8, 2014
-168  DTB1.2   1.1   1.7 DTB_WXHJ49 40:D8:55:11:80:A8  pixelDTB168 UNLstock
+168  DTB1.2   1.1   1.7 DTB_WXHJ49 40:D8:55:11:80:A8  pixelDTB168 OSU
 
 location with an asterisk denotes shipment underway
