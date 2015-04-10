@@ -5,7 +5,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location statu
  16  DTB1.2   1.1   1.7 DTB_WR8LGD 40:D8:55:11:80:10  pixelDTB016 UNL      OK     CMOS Buffer inserted by ETH
  17  DTB1.2   1.1   1.7 DTB_WRBNTI 40:D8:55:11:80:11  pixelDTB017 FNAL     OK
  19  DTB1.2   1.1   1.7 DTB_WRBVG4 40:D8:55:11:80:13  pixelDTB019 FNAL     BROKEN CMOS Buffer inserted by ETH, early delivery to FNAL. Overheating problem, modified with fans, forwarded to PSI for investigation (Nov 10, 2014).
- 21  DTB1.2   1.1   1.7 DTB_WRE2WB 40:D8:55:11:80:15  pixelDTB021 FNAL     OK     CMOS Buffer inserted by ETH, early delivery to FNAL. Defective, received back for repair from FNAL Feb 3, 2014. Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93
+ 21  DTB1.2   1.1   1.7 DTB_WRE2WB 40:D8:55:11:80:15  pixelDTB021 FNAL     BROKEN CMOS Buffer inserted by ETH, early delivery to FNAL. Defective, received back for repair from FNAL Feb 3, 2014. Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93
  22  DTB1.2   1.1   1.7 DTB_WRE4TS 40:D8:55:11:80:16  pixelDTB022 UNL      OK     CMOS Buffer inserted by ETH, early delivery to UNL
  23  DTB1.2   1.1   1.7 DTB_WREGZ0 40:D8:55:11:80:17  pixelDTB023 FNAL     BROKEN CTR line sends very long pulses
  25  DTB1.2   1.1   1.7 DTB_WRE8QZ 40:D8:55:11:80:19  pixelDTB025 FNAL     OK
