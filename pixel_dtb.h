@@ -309,6 +309,15 @@ public:
 	double GetIA() { return _GetIA()/10000.0; }  // get VA current in A
 	double GetID() { return _GetID()/10000.0; }  // get VD current in A
 
+    RPC_EXPORT uint16_t _GetVD_Cap();
+    RPC_EXPORT uint16_t _GetVD_Reg();
+    RPC_EXPORT uint16_t _GetVDAC_Reg();
+
+    double GetVD_Cap(){ return _GetVD_Cap()/1000.0;}
+    double GetVD_Reg(){ return _GetVD_Reg()/1000.0;}
+    double GetVDAC_Reg(){ return _GetVDAC_Reg()/1000.0;}
+
+
 	RPC_EXPORT void HVon();
 	RPC_EXPORT void HVoff();
 	RPC_EXPORT void ResetOn();
