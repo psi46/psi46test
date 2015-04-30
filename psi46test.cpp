@@ -28,7 +28,7 @@ CTestboard tb;
 CSettings settings;  // global settings
 CProber prober;
 CProtocol Log;
-
+CWaferList waferList;
 
 
 void help()
@@ -37,7 +37,7 @@ void help()
 }
 
 
-char filename[512];
+string filename;
 
 
 int main(int argc, char* argv[])
@@ -46,7 +46,8 @@ int main(int argc, char* argv[])
 	printf(VERSIONINFO "\n");
 
 	if (argc != 2) { help(); return 1; }
-	strncpy(filename, argv[1], sizeof(filename));
+	
+	filename = argv[1];
 
 	// --- load settings ----------------------------------
 	if (!settings.Read("psi46test.ini"))
@@ -63,7 +64,27 @@ int main(int argc, char* argv[])
 		fclose(f);
 		return 1;
 	} */
-	if (!Log.open(filename))
+
+	if (settings.IsWaferList())
+	{ // wafer test mode with wafer list
+		if (!waferList.Read(settings.waferList))
+		{
+			printf("No waferlist \"%s\" found!\n", settings.waferList.c_str());
+			return 5;
+		}
+
+		switch (waferList.SelectWafer(filename))
+		{
+		case 1: printf("Wafer %s not in wafer list!\n", filename.c_str());
+				return 5;
+		case 2: printf("Wafer %s already tested!\n", filename.c_str());
+				return 5;
+		}
+
+		filename = filename + ".log";
+	}
+
+	if (!Log.open(filename.c_str()))
 	{
 		printf("log: error creating file\n");
 		return 3;
@@ -126,6 +147,8 @@ int main(int argc, char* argv[])
 	{
 		e.What();
 	}
+
+	if (settings.IsWaferList()) waferList.Write(settings.waferList);
 
 	return 0;
 }

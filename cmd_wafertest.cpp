@@ -51,7 +51,7 @@ void GetTimeStamp(char datetime[])
 
 bool ReportWafer()
 {
-	char *msg;
+	const char *msg;
 	Log.section("WAFER", false);
 
 	// ProductID
@@ -66,15 +66,20 @@ bool ReportWafer()
 	strcpy(g_chipdata.productId, msg+3);
 
 	// WaferID
-	msg = prober.printf("GetWaferID");
-	if (strlen(msg)<=3)
+	if (settings.IsWaferList()) msg = waferList.GetId().c_str();
+	else
 	{
-		printf(" missing wafer id!\n");
-		Log.printf(" waferId?\n");
-		return false;
+		msg = prober.printf("GetWaferID");
+		if (strlen(msg)<=3)
+		{
+			printf(" missing wafer id!\n");
+			Log.printf(" waferId?\n");
+			return false;
+		}
+		msg += 3;
 	}
-	Log.printf(" %s", msg+3);
-	strcpy(g_chipdata.waferId, msg+3);
+	Log.printf(" %s", msg);
+	strcpy(g_chipdata.waferId, msg);
 
 	// Wafer Number
 	int num;
@@ -471,6 +476,7 @@ CMD_PROC(go)
 		{
 			ChangeChipPos(0);
 			isRunning = false;
+			waferList.SetTested();
 			break;
 		}
 	}

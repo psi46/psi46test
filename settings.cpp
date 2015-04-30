@@ -146,6 +146,7 @@ bool CSettings::Read(const char filename[])
 			else if (s == "ADC_TIN_DELAY")      adc_tinDelay  = ReadInt(0, 63);
 			else if (s == "ADC_TOUT_DELAY")     adc_toutDelay = ReadInt(0, 63);
 			else if (s == "ADC_CLK_DELAY")      adc_clkDelay = ReadInt(0, 320);
+			else if (s == "WAFERLIST")          ReadString(waferList);
 		}
 	}
 	catch (int e)

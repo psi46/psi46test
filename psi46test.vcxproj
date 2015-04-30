@@ -188,6 +188,7 @@
     </ClCompile>
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="settings.cpp" />
+    <ClCompile Include="waferlist.cpp" />
     <ClCompile Include="win32\rs232.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -216,6 +217,7 @@
     <ClInclude Include="rpc_error.h" />
     <ClInclude Include="rpc_io.h" />
     <ClInclude Include="usb.h" />
+    <ClInclude Include="waferlist.h" />
     <ClInclude Include="win32\FTD2XX.H" />
     <ClInclude Include="histo.h" />
     <ClInclude Include="protocol.h" />

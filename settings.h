@@ -15,7 +15,7 @@ class CSettings
 {
 	CFileBuffer f;
 	static bool IsNumber(char ch) { return '0' <= ch && ch <= '9'; }
-	static bool IsAlpha(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (ch == '_'); }
+	static bool IsAlpha(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (ch == '_') || (ch == '.'); }
 	static bool IsAlphaNum(char ch) { return IsAlpha(ch) || IsNumber(ch); }
 	static bool IsWhitespace(char ch) { return (ch == ' ') || (ch == '\t') || (ch == '\n') || (ch == '\r'); }
 	void SkipWhitespace();
@@ -49,6 +49,9 @@ public:
 	int cableLength;        // adapter cable length in mm
 
 	int  errorRep;          // # test rep if defect chip
+
+	std::string waferList;
+	bool IsWaferList() { return waferList.length() != 0; }
 };
 
 
