@@ -6,7 +6,7 @@
 
 #define TITLE        "PSI46V2 ROC/Wafer Tester"
 #define VERSION      "V1.6"
-#define TIMESTAMP    "30.04.2015"
+#define TIMESTAMP    "07.05.2015"
 
 
 // === set profiling options ================================================

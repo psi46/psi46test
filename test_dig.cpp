@@ -433,8 +433,6 @@ int test_i2c()
 
 void test_readback()
 { PROFILING
-	if ((settings.proberPort >= 0) && (g_chipdata.mapPos != 3)) return;
-
 	tb.Pg_SetCmd(0, PG_TOK);
 
 	tb.roc_SetDAC(0xff, 8);
