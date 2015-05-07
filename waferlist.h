@@ -26,7 +26,7 @@ class CWaferList
 	bool modified;
 	std::list<CWaferId>::iterator current;
 public:
-	CWaferList() : current(wafer.end()), modified(false) {}
+	CWaferList() : modified(false), current(wafer.end()) {}
 	bool Read(const std::string &fileName);
 	void Write(const std::string &fileName);
 	int SelectWafer(const std::string &waferId); // 0 = ok, 1 = not existing, 2 = already tested
