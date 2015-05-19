@@ -20,7 +20,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location statu
  35  DTB1.2   1.1   1.7 DTB_WRENKE 40:D8:55:11:80:23  pixelDTB035 UIC      OK     02/10/15 Has build-in fans, at UIC
  37  DTB1.2   1.1   1.7 DTB_WRMIFT 40:D8:55:11:80:25  pixelDTB037 UIC      OK     SDcard empty on delivery, initialized and ok now -- 02/10/15 at UIC
  38  DTB1.2   1.1   1.7 DTB_WRMUGK 40:D8:55:11:80:26  pixelDTB038 FNAL     OK
- 41  DTB1.2   1.1   1.7 DTB_WRMLUE 40:D8:55:11:80:29  pixelDTB041 KU       BROKEN
+ 41  DTB1.2   1.1   1.7 DTB_WRMLUE 40:D8:55:11:80:29  pixelDTB041 KU       BROKEN At PSI for repair/exchange (Mai 19, 2015)
  43  DTB1.2   1.1   1.7 DTB_WRMNMR 40:D8:55:11:80:2B  pixelDTB043 KU       BROKEN Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93; got back from KU, still flaky. Handed over to PSI for repair (Nov 10)
  44  DTB1.2   1.1   1.7 DTB_WRMOQG 40:D8:55:11:80:2C  pixelDTB044 Purdue   OK
  45  DTB1.2   1.1   1.7 DTB_WRMPSF 40:D8:55:11:80:2D  pixelDTB045 Purdue   OK
@@ -34,7 +34,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location statu
  56  DTB1.2   1.1   1.7 DTB_WRPPWX 40:D8:55:11:80:38  pixelDTB056 FNAL     OK     Backorder, delivered to FNAL on May 28
  57  DTB1.2   1.1   1.7 DTB_WRPQJV 40:D8:55:11:80:39  pixelDTB057 FNAL     OK     Backorder, delivered to FNAL on May 28
  58  DTB1.2   1.1   1.7 DTB_WRPRHI 40:D8:55:11:80:3A  pixelDTB058 KU       OK     Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93
- 61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 KU       BROKEN
+ 61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 KU       BROKEN At PSI for repair/exchange (Mai 19, 2015)
  64  DTB1.2   1.1   1.7 DTB_WRQ0UZ 40:D8:55:11:80:40  pixelDTB064 UNL      OK
  68  DTB1.2   1.1   1.7 DTB_WRQ2WG 40:D8:55:11:80:44  pixelDTB068 FNAL     OK
  69  DTB1.2   1.1   1.7 DTB_WRQ3EG 40:D8:55:11:80:45  pixelDTB069 Rice     OK
