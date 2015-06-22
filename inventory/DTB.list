@@ -2,12 +2,14 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location statu
 --- ------- ----- ----- ---------- -----------------  ----------- -------- ------ -------------------------------------------------------------------------------------------------------
   8  DTB1.1     X     X DTB_WQSTXY 40:D8:55:11:80:08  pixelDTB008 UNL      spcl   Prototype 2 - compatible; LVDS translator chip defunct, for testing purposes only. Property of PSI 
   9  DTB1.1   1.1   1.7 DTB_WQSUMF 40:D8:55:11:80:09  pixelDTB009 UNL      OK     Prototype, CMOS Buffer inserted by PSI
+ 15  DTB1.2                        40:D8:55:11:80:0F  pixelDTB015 KU       OKTRAN Replaces defective DTB no. 41
  16  DTB1.2   1.1   1.7 DTB_WR8LGD 40:D8:55:11:80:10  pixelDTB016 UNL      OK     CMOS Buffer inserted by ETH
  17  DTB1.2   1.1   1.7 DTB_WRBNTI 40:D8:55:11:80:11  pixelDTB017 FNAL     OK
- 19  DTB1.2   1.1   1.7 DTB_WRBVG4 40:D8:55:11:80:13  pixelDTB019 FNAL     BROKEN CMOS Buffer inserted by ETH, early delivery to FNAL. Overheating problem, modified with fans, forwarded to PSI for investigation (Nov 10, 2014). Tested ok, module test pending (as of Jun 15, 2015)
+ 19  DTB1.2   1.1   1.7 DTB_WRBVG4 40:D8:55:11:80:13  pixelDTB019 FNAL     OKTRAN CMOS Buffer inserted by ETH, early delivery to FNAL. Overheating problem, modified with fans, forwarded to PSI for investigation (Nov 10, 2014). Tested ok, module test pending (as of Jun 15, 2015)
  21  DTB1.2   1.1   1.7 DTB_WRE2WB 40:D8:55:11:80:15  pixelDTB021 FNAL     BROKEN CMOS Buffer inserted by ETH, early delivery to FNAL. Defective, received back for repair from FNAL Feb 3, 2014. Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93
  22  DTB1.2   1.1   1.7 DTB_WRE4TS 40:D8:55:11:80:16  pixelDTB022 UNL      OK     CMOS Buffer inserted by ETH, early delivery to UNL
  23  DTB1.2   1.1   1.7 DTB_WREGZ0 40:D8:55:11:80:17  pixelDTB023 FNAL     BROKEN CTR line sends very long pulses
+ 24  DTB1.2                        40:D8:55:11:80:18  pixelDTB024 UNL      OK     New delivery Jun 2015
  25  DTB1.2   1.1   1.7 DTB_WRE8QZ 40:D8:55:11:80:19  pixelDTB025 FNAL     OK
  26  DTB1.2   1.1   1.7 DTB_WRECOM 40:D8:55:11:80:1A  pixelDTB026 UNL      OK     CMOS Buffer inserted by ETH, early delivery to UNL
  27  DTB1.2   1.1   1.7 DTB_WREE8J 40:D8:55:11:80:1B  pixelDTB027 FNAL     OK
@@ -20,8 +22,8 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location statu
  35  DTB1.2   1.1   1.7 DTB_WRENKE 40:D8:55:11:80:23  pixelDTB035 UIC      OK     02/10/15 Has build-in fans, at UIC
  37  DTB1.2   1.1   1.7 DTB_WRMIFT 40:D8:55:11:80:25  pixelDTB037 UIC      OK     SDcard empty on delivery, initialized and ok now -- 02/10/15 at UIC
  38  DTB1.2   1.1   1.7 DTB_WRMUGK 40:D8:55:11:80:26  pixelDTB038 FNAL     OK
- 41  DTB1.2   1.1   1.7 DTB_WRMLUE 40:D8:55:11:80:29  pixelDTB041 KU       DEAD   At PSI for repair/exchange (Mai 19, 2015); irreparable, crosspoint switch damaged (HV incident?). Needs to be replaced.
- 43  DTB1.2   1.1   1.7 DTB_WRMNMR 40:D8:55:11:80:2B  pixelDTB043 KU       OK     Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93; got back from KU, still flaky. Handed over to PSI for repair (Nov 10); repaired Jun15, 2015; in transit
+ 41  DTB1.2   1.1   1.7 DTB_WRMLUE 40:D8:55:11:80:29  pixelDTB041 KU       DEAD   At PSI for repair/exchange (Mai 19, 2015); irreparable, crosspoint switch damaged (HV incident?). Needs to be replaced. ==> Replaced by No. 15
+ 43  DTB1.2   1.1   1.7 DTB_WRMNMR 40:D8:55:11:80:2B  pixelDTB043 KU       OKTRAN Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93; got back from KU, still flaky. Handed over to PSI for repair (Nov 10); repaired Jun15, 2015; in transit
  44  DTB1.2   1.1   1.7 DTB_WRMOQG 40:D8:55:11:80:2C  pixelDTB044 Purdue   OK
  45  DTB1.2   1.1   1.7 DTB_WRMPSF 40:D8:55:11:80:2D  pixelDTB045 Purdue   OK
  47  DTB1.2   1.1   1.7 DTB_WRMS4N 40:D8:55:11:80:2F  pixelDTB047 Purdue   OK
@@ -34,7 +36,7 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location statu
  56  DTB1.2   1.1   1.7 DTB_WRPPWX 40:D8:55:11:80:38  pixelDTB056 FNAL     OK     Backorder, delivered to FNAL on May 28
  57  DTB1.2   1.1   1.7 DTB_WRPQJV 40:D8:55:11:80:39  pixelDTB057 FNAL     OK     Backorder, delivered to FNAL on May 28
  58  DTB1.2   1.1   1.7 DTB_WRPRHI 40:D8:55:11:80:3A  pixelDTB058 KU       OK     Repaired Apr 4 2014, see http://dbweb4.fnal.gov:8080/ECL/cms_fpix/E/show?e=93
- 61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 KU       OK     At PSI for repair/exchange (Mai 19, 2015); repaired Jun 15, 2015; in transit
+ 61  DTB1.2   1.1   1.7 DTB_WRPUCV 40:D8:55:11:80:3D  pixelDTB061 KU       OKTRAN At PSI for repair/exchange (Mai 19, 2015); repaired Jun 15, 2015; in transit
  64  DTB1.2   1.1   1.7 DTB_WRQ0UZ 40:D8:55:11:80:40  pixelDTB064 UNL      OK
  68  DTB1.2   1.1   1.7 DTB_WRQ2WG 40:D8:55:11:80:44  pixelDTB068 FNAL     OK
  69  DTB1.2   1.1   1.7 DTB_WRQ3EG 40:D8:55:11:80:45  pixelDTB069 Rice     OK
@@ -42,6 +44,9 @@ id  HWver   FWver SWver USB id     MAC address        hostname    location statu
  82  DTB1.2   1.1   1.7 DTB_WS6U7R 40:D8:55:11:80:52  pixelDTB082 FNAL     OK     Backorder, delivered to FNAL on May 28
  87  DTB1.2   1.1   1.7 DTB_WV2QWE 40:D8:55:11:80:57  pixelDTB087 UNL      OK
  88  DTB1.2   1.1   1.7 DTB_WVS33S 40:D8:55:11:80:58  pixelDTB088 Cornell  OK
+133  DTB1.2                        40:D8:55:11:80:85  pixelDTB133 UNL      OK     New delivery Jun 2015
+141  DTB1.2                        40:D8:55:11:80:8D  pixelDTB141 UNL      OK     New delivery Jun 2015
+142  DTB1.2                        40:D8:55:11:80:8E  pixelDTB142 UNL      OK     New delivery Jun 2015
 165  DTB1.2   1.1   1.7 DTB_WXHFQ4 40:D8:55:11:80:A5  pixelDTB165 KU       OK     In exchange for a faulty DTB, which will be shipped to us on Aug 8, 2014
 168  DTB1.2   1.1   1.7 DTB_WXHJ49 40:D8:55:11:80:A8  pixelDTB168 OSU      OK
 
