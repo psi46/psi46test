@@ -157,17 +157,20 @@ int test_startup(bool probecard)
 	if (probecard)
 	{
 		// check return voltages
-		g_chipdata.probecard.vd_cap = 0; // tb.GetVD_CAP();
-		Log.section("VDCAP", false);
-		Log.printf("%5.3f\n", g_chipdata.probecard.vd_cap);
+		tb.GetVD_Cap(); tb.GetVD_Cap(); tb.GetVD_Cap(); tb.GetVD_Cap();
+        g_chipdata.probecard.vd_cap =tb.GetVD_Cap();
+        Log.section("VDCAP", false);
+        Log.printf("%5.3f\n", g_chipdata.probecard.vd_cap);
 
-		g_chipdata.probecard.vd_reg = 0; // tb.GetVD_CAP();
-		Log.section("VDREG", false);
-		Log.printf("%5.3f\n", g_chipdata.probecard.vd_reg);
+		tb.GetVD_Reg(); tb.GetVD_Reg(); tb.GetVD_Reg(); tb.GetVD_Reg();
+        g_chipdata.probecard.vd_reg = tb.GetVD_Reg();
+        Log.section("VDREG", false);
+        Log.printf("%5.3f\n", g_chipdata.probecard.vd_reg);
 
-		g_chipdata.probecard.v_dac = 0; // tb.GetVDAC_CAP();
-		Log.section("VDAC", false);
-		Log.printf("%5.3f\n", g_chipdata.probecard.v_dac);
+		tb.GetVDAC_Reg(); tb.GetVDAC_Reg(); tb.GetVDAC_Reg(); tb.GetVDAC_Reg();
+        g_chipdata.probecard.v_dac = tb.GetVDAC_Reg();
+        Log.section("VDAC", false);
+        Log.printf("%5.3f\n", g_chipdata.probecard.v_dac); 
 
 		g_chipdata.probecard.v_tout = 0; // tb.GetTOUT_COM();
 		Log.section("VTOUT", false);

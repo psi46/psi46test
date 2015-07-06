@@ -105,6 +105,9 @@
     <ClCompile Include="cmd_wafertest.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
+    <ClCompile Include="waferlist.cpp">
+      <Filter>Quellcodedateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="command.h">
@@ -207,6 +210,9 @@
       <Filter>Header-Dateien</Filter>
     </ClInclude>
     <ClInclude Include="cmd_analyzer.h">
+      <Filter>Header-Dateien</Filter>
+    </ClInclude>
+    <ClInclude Include="waferlist.h">
       <Filter>Header-Dateien</Filter>
     </ClInclude>
   </ItemGroup>

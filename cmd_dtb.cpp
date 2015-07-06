@@ -722,6 +722,56 @@ CMD_PROC(pgloop)
 	DO_FLUSH
 }
 
+// === Trigger ==============================================================
+
+CMD_PROC(trgsel)
+{
+	int bitmask;
+	PAR_INT(bitmask, 0, 511);
+	tb.Trigger_Select(bitmask);
+	DO_FLUSH
+}
+
+CMD_PROC(trgdelay)
+{
+	int delay;
+	PAR_INT(delay, 0, 255);
+	tb.Trigger_Delay(delay);
+	DO_FLUSH
+}
+
+CMD_PROC(trgtimeout)
+{
+	int timeout;
+	PAR_INT(timeout, 0, 65535);
+	tb.Trigger_Timeout(timeout);
+	DO_FLUSH
+}
+
+CMD_PROC(trgper)
+{
+	int period;
+	PAR_INT(period, 0, 0x7fffffff);
+	tb.Trigger_SetGenPeriodic(period);
+	DO_FLUSH
+}
+
+CMD_PROC(trgrand)
+{
+	int rate;
+	PAR_INT(rate, 0, 0x7fffffff);
+	tb.Trigger_SetGenRandom(rate);
+	DO_FLUSH
+}
+
+CMD_PROC(trgsend)
+{
+	int bitmask;
+	PAR_INT(bitmask, 0, 31);
+	tb.Trigger_Send(bitmask);
+	DO_FLUSH
+}
+
 
 // === DAQ ==================================================================
 

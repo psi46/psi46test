@@ -574,6 +574,42 @@ CMD_PROC(daqreadm)
 }
 
 
+CMD_PROC(daqreadt)
+{ PROFILING
+	int period;
+	PAR_INT(period,0,65535)
+
+	CDtbSource src;  src.Logging(false);
+	CStreamDump srcdump("stream_soft_tbm.txt");
+	CSink<uint16_t> pump;
+
+	src >> srcdump >> pump;
+	src.OpenRocDig(tb, settings.deser160_tinDelay, true, 1000000);
+	src.Enable();
+	tb.uDelay(100);
+	tb.Pg_Loop(period);
+	tb.Trigger_SetGenPeriodic(period);
+	tb.Trigger_Select(TRG_SEL_ASYNC);
+
+	try
+	{
+		int i=0;
+		while (i++ < 50000 && !keypressed())
+		{
+			pump.Get();
+		}
+		tb.Trigger_Select(0);
+//		pxmap.Report();
+	}
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+
+//	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
+	printf("\n");
+	src.Disable();
+}
+
+
 /*
 class CDemoAnalyzer : public CAnalyzer
 {

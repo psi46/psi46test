@@ -155,17 +155,21 @@ int test_startup(bool probecard)
 	if (probecard)
 	{
 		// check return voltages
-		g_chipdata.probecard.vd_cap = 0; // tb.GetVD_CAP();
-		Log.section("VDCAP", false);
-		Log.printf("%5.3f\n", g_chipdata.probecard.vd_cap);
+        // check return voltages
+		tb.GetVD_Cap(); tb.GetVD_Cap(); tb.GetVD_Cap(); tb.GetVD_Cap();
+        g_chipdata.probecard.vd_cap =tb.GetVD_Cap();
+        Log.section("VDCAP", false);
+        Log.printf("%5.3f\n", g_chipdata.probecard.vd_cap);
 
-		g_chipdata.probecard.vd_reg = 0; // tb.GetVD_CAP();
-		Log.section("VDREG", false);
-		Log.printf("%5.3f\n", g_chipdata.probecard.vd_reg);
+		tb.GetVD_Reg(); tb.GetVD_Reg(); tb.GetVD_Reg(); tb.GetVD_Reg();
+        g_chipdata.probecard.vd_reg = tb.GetVD_Reg();
+        Log.section("VDREG", false);
+        Log.printf("%5.3f\n", g_chipdata.probecard.vd_reg);
 
-		g_chipdata.probecard.v_dac = 0; // tb.GetVDAC_CAP();
-		Log.section("VDAC", false);
-		Log.printf("%5.3f\n", g_chipdata.probecard.v_dac);
+		tb.GetVDAC_Reg(); tb.GetVDAC_Reg(); tb.GetVDAC_Reg(); tb.GetVDAC_Reg();
+        g_chipdata.probecard.v_dac = tb.GetVDAC_Reg();
+        Log.section("VDAC", false);
+        Log.printf("%5.3f\n", g_chipdata.probecard.v_dac); 
 
 		g_chipdata.probecard.v_tout = 0; // tb.GetTOUT_COM();
 		Log.section("VTOUT", false);
@@ -429,8 +433,6 @@ int test_i2c()
 
 void test_readback()
 { PROFILING
-	if ((settings.proberPort >= 0) && (g_chipdata.mapPos != 3)) return;
-
 	tb.Pg_SetCmd(0, PG_TOK);
 
 	tb.roc_SetDAC(0xff, 8);
@@ -505,40 +507,54 @@ double getIana(int dac, bool prot = false)
 
 void test_current()
 { PROFILING
-	int xmin = 30;
-	tb.roc_SetDAC(VwllPr,  0);
-	tb.roc_SetDAC(VwllSh,  0);
-	tb.Flush();
+    int xmin = 30;
+    int xmax = 140;
+    tb.roc_SetDAC(VwllPr,  0);
+    tb.roc_SetDAC(VwllSh,  0);
+    tb.Pg_SetCmd(0, PG_TOK);
+    tb.Flush();
 
-	// Iana @ Vana
-	double ia = 0.0;
-	const int dac[VANASTEPS] = { 20, 60, 100, 140, 180 };
+    // Iana @ Vana
+    double ia = 0.0;
+    const int dac[VANASTEPS] = { 20, 60, 100, 140, 180 };
 
-	Log.section("VANA");
-	for (int i=0; i<VANASTEPS; i++)
-	{
-		ia = getIana(dac[i]);
-		g_chipdata.Iana[i] = ia;
-		Log.printf("%3i %6.2lf mA\n", dac[i], ia);
-		if (ia<24.0) xmin = dac[i];
-	}
 
-	// set Iana to 24+/-2 mA
-	if (xmin==0) return;
-	int xmax = xmin+30, x=0;
-	for (int n=0; n<6; n++)
-	{
-		x = (xmin+xmax)/2;
-		ia = getIana(x);
-		if (ia < 0.0) break;
-		if (ia > 24.0) xmax = x; else xmin = x;
-	}
-	g_chipdata.InitVana = (ia>=0.0)? x : -1;
-	g_chipdata.InitIana = ia;
-	Log.section("ITRIM", false);
-	Log.printf("%i %1.2lf mA\n", g_chipdata.InitVana, g_chipdata.InitIana);
-	InitDAC();
-}
+    Log.section("VANA");
+    for (int i=0; i<VANASTEPS; i++)
+    {
+        ia = getIana(dac[i]);
+        g_chipdata.Iana[i] = ia;
+
+        // readback current and voltage
+        tb.Pg_SetCmd(0, PG_TOK);
+        tb.roc_SetDAC(0xff, 9);
+        int vana_u = GetReadback() & 0xff;
+        tb.roc_SetDAC(0xff, 10);
+        int vana_r = GetReadback() & 0xff;
+        tb.roc_SetDAC(0xff, 12);
+        int iana = GetReadback() & 0xff;
+
+        Log.printf("%3i %6.2lf mA      %3i  %3i  %3i \n", dac[i], ia, vana_u, vana_r, iana);
+        if (ia<24.0) xmin = dac[i];
+        if ((ia>24.0)&&(ia<30)) xmax=dac[i];
+    }
+
+    // set Iana to 24+/-2 mA
+    if (xmin==0) return;
+    int x=0;
+    for (int n=0; n<6; n++)
+    {
+        x = (xmin+xmax)/2;
+        ia = getIana(x);
+        if (ia < 0.0) break;
+        if (ia > 24.0) xmax = x; else xmin = x;
+    }
+    g_chipdata.InitVana = (ia>=0.0)? x : -1;
+    g_chipdata.InitIana = ia;
+    Log.section("ITRIM", false);
+    Log.printf("%i %1.2lf mA\n", g_chipdata.InitVana, g_chipdata.InitIana);
+    InitDAC();
+} 
 
 
 

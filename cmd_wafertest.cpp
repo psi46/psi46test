@@ -68,6 +68,10 @@ void GetTimeStamp(char datetime[])
 
 bool ReportWafer()
 {
+<<<<<<< HEAD
+=======
+	const char *msg;
+>>>>>>> origin/master
 	Log.section("WAFER", false);
 
 	// ProductID
@@ -81,6 +85,7 @@ bool ReportWafer()
 	strcpy(g_chipdata.productId, settings.rocName.c_str());
 
 	// WaferID
+<<<<<<< HEAD
 	if (strlen(settings.waferId.c_str())<=3)
 	{
 		printf("missing waferID! set it into '.ini' file\n");
@@ -89,6 +94,22 @@ bool ReportWafer()
 	}
 	Log.printf("%s", settings.waferId.c_str());
 	strcpy(g_chipdata.waferId, settings.waferId.c_str());
+=======
+	if (settings.IsWaferList()) msg = waferList.GetId().c_str();
+	else
+	{
+		msg = prober.printf("GetWaferID");
+		if (strlen(msg)<=3)
+		{
+			printf(" missing wafer id!\n");
+			Log.printf(" waferId?\n");
+			return false;
+		}
+		msg += 3;
+	}
+	Log.printf(" %s", msg);
+	strcpy(g_chipdata.waferId, msg);
+>>>>>>> origin/master
 
 	// Wafer Number
 	if (strlen(settings.waferNum.c_str())>=1)
@@ -847,8 +868,15 @@ CMD_PROC(initdiced)  //---new
 		}
 		if(!match)
 		{
+<<<<<<< HEAD
 			printf("ERROR: no match coordinates for this ROC %i %i %c \n", cc.X, cc.Y, cc.Letter);
 			return;
+=======
+			ChangeChipPos(0);
+			isRunning = false;
+			waferList.SetTested();
+			break;
+>>>>>>> origin/master
 		}
 		printf("moving on ROC %i %i %c \n", crd[NROC].X, crd[NROC].Y, crd[NROC].Letter);
 		std::stringstream sstr1, sstr2;

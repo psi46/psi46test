@@ -98,6 +98,17 @@ CMD_REG(pgsingle, "", "send single pattern")
 CMD_REG(pgtrig, "", "enable external pattern trigger")
 CMD_REG(pgloop, "<period>", "start patterngenerator in loop mode")
 
+// === Trigger ==============================================================
+
+HELP_CAT("trigger")
+
+CMD_REG(trgsel, "<bitmask>", "Select trigger source")
+CMD_REG(trgdelay, "<delay>", "Set trigger delay in clock cycles")
+CMD_REG(trgtimeout, "<timeout>", "Set max readout length")
+CMD_REG(trgper, "<period>", "Chose periodic trigger generator")
+CMD_REG(trgrand, "<rate>", "Chose random trigger generator")
+CMD_REG(trgsend, "<bitmask>", "Send single trigger signal")
+
 // === DAQ ==================================================================
 
 HELP_CAT("daq")

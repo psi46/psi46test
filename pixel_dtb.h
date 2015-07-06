@@ -309,6 +309,15 @@ public:
 	double GetIA() { return _GetIA()/10000.0; }  // get VA current in A
 	double GetID() { return _GetID()/10000.0; }  // get VD current in A
 
+    RPC_EXPORT uint16_t _GetVD_Cap();
+    RPC_EXPORT uint16_t _GetVD_Reg();
+    RPC_EXPORT uint16_t _GetVDAC_Reg();
+
+    double GetVD_Cap(){ return _GetVD_Cap()/1000.0;}
+    double GetVD_Reg(){ return _GetVD_Reg()/1000.0;}
+    double GetVDAC_Reg(){ return _GetVDAC_Reg()/1000.0;}
+
+
 	RPC_EXPORT void HVon();
 	RPC_EXPORT void HVoff();
 	RPC_EXPORT void ResetOn();
@@ -332,6 +341,33 @@ public:
 	RPC_EXPORT void Pg_Single();
 	RPC_EXPORT void Pg_Trigger();
 	RPC_EXPORT void Pg_Loop(uint16_t period);
+
+
+	// --- Trigger ----------------------------------------------------------
+	#define TRG_SEL_ASYNC      0x100
+	#define TRG_SEL_SYNC       0x080
+	#define TRG_SEL_SINGLE     0x040
+	#define TRG_SEL_GEN        0x020
+	#define TRG_SEL_PG         0x010
+	#define TRG_SEL_SINGLE_DIR 0x008
+	#define TRG_SEL_PG_DIR     0x004
+	#define TRG_SEL_CHAIN      0x002
+	#define TRG_SEL_SYNC_OUT   0x001
+	RPC_EXPORT void Trigger_Select(uint16_t mask);
+
+	RPC_EXPORT void Trigger_Delay(uint8_t delay);
+
+	RPC_EXPORT void Trigger_Timeout(uint16_t timeout);
+
+	RPC_EXPORT void Trigger_SetGenPeriodic(uint32_t periode);
+	RPC_EXPORT void Trigger_SetGenRandom(uint32_t rate);
+
+	#define TRG_SEND_SYN   1
+	#define TRG_SEND_TRG   2
+	#define TRG_SEND_RSR   4
+	#define TRG_SEND_RST   8
+	#define TRG_SEND_CAL  16
+	RPC_EXPORT void Trigger_Send( uint8_t send);
 
 
 	// --- data aquisition --------------------------------------------------

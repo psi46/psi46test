@@ -19,6 +19,7 @@
 #include "pixel_dtb.h"
 #include "settings.h"
 #include "prober.h"
+#include "waferlist.h"
 #include "protocol.h"
 #include "pixelmap.h"
 #include "test.h"
@@ -34,6 +35,7 @@ extern CTestboard tb;
 extern CSettings settings;  // global settings
 extern CProber prober; // prober
 extern CProtocol Log;  // log file
+extern CWaferList waferList; // wafer list for wafer test option
 
 extern CChip g_chipdata;
 
