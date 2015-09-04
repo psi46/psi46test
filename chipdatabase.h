@@ -106,6 +106,8 @@ public:
 	} TFailCode;
 
 	int nEntry; // 0=no entry found
+//	[CENTER]  //optional
+	char centerId[40];
 //	[WAFER]
 	char productId[40];
 	char waferId[40];
@@ -240,6 +242,7 @@ struct CLogFile
 	CScanner Log;
 	char logTime[28];
 	char logVersion[44];
+	char centerId[40];
 	char productId[40];
 	char waferId[40];
 	char waferNr[10];

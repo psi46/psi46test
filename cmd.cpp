@@ -29,16 +29,23 @@ void cmdHelp()
 	 "| h                  display this text                         |\n"
 	 "| exit               exit commander                            |\n"
 	 "+-- wafer test ------------------------------------------------+\n"
-	 "| initdiced          initialize chip wafer test after dicing   |\n" //---new
-	 "| testdiced          run chip test after dicing                |\n" //---new
- 	 "| createmap          create sorted roc coordinates file        |\n" //---new
-	 "| test               run chip test                             |\n"
-	 "| pr <command>       send command to prober                    |\n"
-	 "| sep                prober z-axis separation                  |\n"
-	 "| contact            prober z-axis contact                     |\n"
-	 "| firs               go to first die-not for entire wafer test |\n"
-	 "| next               go to next die-not for entire wafer test  |\n"
-	 "| goto <x> <y>       go to die-not for entire wafer test       |\n"
+	 "| initdiced          initialize chip wafer test after dicing   |\n"
+	 "| testdiced          run chip test after dicing                |\n"
+ 	 "| checkCont          run script to check probes contact        |\n"
+  	 "| checkphase         run script to find proper clk phase       |\n"
+	 "| goSep              go  chuck z-axis separation               |\n"
+  	 "| setSep             set chuck z-axis separation               |\n"
+	 "| goCont             go  chuck z-axis contact                  |\n"
+ 	 "| setCont            set chuck z-axis contact                  |\n"
+	 "| goL                go  chuck Load position                   |\n"
+ 	 "| setL               set chuck Load position                   |\n"
+ 	 "| goH                go  chuck Home position                   |\n"
+  	 "| setH               set chuck Home position                   |\n"
+	 "| first              go to first die (not for std wafer test)  |\n"
+	 "| next               go to next die  (not for std wafer test)  |\n"
+	 "| goto <y> <x> <L>   go to die       (not for std wafer test)  |\n"
+ 	 "| createmap          create sorted roc coordinates file        |\n"
+	 "| pr <command>       send command to prober (see Alessi manual)|\n"
 	 "+--------------------------------------------------------------+\n",
 	 stdout);
 	}
@@ -49,7 +56,7 @@ void cmdHelp()
 	 "| h                  display this text                         |\n"
 	 "| exit               exit commander                            |\n"
 	 "+-- chip test -------------------------------------------------+\n"
-	 "| test <x y ABCD posx(mm) posy(mm)>    - wafer test on Alessi  |\n"
+	 "| test <y x ABCD posx(mm) posy(mm)>    - wafer test on Alessi  |\n"
 	 "+--------------------------------------------------------------+\n",
 	 stdout);
 	}

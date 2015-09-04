@@ -139,6 +139,7 @@ bool CSettings::Read(const char filename[])
 			else if (s == "PROBER_PORT")        proberPort = ReadInt(-2, 99); //--new to allow manual Alessi option
 			else if (s == "ROC_TYPE")           rocType = ReadInt(0, 1);
 			else if (s == "ROC_NAME")           ReadString(rocName);			
+  		    else if (s == "CENTER_ID")          ReadString(centerId);		
 			else if (s == "WAFER_ID")           ReadString(waferId);		
 			else if (s == "WAFER_NUM")          ReadString(waferNum);
 			else if (s == "ADC_CLK_DELAY")      adc_clkDelay = ReadInt(0, 320); //new
@@ -150,11 +151,12 @@ bool CSettings::Read(const char filename[])
 			else if (s == "ADC_TIN_DELAY")      adc_tinDelay  = ReadInt(0, 63);
 			else if (s == "ADC_TOUT_DELAY")     adc_toutDelay = ReadInt(0, 63);
 			else if (s == "ADC_CLK_DELAY")      adc_clkDelay = ReadInt(0, 320);
+			else if (s == "WAFERLIST")          ReadString(waferList);
+			else if (s == "HOME_DIE")  ReadString(homedie);
 			else if (s == "ROCSORTED_FILENAME")  ReadString(rocsorted_filename); //new
 			else if (s == "COORDINATES_FILENAME")  ReadString(coord_filename); //new
 			else if (s == "OLDLOG_FILENAME")  ReadString(oldlog_filename); //new
 			else if (s == "TOT_ROC_PER_WAFER")  totRocs = ReadInt(0, 248); //new
-			else if (s == "HOME_DIE")  ReadString(homedie);
 		}
 	}
 	catch (int e)

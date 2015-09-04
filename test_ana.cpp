@@ -157,7 +157,7 @@ int test_startup(bool probecard)
 	if (probecard)
 	{
 		// check return voltages
-		tb.GetVD_Cap(); tb.GetVD_Cap(); tb.GetVD_Cap(); tb.GetVD_Cap();
+        tb.GetVD_Cap(); tb.GetVD_Cap(); tb.GetVD_Cap(); tb.GetVD_Cap();
         g_chipdata.probecard.vd_cap =tb.GetVD_Cap();
         Log.section("VDCAP", false);
         Log.printf("%5.3f\n", g_chipdata.probecard.vd_cap);

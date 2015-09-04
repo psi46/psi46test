@@ -20,8 +20,14 @@
 HELP_CAT("test")
 CMD_REG(roctype, "ana|dig", "choose ROC type for test")
 CMD_REG(pr, "<command>", "send command to prober")
-CMD_REG(sep, "", "prober z-axis separation")
-CMD_REG(contact, "", "prober z-axis contact")
+CMD_REG(goSep, "", "chuck z-axis separation")
+CMD_REG(setSep, "", "set chuck z-axis separation")
+CMD_REG(goCont, "", "go  chuck z-axis contact")
+CMD_REG(setCont, "", "set chuck z-axis contact")
+CMD_REG(goL, "", "go  chuck Load position")
+CMD_REG(setL, "", "set chuck Load position")
+CMD_REG(goH, "", "go  chuck Home position")
+CMD_REG(setH, "", "set chuck Home position")
 CMD_REG(test, "<chip id>", "run chip test")
 CMD_REG(initdiced,"initdiced", "to initialize chip-wafer-test-after-dicing"); //---new
 CMD_REG(testdiced,   "", "to run chip-test-after-dicing");  //---new
