@@ -822,7 +822,7 @@ CMD_PROC(initdiced)  //---new
 		if(s=='s') return;
 
 		//read coordinates from file
-		if(!ReadMap(0)) return;		
+		if(!ReadMap(1)) return;		
 		//scaling coordinates to the new home
 		//if(!OffsetMap()) return;
 
