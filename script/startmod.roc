@@ -23,29 +23,25 @@ mdelay 400
 resoff
 mdelay 200
 
+getid
+getia
+
 --- setup TBM -------------------------------
 modsel b11111
 
-tbmset $E4 b11110000    Init TBM, Reset ROC
-tbmset $F4 b11110000
-
-tbmset $E0 b1_000000_1  Disable Auto Reset, Disable PKAM Counter
-tbmset $F0 b1_000000_1
-
-tbmset $E2 b11_000000   Mode: Calibration
-tbmset $F2 b11_000000
-
-tbmset $E8 0            Set PKAM Counter (x+1)*6.4us
-tbmset $F8 16
-
-tbmset $EA b1_1_100_100 Delays: Tok _ Hdr/Trl _ Port 1 _ Port 0
-tbmset $FA b1_1_100_100
-
-tbmset $EC 10           Auto reset rate (x+1)*256
-tbmset $FC 0
-
-tbmset $EE b001_001_00  160/400 MHz phase adjust  
-tbmset $FE $00          Temp measurement control
+tbmset $E4 $F0    Init TBM, Reset ROC
+tbmset $F4 $F0
+tbmset $E0 $81    Disable PKAM Counter, Disable Auto Reset
+tbmset $F0 $81
+tbmset $E2 $C0    Mode = Calibration
+tbmset $F2 $C0
+tbmset $E8 $10    Set PKAM Counter
+tbmset $F8 $10
+tbmset $EA b1_1_101_101 Delays: TOK, Hdr/Trl, Port 1, Port 0
+tbmset $FA b1_1_101_101 Delays: TOK, Hdr/Trl, Port 1, Port 0
+tbmset $EC $00    Temp measurement control
+tbmset $FC $00
+tbmset $EE b001_001_00 160/400 MHz phase adjust
 
 mdelay 100
 
@@ -74,34 +70,34 @@ dac  18 115  VIon
 dac  19  50  Vcomp_ADC 100
 dac  20  70  VIref_ADC 160
 
-dac  25 180  Vcal
-dac  26  50  CalDel
+dac  25  70  Vcal
+dac  26  68  CalDel
 
-dac  $fe 24  WBC
+dac  $fe 25  WBC
 dac  $fd  4  CtrlReg
 flush
 
 mask
-cald
 
-mdelay 100
-getid
-getia
+--- enable pixel ----------------------------
+select 0:7
+cole :
+pixe 1 : 0
+cal 1 1
 
 --- setup probe outputs ---------------------
-d1  9  sync
-d2  0  
-a1  1  sdata1
-lcds
+d1 9  sync
+ds2 0 4
+a1 1  sdata
+
 
 --- setup readout timing --------------------
 pgstop
-pgset 0 b010000  50  pg_rest
-pgset 1 b001000   0  pg_resr
+pgset 0 b010000  20  pg_rest
+pgset 1 b000000   0
 pgsingle
-udelay 100
 
-pgset 0 b000000  15  pg_rest
+pgset 0 b010000  15  pg_rest
 pgset 1 b000100  30  pg_cal
 pgset 2 b100010  30  pg_trg pg_sync
 pgset 3 b000100  30  pg_cal
@@ -109,18 +105,23 @@ pgset 4 b000010  30  pg_trg
 pgset 5 b000100  30  pg_cal
 pgset 6 b000010   0  pg_trg
 
-- pgloop 20000
 
-select :
-cole :
-- pixe : 10:25 0
+getia
+getid
 
-select 1
-pixe 1:4 8 0
-cal  1:4 8
+dselmod
+dopen 10000 0
+dstart
 
-select 5
-pixe 1:3 10:11 0
-cal  1:3 10:11
+pgsingle
+udelay 1000
+dread
+
+dseloff
+dclose
+
+dsena 0
+
+pgloop 500
 
 flush

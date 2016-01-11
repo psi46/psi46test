@@ -653,7 +653,6 @@ CMD_PROC(d1)
 	DO_FLUSH
 }
 
-
 CMD_PROC(d2)
 {
 	int sig;
@@ -661,6 +660,27 @@ CMD_PROC(d2)
 	tb.SignalProbeD2(sig);
 	DO_FLUSH
 }
+
+CMD_PROC(ds1)
+{
+	int deser;
+	int sig;
+	PAR_INT(deser, 0, 3)
+	PAR_INT(sig, 0, 255)
+	tb.SignalProbeDeserD1(deser, sig);
+	DO_FLUSH
+}
+
+CMD_PROC(ds2)
+{
+	int deser;
+	int sig;
+	PAR_INT(deser, 0, 3)
+	PAR_INT(sig, 0, 255)
+	tb.SignalProbeDeserD2(deser, sig);
+	DO_FLUSH
+}
+
 
 CMD_PROC(a1)
 {
@@ -727,7 +747,7 @@ CMD_PROC(pgloop)
 CMD_PROC(trgsel)
 {
 	int bitmask;
-	PAR_INT(bitmask, 0, 511);
+	PAR_INT(bitmask, 0, 0x1000);
 	tb.Trigger_Select(bitmask);
 	DO_FLUSH
 }
@@ -1040,6 +1060,101 @@ CMD_PROC(dreada)
 	printf("\n");
 }
 
+
+// === DESER400 =============================================================
+
+CMD_PROC(dsena)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	tb.Deser400_Enable(deser);
+	DO_FLUSH
+}
+
+CMD_PROC(dsdis)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	tb.Deser400_Disable(deser);
+	DO_FLUSH
+}
+
+CMD_PROC(dsdisall)
+{
+	tb.Deser400_DisableAll();
+	DO_FLUSH
+}
+
+CMD_PROC(dssetph)
+{
+	int deser, phase;
+	PAR_INT(deser, 0, 3)
+	PAR_INT(phase, 0, 15)
+	tb.Deser400_SetPhase(deser, phase);
+	DO_FLUSH
+}
+
+CMD_PROC(dsauto)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	tb.Deser400_SetPhaseAuto(deser);
+	DO_FLUSH
+}
+
+CMD_PROC(dsautoall)
+{
+	tb.Deser400_SetPhaseAutoAll();
+	DO_FLUSH
+}
+
+CMD_PROC(dsgetxor)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	unsigned int xor = tb.Deser400_GetXor(deser);
+
+	char s[9];
+	for (int i=0; i<8; i++)
+	{
+		s[i] = (xor & 0x80) ? 'X' : '.';
+		xor <<= 1;
+	}
+	s[8] = 0;
+	xor >>= 8;
+	printf(" %02X  %s\n", xor, s);
+}
+
+CMD_PROC(dsgetph)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	unsigned int phase = tb.Deser400_GetPhase(deser);
+	printf(" phase = %u\n", phase);
+}
+
+CMD_PROC(gaterun)
+{
+	int width, period;
+	PAR_INT(width, 0, 7)
+	PAR_INT(period, 0, 7)
+	tb.Deser400_GateRun(width, period);
+	DO_FLUSH
+}
+
+CMD_PROC(gatesingle)
+{
+	int width;
+	PAR_INT(width, 0, 7)
+	tb.Deser400_GateSingle(width);
+	DO_FLUSH
+}
+
+CMD_PROC(gatestop)
+{
+	tb.Deser400_GateStop();
+	DO_FLUSH
+}
 
 
 // =======================================================================

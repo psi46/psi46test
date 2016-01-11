@@ -4,7 +4,7 @@
  *
  *  description: PSI46 testboard API for DTB
  *	author:      Beat Meier
- *	date:        15.7.2013
+ *	date:        1.12.2015
  *	rev:
  *
  *---------------------------------------------------------------------
@@ -116,10 +116,11 @@ public:
 	void Clear() { rpc_io->Clear(); }
 
 
-	// === DTB identification ================================================
+	// === DTB identification ===============================================
 
 	RPC_EXPORT void GetInfo(stringR &info);
-	RPC_EXPORT uint16_t GetBoardId();
+	RPC_EXPORT uint16_t GetBoardId();	// reads the board number
+
 	RPC_EXPORT void GetHWVersion(stringR &version);
 	RPC_EXPORT uint16_t GetFWVersion();
 	RPC_EXPORT uint16_t GetSWVersion();
@@ -144,10 +145,12 @@ public:
 	RPC_EXPORT void SetLed(uint8_t x);
 
 
-	// --- Clock, Timing ----------------------------------------------------
+	// === Clock, Timing ====================================================
+
 	RPC_EXPORT void cDelay(uint16_t clocks);
 	RPC_EXPORT void uDelay(uint16_t us);
 	void mDelay(uint16_t ms);
+
 
 	// --- select ROC/Module clock source
 	#define CLK_SRC_INT  0
@@ -178,7 +181,6 @@ public:
 //	RPC_EXPORT void PllReset();
 	void SetClock_(unsigned char MHz);
 
-
 	// --- Signal Delay -----------------------------------------------------
 	#define SIG_CLK 0
 	#define SIG_CTR 1
@@ -201,7 +203,6 @@ public:
 
 	// --- digital signal probe ---------------------------------------------
 	#define PROBE_OFF            0
-
 	#define PROBE_CLK            1
 	#define PROBE_SDA            2
 	#define PROBE_SDA_SEND       3
@@ -224,45 +225,35 @@ public:
 	#define PROBE_ADC_START     22
 	#define PROBE_ADC_SGATE     23
 	#define PROBE_ADC_S         24
-
-	#define PROBE_TBM0_GATE    100
-	#define PROBE_TBM0_DATA    101
-	#define PROBE_TBM0_TBMHDR  102
-	#define PROBE_TBM0_ROCHDR  103
-	#define PROBE_TBM0_TBMTRL  104
-
-	#define PROBE_TBM1_GATE    105
-	#define PROBE_TBM1_DATA    106
-	#define PROBE_TBM1_TBMHDR  107
-	#define PROBE_TBM1_ROCHDR  108
-	#define PROBE_TBM1_TBMTRL  109
-
-	#define PROBE_TBM2_GATE    110
-	#define PROBE_TBM2_DATA    111
-	#define PROBE_TBM2_TBMHDR  112
-	#define PROBE_TBM2_ROCHDR  113
-	#define PROBE_TBM2_TBMTRL  114
-
-	#define PROBE_TBM3_GATE    115
-	#define PROBE_TBM3_DATA    116
-	#define PROBE_TBM3_TBMHDR  117
-	#define PROBE_TBM3_ROCHDR  118
-	#define PROBE_TBM3_TBMTRL  119
-
-	#define PROBE_TBM4_GATE    120
-	#define PROBE_TBM4_DATA    121
-	#define PROBE_TBM4_TBMHDR  122
-	#define PROBE_TBM4_ROCHDR  123
-	#define PROBE_TBM4_TBMTRL  124
-
-	#define PROBE_TBM5_GATE    125
-	#define PROBE_TBM5_DATA    126
-	#define PROBE_TBM5_TBMHDR  127
-	#define PROBE_TBM5_ROCHDR  128
-	#define PROBE_TBM5_TBMTRL  129
+	#define PROBE_DS_GATE       29
 
 	RPC_EXPORT void SignalProbeD1(uint8_t signal);
 	RPC_EXPORT void SignalProbeD2(uint8_t signal);
+
+
+	// DESER400
+	#define PROBE_FRAME_ERROR    0
+	#define PROBE_CODE_ERROR     1
+	#define PROBE_ERROR          2  // FRAME or CODE
+
+	#define PROBE_A_HEADER       3
+	#define PROBE_A_PACKET       4
+	#define PROBE_A_TBM_HDR      5
+	#define PROBE_A_ROC_HDR      6
+	#define PROBE_A_TBM_TRL      7
+	#define PROBE_A_IDLE_ERROR   8
+	#define PROBE_A_HDR_ERROR    9
+
+	#define PROBE_B_HEADER      10
+	#define PROBE_B_PACKET      11
+	#define PROBE_B_TBM_HDR     12
+	#define PROBE_B_ROC_HDR     13
+	#define PROBE_B_TBM_TRL     14
+	#define PROBE_B_IDLE_ERROR  15
+	#define PROBE_B_HDR_ERROR   16
+
+	RPC_EXPORT void SignalProbeDeserD1(uint8_t deser, uint8_t signal);
+	RPC_EXPORT void SignalProbeDeserD2(uint8_t deser, uint8_t signal);
 
 
 	// --- analog signal probe ----------------------------------------------
@@ -280,14 +271,15 @@ public:
 	#define GAIN_3   2
 	#define GAIN_4   3
 
+
 	RPC_EXPORT void SignalProbeA1(uint8_t signal);
 	RPC_EXPORT void SignalProbeA2(uint8_t signal);
 	RPC_EXPORT void SignalProbeADC(uint8_t signal, uint8_t gain = 0);
 
 
 	// --- ROC/Module power VD/VA -------------------------------------------
-	RPC_EXPORT void Pon();	// switch ROC power on
-	RPC_EXPORT void Poff();	// switch ROC power off
+	RPC_EXPORT void Pon();
+	RPC_EXPORT void Poff();
 
 	RPC_EXPORT void _SetVD(uint16_t mV);
 	RPC_EXPORT void _SetVA(uint16_t mV);
@@ -336,23 +328,31 @@ public:
 	#define PG_SYNC  0x2000
 
 	RPC_EXPORT void Pg_SetCmd(uint16_t addr, uint16_t cmd);
-//	RPC_EXPORT void Pg_SetCmdAll(vector<uint16_t> &cmd);
+	RPC_EXPORT void Pg_SetCmdAll(vector<uint16_t> &cmd);
+	RPC_EXPORT void Pg_SetSum(uint16_t delays);
 	RPC_EXPORT void Pg_Stop();
 	RPC_EXPORT void Pg_Single();
 	RPC_EXPORT void Pg_Trigger();
+	RPC_EXPORT void Pg_Triggers(uint32_t triggers, uint16_t period);
 	RPC_EXPORT void Pg_Loop(uint16_t period);
 
 
 	// --- Trigger ----------------------------------------------------------
-	#define TRG_SEL_ASYNC      0x100
-	#define TRG_SEL_SYNC       0x080
-	#define TRG_SEL_SINGLE     0x040
-	#define TRG_SEL_GEN        0x020
-	#define TRG_SEL_PG         0x010
-	#define TRG_SEL_SINGLE_DIR 0x008
-	#define TRG_SEL_PG_DIR     0x004
-	#define TRG_SEL_CHAIN      0x002
-	#define TRG_SEL_SYNC_OUT   0x001
+	#define TRG_SEL_ASYNC      0x0100
+	#define TRG_SEL_SYNC       0x0080
+	#define TRG_SEL_SINGLE     0x0040
+	#define TRG_SEL_GEN        0x0020
+	#define TRG_SEL_PG         0x0010
+
+	#define TRG_SEL_ASYNC_DIR  0x0800
+	#define TRG_SEL_SYNC_DIR   0x0400
+	#define TRG_SEL_SINGLE_DIR 0x0008
+	#define TRG_SEL_GEN_DIR    0x0200
+	#define TRG_SEL_PG_DIR     0x0004
+
+	#define TRG_SEL_CHAIN      0x0002
+	#define TRG_SEL_SYNC_OUT   0x0001
+
 	RPC_EXPORT void Trigger_Select(uint16_t mask);
 
 	RPC_EXPORT void Trigger_Delay(uint8_t delay);
@@ -369,13 +369,15 @@ public:
 	#define TRG_SEND_CAL  16
 	RPC_EXPORT void Trigger_Send( uint8_t send);
 
-
 	// --- data aquisition --------------------------------------------------
 	RPC_EXPORT uint32_t Daq_Open(uint32_t buffersize = 10000000, uint8_t channel = 0);
 	RPC_EXPORT void Daq_Close(uint8_t channel = 0);
 	RPC_EXPORT void Daq_Start(uint8_t channel = 0);
 	RPC_EXPORT void Daq_Stop(uint8_t channel = 0);
+	RPC_EXPORT void Daq_MemReset(uint8_t channel = 0);
 	RPC_EXPORT uint32_t Daq_GetSize(uint8_t channel = 0);
+	RPC_EXPORT uint8_t Daq_FillLevel(uint8_t channel);
+	RPC_EXPORT uint8_t Daq_FillLevel();
 
 	// --- Read data from DAQ FIFO
 	// Meaning if return bits
@@ -389,6 +391,7 @@ public:
 	RPC_EXPORT uint8_t Daq_Read(HWvectorR<uint16_t> &data,
 			uint32_t blocksize, uint32_t &availsize, uint8_t channel = 0);
 
+	void Daq_Read_DeleteData(uint32_t daq_base, int32_t rp);
 
 	RPC_EXPORT void Daq_Select_ADC(uint16_t blocksize, uint8_t source,
 			uint8_t start, uint8_t stop = 0);
@@ -403,10 +406,49 @@ public:
 
 	RPC_EXPORT void Daq_DeselectAll();
 
+	// --- DESER400 configuration -------------------------------------------
+	RPC_EXPORT void Deser400_Enable(uint8_t deser);
+	RPC_EXPORT void Deser400_Disable(uint8_t deser);
+	RPC_EXPORT void Deser400_DisableAll();
 
-	// --- ROC Communication ------------------------------------------------
+	RPC_EXPORT void Deser400_SetPhase(uint8_t deser, uint8_t phase);
+	RPC_EXPORT void Deser400_SetPhaseAuto(uint8_t deser);
+	RPC_EXPORT void Deser400_SetPhaseAutoAll();
+
+	RPC_EXPORT uint8_t Deser400_GetXor(uint8_t deser);
+	RPC_EXPORT uint8_t Deser400_GetPhase(uint8_t deser);
+
+
+	/* --- deser400 gate
+		width: gate length
+		  0       200 ns
+		  1       800 ns
+		  2       3.2 us
+		  3      12.8 us
+		  4      51.2 us
+		  5     204.8 us
+		  6       1.6 ms (default)
+		  7      26.2 ms
+
+		period: gate repetition periode
+		  0       800 ns
+		  1       3.2 us
+		  2      12.8 us
+		  3      51.2 us
+		  4     204.8 us
+		  5       1.6 ms
+		  6      13.1 ms
+		  7     209.7 ms (default)
+	*/
+	RPC_EXPORT void Deser400_GateRun(uint8_t width, uint8_t period);
+	RPC_EXPORT void Deser400_GateSingle(uint8_t width);
+	RPC_EXPORT void Deser400_GateStop();
+
+
+	// --- ROC/module Communication -----------------------------------------
 	// -- set the i2c address for the following commands
 	RPC_EXPORT void roc_I2cAddr(uint8_t id);
+	RPC_EXPORT void roc_I2cAddr_Layer_1(uint8_t id);
 
 	// -- sends "ClrCal" command to ROC
 	RPC_EXPORT void roc_ClrCal();
@@ -430,12 +472,17 @@ public:
 	// -- enable/disable a double column
 	RPC_EXPORT void roc_Col_Enable(uint8_t col, bool on);
 
-	// -- mask all pixels of a column and the coresponding double column
+	// -- enable/disable all double columns
+	RPC_EXPORT void roc_AllCol_Enable(bool on);
+
+	// -- mask all pixels of a column and the corresponding double column
 	RPC_EXPORT void roc_Col_Mask(uint8_t col);
 
 	// -- mask all pixels and columns of the chip
 	RPC_EXPORT void roc_Chip_Mask();
 
+	// --- TBM
+	RPC_EXPORT bool TBM_Present();
 
 	// --- TBM/module Communication -----------------------------------------
 	RPC_EXPORT void tbm_Enable(bool on);
@@ -443,6 +490,7 @@ public:
 	RPC_EXPORT void tbm_Addr(uint8_t hub, uint8_t port);
 
 	RPC_EXPORT void mod_Addr(uint8_t hub);
+	RPC_EXPORT void mod_Addr(uint8_t hub0, uint8_t hub1); // set switch for layer 1 and additional hubid
 
 	RPC_EXPORT void tbm_Set(uint8_t reg, uint8_t value);
 

@@ -93,11 +93,15 @@ bool CDtbSource::Open(CTestboard &dtb, unsigned int dataChannel,
 bool CDtbSource::OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDelay, uint16_t timeout,
 	bool endless, unsigned int dtbBufferSize)
 { PROFILING
-	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
 	dtb.Daq_Select_ADC(timeout, // 1..65535
 		0,  // source: tin/tout
 		tinDelay,  // tin delay 0..63
 		toutDelay); // tout delay 0..63
+	if (!Open(dtb, 0, endless, dtbBufferSize))
+	{
+		dtb.Daq_DeselectAll();
+		return false;
+	}
 	dtb.SignalProbeADC(PROBEA_SDATA1, GAIN_4);
 	dtb.uDelay(800); // to stabilize ADC input signal
 	return true;
@@ -107,16 +111,24 @@ bool CDtbSource::OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDelay
 bool CDtbSource::OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless, unsigned int dtbBufferSize)
 { PROFILING
-	if (!Open(dtb, 0, endless, dtbBufferSize)) return false;
 	tb->Daq_Select_Deser160(deserAdjust);
+	if (!Open(dtb, 0, endless, dtbBufferSize))
+	{
+		dtb.Daq_DeselectAll();
+		return false;
+	}
 	return true;
 }
 
 
 bool CDtbSource::OpenModDig(CTestboard &dtb, unsigned int channel, bool endless, unsigned int dtbBufferSize)
 { PROFILING
-	if (!Open(dtb, channel, endless, dtbBufferSize)) return false;
-	tb->Daq_Select_Deser400();
+	dtb.Daq_Select_Deser400();
+	if (!Open(dtb, channel, endless, dtbBufferSize))
+	{
+		dtb.Daq_DeselectAll();
+		return false;
+	}
 	return true;
 }
 
@@ -593,12 +605,12 @@ CEvent* CModDigDecoder::Read()
 	// --- decode TBM header ---------------------------------
 	unsigned int raw = 0;
 
-	// H1
+	// H0
 	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
 	if ((v & 0xe000) != 0xa000) x.error |= 0x0800;
 	raw = (v & 0x00ff) << 8;
 
-	// H2
+	// H1
 	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
 	if ((v & 0xe000) != 0x8000) x.error |= 0x0400;
 	raw += v & 0x00ff;
@@ -607,6 +619,7 @@ CEvent* CModDigDecoder::Read()
 
 	// --- decode ROC data -----------------------------------
 	CRocEvent roc;
+	CRocPixel pixel;
 
 	// while ROC header
 	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
@@ -616,21 +629,20 @@ CEvent* CModDigDecoder::Read()
 		roc.header = v & 0x0fff;
 		roc.error = 0;
 
-		int px_error;
-		CRocPixel pixel;
 		v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
 		while ((v & 0xe000) <= 0x2000) // R0 ... R1
 		{
-			px_error = 0;
+			pixel.error = 0;
 			pixel.raw = 0;
+
 			for (unsigned int i=0; i<=1; i++)
 			{
 				if ((v >> 13) != i) // R<i>
 				{
-					px_error |= (1<<i);
+					pixel.error |= i ? 0x0100 : 0x200;
 					if (v & 0x8000) // TBM header/trailer
 					{
-						pixel.error = 0x1fff;
+						pixel.error = 0x0400;
 						roc.error |= 0x0001;
 						roc.pixel.push_back(pixel);
 						x.roc.push_back(roc);
@@ -641,10 +653,12 @@ CEvent* CModDigDecoder::Read()
 				pixel.raw = (pixel.raw << 12) + (v & 0x0fff);
 				v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
 			}
-			pixel.DecodeRaw();
-			pixel.error |= (px_error << 8);
-			if (pixel.error) roc.error |= 0x0001;
-			roc.pixel.push_back(pixel);
+			if (pixel.raw != 0xffffff)
+			{
+				pixel.DecodeRaw();
+				if (pixel.error) roc.error |= 0x0001;
+				roc.pixel.push_back(pixel);
+			}
 		}
 		if (roc.error) x.error |= 0x0001;
 		x.roc.push_back(roc);
@@ -654,13 +668,14 @@ CEvent* CModDigDecoder::Read()
 	trailer:
 	raw = 0;
 
-	// T1
-	if ((v & 0xe000) != 0xe000) x.error |= 0x0080;
+	// T0
+	if ((v & 0xe000) != 0xe000) x.error |= 0x0200;
+	else x.error |= (v & 0x1f00) << 1;
 	raw = (v & 0x00ff) << 8;
 
-	// T2
+	// T1
 	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
-	if ((v & 0xe000) != 0xc000) x.error |= 0x0040;
+	if ((v & 0xe000) != 0xc000) x.error |= 0x0100;
 	raw += v & 0x00ff;
 
 	x.trailer = raw;

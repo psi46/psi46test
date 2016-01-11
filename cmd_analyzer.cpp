@@ -446,7 +446,7 @@ public:
 	unsigned int nErrors;
 	void Reset() { nEvents = nPixels = nErrors = 0; }
 	CEventCounter() { Reset(); }
-	void Print() { printf("nEvents: %u;  nPixels: %u;  nErrors: %u\n", nEvents, nPixels, nErrors); }
+	void Print();
 };
 
 CEvent* CEventCounter::Read()
@@ -457,6 +457,14 @@ CEvent* CEventCounter::Read()
 	for (unsigned int r = 0; r < x->roc.size(); r++)
 		nPixels += x->roc[r].pixel.size();
 	return x;
+}
+
+
+void CEventCounter::Print()
+{
+	int xor = tb.Deser400_GetXor(0);
+	int ph  = tb.Deser400_GetPhase(0);
+	printf("nEvents: %u;  nPixels: %u;  nErrors: %u  xor=%02X, ph=%i", nEvents, nPixels, nErrors, xor, ph);
 }
 
 
@@ -525,6 +533,80 @@ CEvent* CEventMap::Read()
 
 	if (error) x->error |= 0x0800;
 	return x;
+}
+
+
+CMD_PROC(daqerrorcheckm)
+{ PROFILING
+	int period;
+	int channel;
+	PAR_INT(channel, 0, 8);
+	PAR_INT(period,0,0xffffff)
+
+	CDtbSource src;  src.Logging(false);
+	CDataRecordScannerMODD rec;
+	CModDigDecoder decoder;
+	CEventPrinter evList("error_report.txt");
+	 evList.ListOnlyErrors(true);
+	CEventCounter counter;
+	CSink<CEvent*> pump;
+
+	src >> rec >> decoder >> evList >> counter >> pump;
+
+	src.OpenModDig(tb, channel, true, 20000000);
+	src.Enable();
+	tb.uDelay(100);
+
+	tb.Pg_Loop(period);
+//	tb.Trigger_SetGenPeriodic(period);
+//	tb.Trigger_SetGenRandom(period);
+//	tb.Trigger_Select(TRG_SEL_GEN_DIR);
+
+	try
+	{
+		int i=0;
+		while (!keypressed())
+		{
+			pump.Get();
+			if (i++ % 1000 == 0)
+			{
+				counter.Print();
+				printf(" Buffer: %u\n", src.GetRemainingSize());
+			}
+		}
+		tb.Pg_Stop();
+//		pxmap.Report();
+	}
+	catch (DS_empty &) { printf("finished\n"); }
+	catch (DataPipeException &e) { printf("%s\n", e.what()); }
+
+//	printf("Bytes Transfered: %u\n", srcdump.ByteCount());
+	printf("\n");
+	src.Disable();
+}
+
+
+CMD_PROC(desergatescan)
+{ PROFILING
+
+	tb.Deser400_GateStop();
+	tb.Deser400_Enable(0);
+
+	Log.section("GATE_SCAN");
+
+	for (int i=0; i<8; i++)
+	{
+		Log.printf("%i: ", i);
+		for (int k=0; k<40; k++)
+		{
+			tb.Deser400_GateSingle(i);
+			tb.mDelay(10);
+			unsigned int xor = tb.Deser400_GetXor(0);
+			Log.printf(" %02X", xor);
+		}
+		Log.printf("\n");
+	}
+	Log.flush();
 }
 
 

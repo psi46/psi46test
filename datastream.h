@@ -69,8 +69,21 @@ public:
 
 struct CRocPixel
 {
-// error bits:{ R5 || R4 | R3 | R2 | R1 || ph | x | y | c1 || c0 | r2 | r1 | r0 }
+	/* error bits:
+		 0: ph error
+		 1: y error
+		 2: x error
+		 3:
+		 4:
+		 5:
+		 6:
+		 7:
+		 8: P1 missing
+		 9: P0 missing
+		10: unexpected header
+	*/
 	int error;
+
 	int raw;
 	int x;
 	int y;
@@ -82,8 +95,11 @@ struct CRocPixel
 
 struct CRocEvent
 {
-// error bits:{ pixel }
+	/* error bits:
+		0: pixel error
+	*/
 	unsigned int error;
+
 	unsigned short header;
 	vector<CRocPixel> pixel;
 };
@@ -92,8 +108,23 @@ struct CRocEvent
 struct CEvent
 {
 	unsigned int recordNr;
-// error bits:{ h0 | h1 | h2 | h3 || t0 | t1 | t2 | t3 || 0 | 0 | 0 | pixel }
+
+	/* error bits:
+		 0: pixel error
+		 1: missing TBM trailer or ROC header after TBM header
+		 2: missing TBM trailer before idle pattern
+		 3: code error during event data transmission
+		 4: frame error during event data transmission
+		 5: TBM trailer error
+		 6:
+		 7:
+		 8: T1 missing
+		 9: T0 missing
+		10: H1 missing
+		11: H0 missing
+	*/
 	int error;
+
 	enum DeviceType { ROCD, ROCA, MODD, MODA } deviceType;
 	unsigned short header;
 	unsigned short trailer;

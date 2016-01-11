@@ -89,6 +89,8 @@ CMD_REG(status, "", "shows testboard status")
 CMD_REG(rocaddr, "", "set ROC address")
 CMD_REG(d1, "<signal>", "assign signal to D1 output")
 CMD_REG(d2, "<signal>", "assign signal to D2 outout")
+CMD_REG(ds1, "<deser> <signal>", "assign deser signal to D1 output")
+CMD_REG(ds2, "<deser> <signal>", "assign deser signal to D2 outout")
 CMD_REG(a1, "<signal>", "assign analog signal to A1 output")
 CMD_REG(a2, "<signal>", "assign analog signal to A2 outout")
 CMD_REG(probeadc, "<signal>", "assign analog signal to ADC")
@@ -128,6 +130,22 @@ CMD_REG(dselroc, "<value>", "select deser160 for DAQ channel 0");
 CMD_REG(dselroca, "<value>", "select adc for channel 0");
 CMD_REG(dselsim, "<startvalue>", "select data generator for channel 0");
 CMD_REG(dseloff, "", "deselect all");
+
+// === DESER400 ==========================================================
+
+HELP_CAT("deser400")
+
+CMD_REG(dsena, "<deser>", "Enable deser 0..3")
+CMD_REG(dsdis, "<deser>", "Disable deser 0..3")
+CMD_REG(dsdisall, "", "Disable all deser")
+CMD_REG(dssetph, "<deser> <phase>", "Switch deser in manual mode and set fixed phase")
+CMD_REG(dsauto, "<deser>", "Switch deser in auto phase mode")
+CMD_REG(dsautoall, "", "Switch all deser in auto phase mode")
+CMD_REG(dsgetxor, "<deser>", "Read deser xor sum")
+CMD_REG(dsgetph, "<deser>", "Read deser phase")
+CMD_REG(gaterun, "<width> <periode>", "Switch gate in running mode")
+CMD_REG(gatesingle, "<width>", "Stop gate running mode and start single pulse")
+CMD_REG(gatestop, "", "Stop gate running mode")
 
 
 // =======================================================================
