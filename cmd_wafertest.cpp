@@ -35,6 +35,7 @@ CMD_PROC(roctype)
 
 	if (strcmp(s, "ana") == 0) settings.rocType = 0;
 	else if (strcmp(s, "dig") == 0) settings.rocType = 1;
+	else if (strcmp(s, "proc600") == 0) settings.rocType = 2;
 	else printf("choose ana or dig\n");
 }
 
@@ -160,7 +161,13 @@ bool test_wafer()
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+	int bin;
+	switch (settings.rocType)
+	{
+		case 0:  bin = TestRocAna::test_roc(repeat); break;
+		case 1:  bin = TestRocDig::test_roc(repeat); break;
+		default: bin = TestPROC600::test_roc(repeat);
+	}
 	tb.SetLed(0x00);
 	tb.Flush();
 	GetTimeStamp(g_chipdata.endTime);
@@ -192,7 +199,13 @@ bool test_chip(char chipid[])
 
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+	int bin;
+	switch (settings.rocType)
+	{
+		case 0:  bin = TestRocAna::test_roc(repeat); break;
+		case 1:  bin = TestRocDig::test_roc(repeat); break;
+		default: bin = TestPROC600::test_roc(repeat);
+	}
 	tb.SetLed(0x00);
 	tb.Flush();
 
@@ -316,7 +329,13 @@ bool go_TestDefects()
 		GetTimeStamp(g_chipdata.startTime);
 		Log.timestamp("BEGIN");
 		bool repeat;
-		int bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+		int bin;
+		switch (settings.rocType)
+		{
+			case 0:  bin = TestRocAna::test_roc(repeat); break;
+			case 1:  bin = TestRocDig::test_roc(repeat); break;
+			default: bin = TestPROC600::test_roc(repeat);
+		}
 		GetTimeStamp(g_chipdata.endTime);
 		Log.timestamp("END");
 		Log.puts("\n");
@@ -349,7 +368,12 @@ bool TestSingleChip(int &bin, bool &repeat)
 	GetTimeStamp(g_chipdata.startTime);
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
-	bin = settings.rocType == 0 ? TestRocAna::test_roc(repeat) : TestRocDig::test_roc(repeat);
+	switch (settings.rocType)
+	{
+		case 0:  bin = TestRocAna::test_roc(repeat); break;
+		case 1:  bin = TestRocDig::test_roc(repeat); break;
+		default: bin = TestPROC600::test_roc(repeat);
+	}
 	tb.SetLed(0x00);
 	tb.Flush();
 

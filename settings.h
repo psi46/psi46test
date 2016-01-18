@@ -36,7 +36,7 @@ public:
 
 	int  proberPort;	    // prober serial port nr (-1 = no prober)
 
-	int rocType;            // 0 = analog ROC, 1 = digital ROC
+	int rocType;            // 0 = analog ROC, 1 = digital ROC, 2 = PROC600
 	bool sensor; 		    // sensor mounted
 
 	// cable length:           5   48  prober 450 cm  bump bonder

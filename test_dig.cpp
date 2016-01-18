@@ -28,8 +28,6 @@
 //  global variables for test results
 // =======================================================================
 
-CChip g_chipdata;
-
 
 namespace TestRocDig
 {
