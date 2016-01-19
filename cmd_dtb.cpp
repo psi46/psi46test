@@ -1112,17 +1112,17 @@ CMD_PROC(dsgetxor)
 {
 	int deser;
 	PAR_INT(deser, 0, 3)
-	unsigned int xor = tb.Deser400_GetXor(deser);
+	unsigned int xorbyte = tb.Deser400_GetXor(deser);
 
 	char s[9];
 	for (int i=0; i<8; i++)
 	{
-		s[i] = (xor & 0x80) ? 'X' : '.';
-		xor <<= 1;
+		s[i] = (xorbyte & 0x80) ? 'X' : '.';
+		xorbyte <<= 1;
 	}
 	s[8] = 0;
-	xor >>= 8;
-	printf(" %02X  %s\n", xor, s);
+	xorbyte >>= 8;
+	printf(" %02X  %s\n", xorbyte, s);
 }
 
 CMD_PROC(dsgetph)

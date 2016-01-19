@@ -462,9 +462,9 @@ CEvent* CEventCounter::Read()
 
 void CEventCounter::Print()
 {
-	int xor = tb.Deser400_GetXor(0);
+	int xorbyte = tb.Deser400_GetXor(0);
 	int ph  = tb.Deser400_GetPhase(0);
-	printf("nEvents: %u;  nPixels: %u;  nErrors: %u  xor=%02X, ph=%i", nEvents, nPixels, nErrors, xor, ph);
+	printf("nEvents: %u;  nPixels: %u;  nErrors: %u  xor=%02X, ph=%i", nEvents, nPixels, nErrors, xorbyte, ph);
 }
 
 
@@ -601,8 +601,8 @@ CMD_PROC(desergatescan)
 		{
 			tb.Deser400_GateSingle(i);
 			tb.mDelay(10);
-			unsigned int xor = tb.Deser400_GetXor(0);
-			Log.printf(" %02X", xor);
+			unsigned int xorbyte = tb.Deser400_GetXor(0);
+			Log.printf(" %02X", xorbyte);
 		}
 		Log.printf("\n");
 	}
@@ -878,7 +878,7 @@ void Scan1D(CDtbSource &src, CSink<CEvent*> &data, int vx, int xmin, int xmax, i
 
 	// --- take data
 	src.Enable();
-	for (x = xmin; x<=xmax; x)
+	for (x = xmin; x<=xmax; x++)
 	{
 		tb.roc_SetDAC(vx, x);
 		tb.uDelay(100);
