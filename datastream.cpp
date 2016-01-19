@@ -26,6 +26,21 @@ void CRocPixel::DecodeRaw()
 	x = 2*c + (r&1); if ((unsigned int)x >= 52) error |= 64;
 }
 
+/*
+void CRocPixel::DecodeRawLinear()
+{ PROFILING
+	ph = (raw & 0x0f) + ((raw >> 1) & 0xf0);
+	error = (raw & 0x10) ? 128 : 0;
+
+	x = (raw >> 17) & 0x07 + (raw >> 18) & 0x38;
+	if (x >= 52) error |= 64;
+	if (raw & 0x1000) error |= ;
+
+	y = (raw >>  9) & 0x07 + (raw >> 10) & 0x78;
+	if (y >= 80) error |= 32;
+	if (raw & 0x100000) error |= ;
+}
+*/
 
 void CRocPixel::DecodeAna(CAnalogLevelDecoder &dec, uint16_t *v)
 { PROFILING

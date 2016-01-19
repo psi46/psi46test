@@ -89,6 +89,7 @@ struct CRocPixel
 	int y;
 	int ph;
 	void DecodeRaw();
+	void DecodeRawLinear() {} // PROC600
 	void DecodeAna(CAnalogLevelDecoder &dec, uint16_t *x);
 };
 
