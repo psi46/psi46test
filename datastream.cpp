@@ -26,7 +26,9 @@ void CRocPixel::DecodeRaw()
 	x = 2*c + (r&1); if ((unsigned int)x >= 52) error |= 64;
 }
 
-/*
+
+// error bits:{ ph | x | y | - | - | - | - | - }
+
 void CRocPixel::DecodeRawLinear()
 { PROFILING
 	ph = (raw & 0x0f) + ((raw >> 1) & 0xf0);
@@ -34,13 +36,13 @@ void CRocPixel::DecodeRawLinear()
 
 	x = (raw >> 17) & 0x07 + (raw >> 18) & 0x38;
 	if (x >= 52) error |= 64;
-	if (raw & 0x1000) error |= ;
+	if (raw & 0x1000) error |= 64;
 
 	y = (raw >>  9) & 0x07 + (raw >> 10) & 0x78;
 	if (y >= 80) error |= 32;
-	if (raw & 0x100000) error |= ;
+	if (raw & 0x100000) error |= 32;
 }
-*/
+
 
 void CRocPixel::DecodeAna(CAnalogLevelDecoder &dec, uint16_t *v)
 { PROFILING
@@ -420,6 +422,37 @@ CDataRecord* CReadBack::Read()
 }
 
 
+// === CRocAnaDecoder (CDataRecord*, CEvent*) ===============================
+
+CEvent* CRocAnaDecoder::Read()
+{ PROFILING
+	x.roc.clear();
+
+	CDataRecord *sample = Get();
+	x.recordNr = sample->recordNr;
+	x.deviceType = CEvent::ROCA;
+	x.header = x.trailer = 0;
+	x.roc.resize(1);
+
+	unsigned int n = sample->GetSize();
+	if (n >= 3)
+	{
+		if (n > 15) x.roc[0].pixel.reserve((n-3)/6);
+		x.roc[0].header = CAnalogLevelDecoder::ExpandSign((*sample)[2]);
+		unsigned int pos = 3;
+		while (pos+6 <= n)
+		{
+			CRocPixel pix;
+			pix.raw = 0;
+			pix.DecodeAna(dec, &((*sample)[pos]));
+			x.roc[0].pixel.push_back(pix);
+			pos += 6;
+		}
+	}
+	return &x;
+}
+
+
 // === CRocDigDecoder (CDataRecord*, CEvent*) ===============================
 
 CEvent* CRocDigDecoder::Read()
@@ -451,31 +484,31 @@ CEvent* CRocDigDecoder::Read()
 }
 
 
-// === CRocAnaDecoder (CDataRecord*, CEvent*) ===============================
+// === CRocDigLinearDecoder (CDataRecord*, CEvent*) =========================
 
-CEvent* CRocAnaDecoder::Read()
+CEvent* CRocDigLinearDecoder::Read()
 { PROFILING
 	x.roc.clear();
 
 	CDataRecord *sample = Get();
 	x.recordNr = sample->recordNr;
-	x.deviceType = CEvent::ROCA;
+	x.deviceType = CEvent::ROCX;
 	x.header = x.trailer = 0;
 	x.roc.resize(1);
 
 	unsigned int n = sample->GetSize();
-	if (n >= 3)
+	if (n > 0)
 	{
-		if (n > 15) x.roc[0].pixel.reserve((n-3)/6);
-		x.roc[0].header = CAnalogLevelDecoder::ExpandSign((*sample)[2]);
-		unsigned int pos = 3;
-		while (pos+6 <= n)
+		if (n > 4) x.roc[0].pixel.reserve((n-1)/2);
+		x.roc[0].header = (*sample)[0];
+		unsigned int pos = 1;
+		while (pos < n-1)
 		{
 			CRocPixel pix;
-			pix.raw = 0;
-			pix.DecodeAna(dec, &((*sample)[pos]));
+			pix.raw =  (*sample)[pos++] << 12;
+			pix.raw += (*sample)[pos++];
+			pix.DecodeRawLinear();
 			x.roc[0].pixel.push_back(pix);
-			pos += 6;
 		}
 	}
 	return &x;
@@ -699,6 +732,107 @@ CEvent* CModDigDecoder::Read()
 }
 
 
+// === CModDigLinearDecoder (CDataRecord*, CEvent*) =========================
+
+#define MDD_ERROR_MARKER 0x6000
+
+CEvent* CModDigLinearDecoder::Read()
+{ PROFILING
+	x.roc.clear();
+
+	CDataRecord *sample = Get();
+	x.recordNr = sample->recordNr;
+	x.deviceType = CEvent::MODX;
+	x.header = x.trailer = 0;
+	x.roc.reserve(8);
+	x.error = 0;
+
+	unsigned int pos = 0;
+	unsigned int size = sample->GetSize();
+	uint16_t v;
+
+	// --- decode TBM header ---------------------------------
+	unsigned int raw = 0;
+
+	// H0
+	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+	if ((v & 0xe000) != 0xa000) x.error |= 0x0800;
+	raw = (v & 0x00ff) << 8;
+
+	// H1
+	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+	if ((v & 0xe000) != 0x8000) x.error |= 0x0400;
+	raw += v & 0x00ff;
+
+	x.header = raw;
+
+	// --- decode ROC data -----------------------------------
+	CRocEvent roc;
+	CRocPixel pixel;
+
+	// while ROC header
+	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+	while ((v & 0xe000) == 0x4000) // RH
+	{
+		roc.pixel.clear();
+		roc.header = v & 0x0fff;
+		roc.error = 0;
+
+		v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+		while ((v & 0xe000) <= 0x2000) // R0 ... R1
+		{
+			pixel.error = 0;
+			pixel.raw = 0;
+
+			for (unsigned int i=0; i<=1; i++)
+			{
+				if ((v >> 13) != i) // R<i>
+				{
+					pixel.error |= i ? 0x0100 : 0x200;
+					if (v & 0x8000) // TBM header/trailer
+					{
+						pixel.error = 0x0400;
+						roc.error |= 0x0001;
+						roc.pixel.push_back(pixel);
+						x.roc.push_back(roc);
+						v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+						goto trailer;
+					}
+				}
+				pixel.raw = (pixel.raw << 12) + (v & 0x0fff);
+				v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+			}
+			if (pixel.raw != 0xffffff)
+			{
+				pixel.DecodeRawLinear();
+				if (pixel.error) roc.error |= 0x0001;
+				roc.pixel.push_back(pixel);
+			}
+		}
+		if (roc.error) x.error |= 0x0001;
+		x.roc.push_back(roc);
+	}
+
+	// --- decode TBM trailer --------------------------------
+	trailer:
+	raw = 0;
+
+	// T0
+	if ((v & 0xe000) != 0xe000) x.error |= 0x0200;
+	else x.error |= (v & 0x1f00) << 1;
+	raw = (v & 0x00ff) << 8;
+
+	// T1
+	v = (pos < size) ? (*sample)[pos++] : MDD_ERROR_MARKER;
+	if ((v & 0xe000) != 0xc000) x.error |= 0x0100;
+	raw += v & 0x00ff;
+
+	x.trailer = raw;
+
+	return &x;
+}
+
+
 // === CEventPrinter (CEvent*, CEvent*) ============================
 
 CEvent* CEventPrinter::Read()
@@ -711,6 +845,7 @@ CEvent* CEventPrinter::Read()
 		{
 			case CEvent::ROCA:
 			case CEvent::ROCD:
+			case CEvent::ROCX:
 				fprintf(f, "%03X(%u):", int(x->header), (unsigned int)(x->roc[0].pixel.size()));
 				for (unsigned int i=0; i<x->roc[0].pixel.size(); i++)
 				{
@@ -719,6 +854,7 @@ CEvent* CEventPrinter::Read()
 				fprintf(f, "\n");
 				break;
 			case CEvent::MODD:
+			case CEvent::MODX:
 				// print TBM header
 				fprintf(f, "\nEvent: %u\nHeader: ", x->recordNr);
 				d = x->header;

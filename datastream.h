@@ -69,28 +69,16 @@ public:
 
 struct CRocPixel
 {
-	/* error bits:
-		 0: ph error
-		 1: y error
-		 2: x error
-		 3:
-		 4:
-		 5:
-		 6:
-		 7:
-		 8: P1 missing
-		 9: P0 missing
-		10: unexpected header
-	*/
+	// error bits:{ ph | x | y | c1 | c0 | r2 | r1 | r0 }
 	int error;
 
 	int raw;
 	int x;
 	int y;
 	int ph;
-	void DecodeRaw();
-	void DecodeRawLinear() {} // PROC600
-	void DecodeAna(CAnalogLevelDecoder &dec, uint16_t *x);
+	void DecodeRaw(); // PSI46dig
+	void DecodeRawLinear(); // PROC600
+	void DecodeAna(CAnalogLevelDecoder &dec, uint16_t *x); // PSI46 analog
 };
 
 
@@ -126,7 +114,15 @@ struct CEvent
 	*/
 	int error;
 
-	enum DeviceType { ROCD, ROCA, MODD, MODA } deviceType;
+	/*
+		ROCA  PSI46 single ROC
+		ROCD  PSI46dig single ROC
+		ROCX  PROC600 single ROC
+		MODA  PSI46 module (analog)
+		MODD  PSI46dig module
+		MODX  PROC600 module
+	*/
+	enum DeviceType { ROCX, ROCD, ROCA, MODX, MODD, MODA } deviceType;
 	unsigned short header;
 	unsigned short trailer;
 	vector<CRocEvent> roc;
@@ -341,17 +337,8 @@ public:
 };
 
 
-// === CRocDigDecoder (CDataRecord*, CEvent*) ============================
-
-class CRocDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
-{
-	CEvent x;
-	CEvent* Read();
-	CEvent* ReadLast() { return &x; }
-};
-
-
 // === CRocAnaDecoder (CDataRecord*, CEvent*) ============================
+// PSI46 analog
 
 class CRocAnaDecoder : public CDataPipe<CDataRecord*, CEvent*>
 {
@@ -362,6 +349,27 @@ class CRocAnaDecoder : public CDataPipe<CDataRecord*, CEvent*>
 public:
 	void Calibrate(int ublackLevel, int blackLevel)
 	{ dec.Calibrate(ublackLevel, blackLevel); }
+};
+
+
+// === CRocDigDecoder (CDataRecord*, CEvent*) ============================
+// PSI46dig
+
+class CRocDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
+{
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
+};
+
+// === CRocDigLinearDecoder (CDataRecord*, CEvent*) ============================
+// PROC600
+
+class CRocDigLinearDecoder : public CDataPipe<CDataRecord*, CEvent*>
+{
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
 };
 
 
@@ -378,6 +386,16 @@ class CModDigDecoder_old : public CDataPipe<CDataRecord*, CEvent*>
 // === CModDigDecoder (CDataRecord*, CEvent*) ============================
 
 class CModDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
+{
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
+};
+
+
+// === CModDigLinearDecoder (CDataRecord*, CEvent*) ======================
+
+class CModDigLinearDecoder : public CDataPipe<CDataRecord*, CEvent*>
 {
 	CEvent x;
 	CEvent* Read();

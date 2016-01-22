@@ -12,7 +12,7 @@ long long Watchpoint::frequency = 0;
 std::list<Watchpoint*> Watchpoint::wplist;
 
 
-Watchpoint::Watchpoint(const char *fname)
+Watchpoint::Watchpoint(const char *fname) : name(fname), t(0), n(0)
 {
 	if (!IsRunning())
 	{
@@ -29,41 +29,41 @@ Watchpoint::Watchpoint(const char *fname)
 		}
 	}
 
-	name = fname;
-	t = 0;
-	n = 0;
 	wplist.push_back(this);
 }
 
 
 Watchpoint::~Watchpoint()
 {
-	if (!IsRunning()) return;
-
-	Report("profiler_report.txt");
-	wplist.clear();
+	if (IsRunning())
+	{
+		Report("profiler_report.txt");
+		wplist.clear();
+	}
 }
 
+
+bool wplist_sorter(Watchpoint *a, Watchpoint *b) { return *b < *a; }
 
 void Watchpoint::Report(const char *filename)
 {
 	FILE *f = fopen(filename, "wt");
 	if (!f) return;
 
-	wplist.sort();
+	wplist.sort(wplist_sorter);
 
 	std::list<Watchpoint*>::iterator i;
 
 	unsigned int width = 0;
 	for (i = wplist.begin(); i != wplist.end(); i++)
 		if ((*i)->name.size() > width) width = (*i)->name.size();
-	if (width > 300) width = 200;
+	if (width > 300) width = 300;
+
 	for (i = wplist.begin(); i != wplist.end(); i++)
 	{
 		fprintf(f, "%-*s %7i %11.3f\n", width,
 			(*i)->name.c_str(), (*i)->n, double((*i)->t)/frequency);
 	}
-	wplist.clear();
 }
 
 #endif

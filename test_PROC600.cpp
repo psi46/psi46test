@@ -575,7 +575,7 @@ void test_pixel()
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigDecoder dec;
+	CRocDigLinearDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 
@@ -665,7 +665,7 @@ void test_pulse_height1()
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigDecoder dec;
+	CRocDigLinearDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 
@@ -728,7 +728,7 @@ void test_pulse_height2()
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigDecoder dec;
+	CRocDigLinearDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 
@@ -967,7 +967,7 @@ int test_PUCs(bool forceDefTest = false)
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigDecoder dec;
+	CRocDigLinearDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 10000);
