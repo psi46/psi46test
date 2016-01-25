@@ -128,7 +128,7 @@ bool CDtbSource::OpenRocAna(CTestboard &dtb, uint8_t tinDelay, uint8_t toutDelay
 bool CDtbSource::OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless, unsigned int dtbBufferSize)
 { PROFILING
-	tb->Daq_Select_Deser160(deserAdjust);
+	dtb.Daq_Select_Deser160(deserAdjust);
 	if (!Open(dtb, 0, endless, dtbBufferSize))
 	{
 		dtb.Daq_DeselectAll();
