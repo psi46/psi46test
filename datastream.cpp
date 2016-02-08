@@ -34,11 +34,12 @@ void CRocPixel::DecodeRawLinear()
 	ph = (raw & 0x0f) + ((raw >> 1) & 0xf0);
 	error = (raw & 0x10) ? 128 : 0;
 
-	x = (raw >> 17) & 0x07 + (raw >> 18) & 0x38;
+	x = ((raw >> 17) & 0x07) + ((raw >> 18) & 0x38);
 	if (x >= 52) error |= 64;
 	if (raw & 0x1000) error |= 64;
 
-	y = (raw >>  9) & 0x07 + (raw >> 10) & 0x78;
+	y = ((raw >>  9) & 0x07) + ((raw >> 10) & 0x78);
+//	if (!(y & 0x08)) y--; // !!! address defect. Calculate cluster address
 	if (y >= 80) error |= 32;
 	if (raw & 0x100000) error |= 32;
 }

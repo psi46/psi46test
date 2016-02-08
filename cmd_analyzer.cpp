@@ -1084,3 +1084,381 @@ CMD_PROC(readback)
 	}
 }
 */
+
+
+
+
+
+// === DROC600 Test =========================================================
+
+CMD_PROC(phscan)
+{ PROFILING
+	Log.section("PHSCAN1");
+
+	const int vcalmin = 0;
+	const int vcalmax = 140;
+	const int col = 10;
+	const int row = 10;
+
+	tb.Pg_Stop();
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 40);
+	tb.Pg_SetCmd(2, PG_TRG  + 16);
+	tb.Pg_SetCmd(3, PG_TOK);
+
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+//	CRocRawDataPrinter rawPrint("raw.txt");
+	CRocDigDecoder dec;
+//	CEventPrinter evPrint("event.txt");
+	CSink<CEvent*> data;
+	src >> raw /* >> rawPrint */ >> dec /* >> evPrint */ >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 400000);
+	src.Enable();
+	tb.uDelay(100);
+
+	// --- scan vcal
+	tb.roc_ClrCal();
+	tb.roc_Col_Enable(col, true);
+	tb.roc_Pix_Trim(col, row, 15);
+	tb.roc_Pix_Cal (col, row, false);
+
+	for (int cal = vcalmin; cal < vcalmax; cal++)
+	{
+		tb.roc_SetDAC(Vcal, cal);
+		tb.uDelay(100);
+		for (int k=0; k<20; k++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(20);
+		}
+	}
+
+	tb.roc_Pix_Mask(col, row);
+	tb.roc_Col_Enable(col, false);
+	tb.roc_ClrCal();
+
+	src.Disable();
+
+	// --- plot data
+	try
+	{
+		for (int cal = vcalmin; cal < vcalmax; cal++)
+		{
+			int cnt = 0;
+			double yi = 0.0;
+			double yi2 = 0.0;
+			for (int k=0; k<20; k++)
+			{
+				CEvent *ev = data.Get();
+				if (ev->roc[0].pixel.size() > 0)
+				{
+					double ph = ev->roc[0].pixel[0].ph;
+					cnt++;
+					yi  += ph;
+					yi2 += ph*ph;
+				}
+			}
+			if (cnt > 0)
+			{
+				Log.printf("%3i %5.1f %5.1f\n", cal, yi/cnt, sqrt((yi2-yi*yi/cnt)/cnt));
+			}
+			else Log.printf("%3i\n", cal);
+		}
+	} catch (DataPipeException e) { printf("\nERROR test_pulseheight: %s\n", e.what()); }
+
+	Log.flush();
+}
+
+
+const char *i2bin(int x)
+{
+	static char s[18];
+
+	for (int i=0; i<7; i++)
+	{
+		s[i] = (x & 0x40) ? '1' : '0';
+		x <<= 1;
+	}
+	s[7] = 0;
+	return s;
+}
+
+
+CMD_PROC(addrscan)
+{ PROFILING
+	Log.section("ADDRSCAN");
+
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
+	src.Enable();
+
+	// --- scan all pixel ------------------------------------------------------
+	unsigned char col, row;
+	for (col=0; col<ROC_NUMCOLS; col++)
+	{
+		tb.roc_Col_Enable(col, true);
+		tb.uDelay(10);
+		for (row=0; row<ROC_NUMROWS; row++)
+		{
+			tb.roc_Pix_Cal (col, row,   false);  // cluster lower
+			tb.roc_Pix_Cal (col, row+1, false);  // cluster upper
+			tb.roc_Pix_Trim(col, row,   15);
+			tb.roc_Pix_Trim(col, row+1, 15);
+			tb.uDelay(20);
+			tb.Pg_Single();
+			tb.uDelay(20);
+
+			tb.roc_Pix_Mask(col, row);
+			tb.roc_ClrCal();
+		}
+		tb.roc_Col_Enable(col, false);
+		tb.uDelay(10);
+	}
+	src.Disable();
+
+
+	// --- analyze data --------------------------------------------------------
+	// for each col, for each row
+//	int r[ROC_NUMCOLS][ROC_NUMROWS];
+	int x[ROC_NUMCOLS][ROC_NUMROWS];
+	int y[ROC_NUMCOLS][ROC_NUMROWS];
+
+	try
+	{
+		for (col=0; col<ROC_NUMCOLS; col++)
+		{
+			for (row=0; row<ROC_NUMROWS; row++)
+			{
+				CEvent *ev = data.Get();
+				if (ev->roc[0].pixel.size() >= 1)
+				{
+//					r[col][row] = ev->roc[0].pixel[0].raw;
+					x[col][row] = ev->roc[0].pixel[0].x;
+					y[col][row] = ev->roc[0].pixel[0].y;
+				} else x[col][row] = -1;
+			}
+		}
+	} catch (DataPipeException e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	src.Close();
+
+	for (row=0; row<ROC_NUMROWS; row++)
+	{
+		Log.printf("%2i", row);
+		for (col=0; col<ROC_NUMCOLS; col++)
+		{
+			if (x[col][row] >= 0)
+			{
+				Log.printf(" (%2i/%s)", x[col][row], i2bin(y[col][row]));
+			}
+			else Log.printf(" ------------");
+		}
+		Log.printf("\n");
+	}
+	Log.flush();
+}
+
+
+CMD_PROC(multiread)
+{ PROFILING
+	int nReadouts;
+	PAR_INT(nReadouts, 0, 100000);
+
+	Log.section("MULTIREAD");
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+	src.Enable();
+
+	// --- scan all pixel ---------------------------------------------------
+	int i, k;
+	for (i=0; i<nReadouts; i++)
+	{
+		tb.Pg_Single();
+		tb.uDelay(100);
+	}
+	src.Disable();
+
+
+	// --- analyze data -----------------------------------------------------
+
+	int evCnt = 0;
+	try
+	{
+		while (!keypressed())
+		{
+			CEvent *ev = data.Get(); evCnt++;
+			Log.printf("%5i:", evCnt);
+			for (k = 0; k < ev->roc[0].pixel.size(); k++)
+			{
+				int x = ev->roc[0].pixel[k].x;
+				int y = ev->roc[0].pixel[k].y;
+				int a = ev->roc[0].pixel[k].ph;
+				Log.printf (" (%2i/%s%c%3i)", x, i2bin(y), ev->roc[0].error ? '*' : '/', a);
+//				Log.printf ("  %3i %3i", y, a); 
+			}
+			Log.puts("\n");
+		}
+	} 
+	catch (DS_empty &e) { Log.printf("--- end of data ---\n"); }
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+
+	Log.flush();
+
+	src.Close();
+	printf("%i events read.\n", evCnt);
+}
+
+
+CMD_PROC(cluster)
+{ PROFILING
+	int nReadouts;
+	PAR_INT(nReadouts, 0, 100000);
+	const int offset = 2;
+
+	Log.section("MULTIREAD");
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+	
+	int evCnt = 0;
+	int i, j, k;
+
+	for (j=0; j<78; j++)
+	{
+		tb.roc_Pix_Trim(0, j,   15);
+		tb.roc_Pix_Trim(1, j+offset, 15);
+		tb.roc_Pix_Cal(0, j);
+		tb.roc_Pix_Cal(1, j+offset);
+		tb.uDelay(500);
+		Log.printf("----- (0/%i) (1/%i)\n", j, j+offset);
+
+		// --- readout ---------------------------------------------------
+		src.Enable();
+		for (i=0; i<nReadouts; i++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(100);
+		}
+		src.Disable();
+
+		// --- analyze data -----------------------------------------------------
+		try
+		{
+			while (!keypressed())
+			{
+				CEvent *ev = data.Get(); evCnt++;
+				Log.printf("%5i:", evCnt);
+				for (k = 0; k < ev->roc[0].pixel.size(); k++)
+				{
+					int x = ev->roc[0].pixel[k].x;
+					int y = ev->roc[0].pixel[k].y;
+					int a = ev->roc[0].pixel[k].ph;
+					Log.printf (" (%2i/%s/%3i)", x, i2bin(y), a);
+//					Log.printf ("  %3i %3i", y, a); 
+				}
+				Log.puts("\n");
+			}
+		} 
+		catch (DS_empty &e) { Log.printf("--- end of data ---\n"); }
+		catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	
+		tb.roc_Pix_Mask(0, j);
+		tb.roc_Pix_Mask(1, j+offset);
+		tb.roc_ClrCal();
+	}
+
+	Log.flush();
+
+	src.Close();
+	printf("%i events read.\n", evCnt);
+}
+
+
+CMD_PROC(cluster2)
+{ PROFILING
+	int nReadouts;
+	PAR_INT(nReadouts, 0, 100000);
+	const int offset = 0;
+
+	Log.section("MULTIREAD");
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+	
+	int evCnt = 0;
+	int i, j, k;
+
+	for (j=0; j<78; j++)
+	{
+		tb.roc_Pix_Trim(0, j,   15);
+		tb.roc_Pix_Trim(1, offset, 15);
+		tb.roc_Pix_Cal(0, j);
+		tb.roc_Pix_Cal(1, offset);
+		tb.uDelay(500);
+		Log.printf("----- (0/%i) (1/%i)\n", j, offset);
+
+		// --- readout ---------------------------------------------------
+		src.Enable();
+		for (i=0; i<nReadouts; i++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(100);
+		}
+		src.Disable();
+
+		// --- analyze data -----------------------------------------------------
+		try
+		{
+			while (!keypressed())
+			{
+				CEvent *ev = data.Get(); evCnt++;
+				Log.printf("%5i:", evCnt);
+				for (k = 0; k < ev->roc[0].pixel.size(); k++)
+				{
+					int x = ev->roc[0].pixel[k].x;
+					int y = ev->roc[0].pixel[k].y;
+					int a = ev->roc[0].pixel[k].ph;
+					Log.printf (" (%2i/%s/%3i)", x, i2bin(y), a);
+//					Log.printf ("  %3i %3i", y, a); 
+				}
+				Log.puts("\n");
+			}
+		} 
+		catch (DS_empty &e) { Log.printf("--- end of data ---\n"); }
+		catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	
+		tb.roc_Pix_Mask(0, j);
+		tb.roc_Pix_Mask(1, offset);
+		tb.roc_ClrCal();
+	}
+
+	Log.flush();
+
+	src.Close();
+	printf("%i events read.\n", evCnt);
+}

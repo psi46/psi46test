@@ -99,7 +99,7 @@ void SetMHz(int MHz = 0)
 	tb.Sig_SetDelay(SIG_TIN,  settings.deser160_clkDelay+5);
 	tb.Flush();
 
-	tct_wbc = 5;
+	tct_wbc = 4;
 }
 
 
@@ -651,9 +651,9 @@ void test_pulse_height1()
 	InitDAC();
 
 	// load individual settings
-	tb.roc_SetDAC(CtrlReg, 0);
+//	tb.roc_SetDAC(CtrlReg, 0);
 	tb.roc_SetDAC(Vcal, PULSE_VCAL1);
-	tb.roc_SetDAC(CtrlReg, 0x04);
+	tb.roc_SetDAC(CtrlReg, 13);
 
 	tb.Pg_SetCmd(0, PG_RESR + 25);
 	tb.Pg_SetCmd(1, PG_CAL  + 15 + tct_wbc);
@@ -783,7 +783,7 @@ void test_pulseheight()
 	int col = 10, row = 10;
 	InitDAC();
 	tb.roc_SetDAC(Vcal, VCAL_TEST);
-	tb.roc_SetDAC(CtrlReg,0x04); // 0x04
+	tb.roc_SetDAC(CtrlReg,0x0c); // 0x04
 
 	if (g_chipdata.pixmap.GetUnmaskedCount(col, row) == 0) col += 2;
 	if (g_chipdata.pixmap.GetUnmaskedCount(col, row) == 0) col += 2;
@@ -795,8 +795,8 @@ void test_pulseheight()
 	const int vcalmax = 140;
 
 	tb.Pg_Stop();
-	tb.Pg_SetCmd(0, PG_RESR + 15);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 15 + tct_wbc);
 	tb.Pg_SetCmd(2, PG_TRG  + 16);
 	tb.Pg_SetCmd(3, PG_TOK);
 
