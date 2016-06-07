@@ -6,7 +6,7 @@ mdelay 100
 resoff
 
 --- set voltages ----------------------------
-vd 2500 mV
+vd 2650 mV
 id  200 mA
 va 1500 mV
 ia  200 mA
@@ -40,7 +40,7 @@ dac   3   8  *NEW* Iph (4bit) (prev Vsf 30)
 dac   4  12  Vcomp
 
 dac   7 150  VwllPr
-dac   9 150  VwllPr
+dac   9 150  VwllSh
 - dac  10 117  VhldDel
 dac  11  40  Vtrim
 dac  12  80  VthrComp
@@ -48,23 +48,23 @@ dac  12  80  VthrComp
 dac  13 100  *NEW* VColor (prev VIBias_Bus 30)
 - dac  22  99  VIColOr
 
-dac  17 180  *NEW* VoffsetRO (prev 170)
+dac  17 170  *NEW* VoffsetRO (prev 170)
 
 dac  19  50  Vcomp_ADC
-dac  20  45  VIref_ADC
+dac  20  60  VIref_ADC
 
 dac  25  70  Vcal
-dac  26  68  CalDel
+dac  26  62 50 68  CalDel
 
-dac  $fe 36  WBC 34
-dac  $fd b01_101  CtrlReg (high cal range, StopAcq, TriggerDisable)
+dac  $fe  96  WBC
+dac  $fd b11_101  CtrlReg (high cal range, StopAcq, TriggerDisable)
 flush
 
 mask
 
 d1  9   scope trigger (CH1)
-d2 12   tout  (CH2)
-a1 1    sdata (CH3)
+d2 10   CTR   (CH2)
+a1 4    sdata (CH3)
 a2 6    tout  (CH4)
 
 mdelay 200
@@ -72,33 +72,33 @@ getid
 mdelay 20
 getia
 
+
+--- enable pixel ----------------------------
+cald
+cole :
+
+pixe 10  5 0
+pixe 10 10 0
+pixe 10 15 0
+pixe 10 20 0
+cal  10  5
+cal  10 10
+cal  10 15
+cal  10 20
+
 --- reset ROC -------------------------------
+mdelay 20
+
 pgstop
 pgset 0 b001000   0  reset
 pgsingle
 mdelay 20
 
 --- setup readout timing --------------------
-pgset 0 b000000  15  pg_resr
-pgset 1 b100100  40  pg_cal
+pgset 0 b001000  15  pg_resr
+pgset 1 b000100 100  pg_cal
 pgset 2 b000010  16  pg_trg
-pgset 3 b000001   0  pg_tok pg_sync
-
---- enable pixel ----------------------------
-cald
-cole :
--pixe 0 0 0
--pixe 0 68 0
-
-pixe 0 65 0
-pixe 1 67 0
-cal  0 65
-cal  1 67
-
--pixe : : 0
--cal 47 0
--cal 48 0
--cal 49 0
+pgset 3 b100001   0  pg_tok pg_sync
 
 flush
 
@@ -112,6 +112,19 @@ flush
 -dread
 -dclose
 
-pgloop 10000
+udelay 100
+-multiread 50
 
+-pgloop 10000
+-log *** cluster test
+-mdelay 5000
+-multiread 30
+
+-pgset 0 b001000 15 pg_resr
+-mdelay 500
+-pgset 0 b000000 15
+
+-mdelay 500
+-multiread 30
+pgloop 10000
 flush

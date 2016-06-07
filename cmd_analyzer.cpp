@@ -464,7 +464,7 @@ void CEventCounter::Print()
 {
 	int xorbyte = tb.Deser400_GetXor(0);
 	int ph  = tb.Deser400_GetPhase(0);
-	printf("nEvents: %u;  nPixels: %u;  nErrors: %u  xor=%02X, ph=%i", nEvents, nPixels, nErrors, xorbyte, ph);
+	printf("nEvents: %u;  nPixels: %u;  nErrors: %u  xor=%02X, ph=%i\n", nEvents, nPixels, nErrors, xorbyte, ph);
 }
 
 
@@ -1093,16 +1093,22 @@ CMD_PROC(readback)
 
 CMD_PROC(phscan)
 { PROFILING
-	Log.section("PHSCAN1");
 
-	const int vcalmin = 0;
-	const int vcalmax = 140;
-	const int col = 10;
-	const int row = 10;
+	int col;
+	int row;
+	int vcalmin;
+	int vcalmax;
+
+	PAR_INT(col, 0, 51)
+	PAR_INT(row, 0, 79)
+	PAR_RANGE(vcalmin, vcalmax, 0, 255)
+
+	Log.section("PHSCAN1", false);
+	Log.printf("(%2i/%2i)\n", col, row);
 
 	tb.Pg_Stop();
 	tb.Pg_SetCmd(0, PG_RESR + 25);
-	tb.Pg_SetCmd(1, PG_CAL  + 40);
+	tb.Pg_SetCmd(1, PG_CAL  + 100);
 	tb.Pg_SetCmd(2, PG_TRG  + 16);
 	tb.Pg_SetCmd(3, PG_TOK);
 
@@ -1131,7 +1137,7 @@ CMD_PROC(phscan)
 		for (int k=0; k<20; k++)
 		{
 			tb.Pg_Single();
-			tb.uDelay(20);
+			tb.uDelay(40);
 		}
 	}
 
@@ -1186,9 +1192,11 @@ const char *i2bin(int x)
 }
 
 
-CMD_PROC(addrscan)
+CMD_PROC(scanaddr)
 { PROFILING
-	Log.section("ADDRSCAN");
+	Log.section("SCANADDR");
+	tb.Pg_Stop();
+	tb.roc_Chip_Mask();
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
@@ -1208,9 +1216,9 @@ CMD_PROC(addrscan)
 		for (row=0; row<ROC_NUMROWS; row++)
 		{
 			tb.roc_Pix_Cal (col, row,   false);  // cluster lower
-			tb.roc_Pix_Cal (col, row+1, false);  // cluster upper
+//			tb.roc_Pix_Cal (col, row+1, false);  // cluster upper
 			tb.roc_Pix_Trim(col, row,   15);
-			tb.roc_Pix_Trim(col, row+1, 15);
+//			tb.roc_Pix_Trim(col, row+1, 15);
 			tb.uDelay(20);
 			tb.Pg_Single();
 			tb.uDelay(20);
@@ -1226,7 +1234,7 @@ CMD_PROC(addrscan)
 
 	// --- analyze data --------------------------------------------------------
 	// for each col, for each row
-//	int r[ROC_NUMCOLS][ROC_NUMROWS];
+	int r[ROC_NUMCOLS][ROC_NUMROWS];
 	int x[ROC_NUMCOLS][ROC_NUMROWS];
 	int y[ROC_NUMCOLS][ROC_NUMROWS];
 
@@ -1239,7 +1247,7 @@ CMD_PROC(addrscan)
 				CEvent *ev = data.Get();
 				if (ev->roc[0].pixel.size() >= 1)
 				{
-//					r[col][row] = ev->roc[0].pixel[0].raw;
+					r[col][row] = ev->roc[0].pixel[0].raw;
 					x[col][row] = ev->roc[0].pixel[0].x;
 					y[col][row] = ev->roc[0].pixel[0].y;
 				} else x[col][row] = -1;
@@ -1248,6 +1256,7 @@ CMD_PROC(addrscan)
 	} catch (DataPipeException e) { printf("\nERROR TestPixel: %s\n", e.what()); }
 	src.Close();
 
+	int addrDefect = 0;
 	for (row=0; row<ROC_NUMROWS; row++)
 	{
 		Log.printf("%2i", row);
@@ -1255,12 +1264,17 @@ CMD_PROC(addrscan)
 		{
 			if (x[col][row] >= 0)
 			{
-				Log.printf(" (%2i/%s)", x[col][row], i2bin(y[col][row]));
+//				Log.printf(" %06X(%2i/%s)", r[col][row], x[col][row], i2bin(y[col][row]));
+//				Log.printf(" (%2i/%s)", x[col][row], i2bin(y[col][row]));
+				bool addrOk = (x[col][row] == col) && (y[col][row] == row);
+				if (!addrOk) addrDefect++;
+				Log.printf("(%2i%c%2i)", x[col][row], addrOk ? '/' : '*',  y[col][row]);
 			}
-			else Log.printf(" ------------");
+			else Log.printf(" ------");
 		}
 		Log.printf("\n");
 	}
+	Log.printf("%i addresses defect\n", addrDefect);
 	Log.flush();
 }
 
@@ -1283,42 +1297,47 @@ CMD_PROC(multiread)
 	src.Enable();
 
 	// --- scan all pixel ---------------------------------------------------
-	int i, k;
+	int i;
 	for (i=0; i<nReadouts; i++)
 	{
 		tb.Pg_Single();
-		tb.uDelay(100);
+		tb.uDelay(1000);
 	}
 	src.Disable();
 
 
 	// --- analyze data -----------------------------------------------------
 
-	int evCnt = 0;
+	int evCnt  = 0;
+	int errCnt = 0;
+
 	try
 	{
 		while (!keypressed())
 		{
 			CEvent *ev = data.Get(); evCnt++;
-			Log.printf("%5i:", evCnt);
-			for (k = 0; k < ev->roc[0].pixel.size(); k++)
+			Log.printf("%5i: <%3u>", evCnt, ev->roc[0].pixel.size());
+			for (unsigned int k = 0; k < ev->roc[0].pixel.size(); k++)
 			{
 				int x = ev->roc[0].pixel[k].x;
 				int y = ev->roc[0].pixel[k].y;
 				int a = ev->roc[0].pixel[k].ph;
-				Log.printf (" (%2i/%s%c%3i)", x, i2bin(y), ev->roc[0].error ? '*' : '/', a);
+//				Log.printf (" (%2i/%s%c%3i)", x, i2bin(y), ev->roc[0].error ? '*' : '/', a);
+				Log.printf (" (%2i%c%2i/%3i)", x, ev->roc[0].error ? '*' : '/', y, a);
 //				Log.printf ("  %3i %3i", y, a); 
+				if (ev->roc[0].error) errCnt++;
 			}
 			Log.puts("\n");
 		}
 	} 
-	catch (DS_empty &e) { Log.printf("--- end of data ---\n"); }
+	catch (DS_empty &) { Log.printf("--- end of data ---\n"); }
 	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+
+	printf("%i events read with %i errors.\n", evCnt, errCnt);
 
 	Log.flush();
 
 	src.Close();
-	printf("%i events read.\n", evCnt);
 }
 
 
@@ -1339,8 +1358,8 @@ CMD_PROC(cluster)
 
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
 	
-	int evCnt = 0;
-	int i, j, k;
+	unsigned int evCnt = 0;
+	unsigned int j, k;
 
 	for (j=0; j<78; j++)
 	{
@@ -1353,7 +1372,7 @@ CMD_PROC(cluster)
 
 		// --- readout ---------------------------------------------------
 		src.Enable();
-		for (i=0; i<nReadouts; i++)
+		for (int i=0; i<nReadouts; i++)
 		{
 			tb.Pg_Single();
 			tb.uDelay(100);
@@ -1378,7 +1397,7 @@ CMD_PROC(cluster)
 				Log.puts("\n");
 			}
 		} 
-		catch (DS_empty &e) { Log.printf("--- end of data ---\n"); }
+		catch (DS_empty &) { Log.printf("--- end of data ---\n"); }
 		catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
 	
 		tb.roc_Pix_Mask(0, j);
@@ -1410,8 +1429,8 @@ CMD_PROC(cluster2)
 
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
 	
-	int evCnt = 0;
-	int i, j, k;
+	unsigned int evCnt = 0;
+	unsigned int j, k;
 
 	for (j=0; j<78; j++)
 	{
@@ -1424,7 +1443,7 @@ CMD_PROC(cluster2)
 
 		// --- readout ---------------------------------------------------
 		src.Enable();
-		for (i=0; i<nReadouts; i++)
+		for (int i=0; i<nReadouts; i++)
 		{
 			tb.Pg_Single();
 			tb.uDelay(100);
@@ -1449,7 +1468,7 @@ CMD_PROC(cluster2)
 				Log.puts("\n");
 			}
 		} 
-		catch (DS_empty &e) { Log.printf("--- end of data ---\n"); }
+		catch (DS_empty &) { Log.printf("--- end of data ---\n"); }
 		catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
 	
 		tb.roc_Pix_Mask(0, j);
@@ -1461,4 +1480,1251 @@ CMD_PROC(cluster2)
 
 	src.Close();
 	printf("%i events read.\n", evCnt);
+}
+
+
+CMD_PROC(db1)
+{ PROFILING
+	Log.section("DB1");
+
+	int evCnt = 0;
+	int k;
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 10000000);
+	
+	// --- readout ---------------------------------------------------
+	src.Enable();
+	tb.Pg_Single();
+	tb.uDelay(1000);
+	src.Disable();
+
+	// --- analyze data -----------------------------------------------------
+	try
+	{
+		while (!keypressed())
+		{
+			CEvent *ev = data.Get(); evCnt++;
+
+			int nPx = ev->roc[0].pixel.size();
+			Log.printf("%5i<%3i>:", evCnt, nPx);
+
+			for (k = 0; k < nPx; k++)
+			{
+				int x = ev->roc[0].pixel[k].x;
+				int y = ev->roc[0].pixel[k].y;
+				int a = ev->roc[0].pixel[k].ph;
+//				Log.printf (" (%2i/%s/%3i)", x, i2bin(y), a);
+				Log.printf(" (%2i/%2i)", x, y /* & 0x3f */ );
+				if ((k % 14) == 13) Log.puts("\n           ");
+			}
+			Log.puts("\n");
+		}
+	} 
+	catch (DS_empty &) { Log.printf("--- end of data ---\n"); }
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	
+	Log.flush();
+
+	src.Close();
+	printf("%i events read.\n", evCnt);
+}
+
+
+// =================================
+
+
+class CPulse
+{
+	unsigned int pn;
+	double px;
+	double px2;
+	double mean;
+	double stdev;
+public:
+	void Clear() { pn = 0; px = px2 = 0.0; }
+	void Add(unsigned int ph) { px += ph; px2 += ph*ph; pn++; }
+	void Update();
+	double GetCount() { return pn; }
+	double GetMean() { return mean; }
+	double GetStdev() { return stdev; }
+	void Print();
+};
+
+
+void CPulse::Update()
+{
+	if (pn)
+	{
+		mean = px/pn;
+		stdev = sqrt(px2/pn - mean*mean);
+	}
+}
+
+void CPulse::Print()
+{
+	if (pn) Log.printf(" (%3u %5.1f %5.1f)", pn, mean, stdev);
+	else    Log.printf(" (  0            )");
+}
+
+
+class CPulseMap
+{
+	unsigned int pn;
+public:
+	CPulse ph[52][80];
+	void Clear();
+	void Add(CRocPixel &p);
+	void Update();
+	void Print();
+	void Print(int xmin, int xmax, int ymin=0, int ymax=79);
+	void List();
+};
+
+
+void CPulseMap::Clear()
+{
+	unsigned int x, y;
+	for (x=0; x<52; x++) for (y=0; y<80; y++) ph[x][y].Clear();
+	pn = 0;
+}
+
+void CPulseMap::Add(CRocPixel &p)
+{
+	if (p.x < 52 && p.y < 80)
+	{
+		ph[p.x][p.y].Add(p.ph);
+		pn++;
+	}
+}
+
+void CPulseMap::Update()
+{
+	unsigned int x, y;
+	for (x=0; x<52; x++) for (y=0; y<80; y++) ph[x][y].Update();
+}
+
+void CPulseMap::Print()
+{
+	int x, y;
+	for (y=79; y>=0; y--)
+	{
+		for (x=0; x<52; x++) ph[x][y].Print();
+		Log.puts("\n");
+	}
+}
+
+void CPulseMap::Print(int xmin, int xmax, int ymin, int ymax)
+{
+	int x, y;
+	for (y=ymax; y>=ymin; y--)
+	{
+		for (x=xmin; x<=xmax; x++) ph[x][y].Print();
+		Log.puts("\n");
+	}
+}
+
+void CPulseMap::List()
+{
+	int x, y;
+	for (x=0; x<52; x++)
+	{
+		for (y=0; y<80; y++) if (ph[x][y].GetCount())
+		{
+			Log.printf("(%2u/%3u):", x, y);
+			ph[x][y].Print();
+			Log.puts("\n");
+		}
+	}
+	Log.printf("%u pixel hits\n", pn);
+}
+
+
+CMD_PROC(scanphxy)
+{ PROFILING
+	int nReadouts;
+	int xmin, xmax, ymin, ymax;
+	PAR_RANGE(xmin, xmax, 0, 51)
+	PAR_RANGE(ymin, ymax, 0, 79)
+	if (!PAR_IS_INT(nReadouts, 0, 10000)) nReadouts = 1;
+
+	Log.section("SCANPHXY");
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+
+	// --- scan all pixel ---------------------------------------------------
+	int x, y, k;
+	src.Enable();
+	for (x=xmin; x<=xmax; x++)
+	{
+		tb.roc_Col_Enable(x, true);
+		for (y=ymin; y <=ymax; y++)
+		{
+			tb.roc_Pix_Trim(x, y, 15);
+			tb.roc_Pix_Cal(x, y);
+			tb.uDelay(50);
+			for (k=0; k<nReadouts; k++)
+			{
+				tb.Pg_Single();
+				tb.uDelay(50);
+			}
+			tb.roc_Pix_Mask(x, y);
+			tb.roc_ClrCal();
+		}
+	}
+	src.Disable();
+
+
+	// --- analyze data -----------------------------------------------------
+	CPulseMap *map = new CPulseMap;
+	map->Clear();
+
+	try
+	{
+		while (true)
+		{
+			CEvent *ev = data.Get();
+			for (k = 0; k < int(ev->roc[0].pixel.size()); k++)
+			{
+				map->Add(ev->roc[0].pixel[k]);
+			}
+		}
+	} 
+	catch (DS_empty &) {}
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+
+	map->Update();
+	map->Print(xmin, xmax, ymin, ymax);
+	
+	// --- statistics
+	int channel_cnt[4];
+	double channel[4];
+	for (k=0; k<4; k++) { channel_cnt[k] = 0; channel[k] = 0.0; }
+	for (x=xmin; x<= xmax; x++) for (y=ymin; y<=ymax; y++)
+	{
+		int grp = (x%2) + 2*(y%2);
+		channel[grp] += map->ph[x][y].GetMean();
+		channel_cnt[grp]++;
+	}
+	for (k=0; k<4; k++)
+	{
+		if (channel_cnt[k]) Log.printf("channel %i: %5.1f  %i\n", k, channel[k]/channel_cnt[k], channel_cnt[k]);
+		else Log.printf("channel %i:\n", k);
+	}
+
+
+	delete map;
+	Log.flush();
+	src.Close();
+}
+
+CMD_PROC(scanph)
+{ PROFILING
+	int nReadouts;
+	PAR_INT(nReadouts, 1, 100000)
+
+	Log.section("SCANPH");
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+
+	// --- scan pixel -------------------------------------------------------
+	int k;
+	src.Enable();
+	for (k=0; k<nReadouts; k++)
+	{
+		tb.Pg_Single();
+		tb.uDelay(500);
+	}
+	src.Disable();
+
+	// --- analyze data -----------------------------------------------------
+	CPulseMap *map = new CPulseMap;
+	map->Clear();
+
+	try
+	{
+		while (true)
+		{
+			CEvent *ev = data.Get();
+			for (k = 0; k < int(ev->roc[0].pixel.size()); k++)
+			{
+				 map->Add(ev->roc[0].pixel[k]);
+			}
+		}
+	} 
+	catch (DS_empty &) {}
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+
+	map->Update();
+	map->List();
+	
+	delete map;
+	Log.flush();
+	src.Close();
+}
+
+
+CMD_PROC(dbmatch)
+{ PROFILING
+	const int DBSIZE = 56;
+
+	int nCycles;
+	PAR_INT(nCycles, 1, 1000)
+
+	Log.section("DBMATCH");
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+
+	// --- scan pixel -------------------------------------------------------
+	int n = nCycles*DBSIZE;
+	int j, k;
+	src.Enable();
+	for (k=0; k<n; k++)
+	{
+		tb.Pg_Single();
+		tb.uDelay(500);
+	}
+	src.Disable();
+
+	// --- analyze data -----------------------------------------------------
+
+	unsigned int db_cnt[DBSIZE];
+	double db_ph[DBSIZE];
+	double db_ph2[DBSIZE];
+	for (j=0; j<DBSIZE; j++) { db_ph[j] = db_ph2[j] = 0.0; db_cnt[j] = 0; }
+
+	try
+	{
+		for (k=0; k<nCycles; k++)
+		{
+			for (j=0; j<DBSIZE; j++)
+			{
+				CEvent *ev = data.Get();
+				if (ev->roc.size() && ev->roc[0].pixel.size())
+				{
+					int ph = ev->roc[0].pixel[0].ph;
+					db_ph[j] += ph;
+					db_ph2[j] += ph*ph;
+					db_cnt[j]++;
+				}
+			}
+		}
+	} 
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+
+	for (j=0; j<DBSIZE; j++)
+	{
+		if (db_cnt[j])
+		{
+			db_ph[j] /= db_cnt[j];
+			db_ph2[j] = sqrt(db_ph2[j]/db_cnt[j] - db_ph[j]*db_ph[j]);
+		}
+		else db_ph[j] = db_ph2[j] = 0.0;
+	}
+
+	for (j=0; j < DBSIZE; j++)
+	{
+		Log.printf("%2i  %5.1f  %5.1f %3u\n", j, db_ph[j], db_ph2[j], db_cnt[j]);
+	}
+
+	Log.flush();
+	src.Close();
+}
+
+
+CMD_PROC(dbmatch2)
+{ PROFILING
+	const int DBSIZE = 56;
+
+	int nCycles;
+	PAR_INT(nCycles, 1, 1000)
+
+	Log.section("DBMATCH2");
+
+	int j, k;
+
+	// --- construct PG sequence -------------------------------------------
+	vector<uint16_t>sequence;
+	sequence.push_back(PG_RESR|PG_SYNC + 20);
+	for (j = 0; j < DBSIZE; j++)
+	{
+		sequence.push_back(PG_CAL + 100);
+		sequence.push_back(PG_TRG +  20);
+		sequence.push_back(PG_TOK + 100);
+	}
+	sequence.push_back(0);
+	tb.Pg_SetCmdAll(sequence);
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+
+	// --- scan pixel -------------------------------------------------------
+	unsigned int db_cnt[DBSIZE];
+	double db_ph[DBSIZE];
+	double db_ph2[DBSIZE];
+	for (j=0; j<DBSIZE; j++) { db_ph[j] = db_ph2[j] = 0.0; db_cnt[j] = 0; }
+
+	src.Enable();
+	try
+	{
+		for (k=0; k<nCycles; k++)
+		{
+			tb.Pg_Single();
+			tb.uDelay(1000);
+			for (j=0; j<DBSIZE; j++)
+			{
+				CEvent *ev = data.Get();
+				if (ev->roc.size() && ev->roc[0].pixel.size())
+				{
+					int ph = ev->roc[0].pixel[0].ph;
+					db_ph[j] += ph;
+					db_ph2[j] += ph*ph;
+					db_cnt[j]++;
+				}
+			}
+		}
+	}
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	src.Disable();
+	src.Close();
+
+	// --- analyze and print data -------------------------------------------
+	for (j=0; j<DBSIZE; j++)
+	{
+		if (db_cnt[j])
+		{
+			db_ph[j] /= db_cnt[j];
+			db_ph2[j] = sqrt(db_ph2[j]/db_cnt[j] - db_ph[j]*db_ph[j]);
+		}
+		else db_ph[j] = db_ph2[j] = 0.0;
+	}
+
+	for (j=0; j < DBSIZE; j++)
+	{
+		Log.printf("%2i  %5.1f  %5.1f %3u\n", j, db_ph[j], db_ph2[j], db_cnt[j]);
+	}
+
+	double db_even = 0.0;
+	double db_odd  = 0.0;
+	for (j=0; j<DBSIZE; j++)
+	{
+		if (j & 1) db_odd += db_ph[j]; else db_even += db_ph[j];
+	}
+	db_even /= DBSIZE/2;
+	db_odd  /= DBSIZE/2;
+	Log.printf("even/odd/diff: %5.1f  %5.1f  %5.1f\n", db_even, db_odd, db_even-db_odd);
+
+	Log.flush();
+}
+
+
+CMD_PROC(evenodd)
+{ PROFILING
+	const int DBSIZE = 56;
+
+	int nCycles = 10;
+	int x0;
+	int y0;
+	PAR_INT(x0, 0, 51);
+	PAR_INT(y0, 0, 1);
+
+	Log.section("EVENODD", false);
+	Log.printf(" (%i/%i)\n", x0, y0);
+
+	int j, k;
+
+	// --- construct PG sequence -------------------------------------------
+	vector<uint16_t>sequence;
+	sequence.push_back(PG_RESR|PG_SYNC + 20);
+	for (j = 0; j < DBSIZE; j++)
+	{
+		sequence.push_back(PG_CAL + 100);
+		sequence.push_back(PG_TRG +  20);
+		sequence.push_back(PG_TOK + 100);
+	}
+	sequence.push_back(0);
+	tb.Pg_SetCmdAll(sequence);
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+
+	// --- scan pixel -------------------------------------------------------
+	src.Enable();
+	try
+	{
+		for (int y=y0; y<80; y+=2) // all pixel on same channel
+		{
+			unsigned int db_neven = 0;
+			unsigned int db_nodd  = 0;
+			double db_even = 0.0;
+			double db_odd = 0.0;
+			tb.roc_Pix_Cal(x0, y);
+			tb.roc_Pix_Trim(x0, y, 15);
+			tb.roc_Col_Enable(x0, true);
+			tb.uDelay(100);
+
+			for (k=0; k<nCycles; k++) // mean value over nCycles
+			{
+				tb.Pg_Single();
+				tb.uDelay(1000);
+				for (j=0; j<DBSIZE; j++) // all DB cells
+				{
+					CEvent *ev = data.Get();
+					if (ev->roc.size() && ev->roc[0].pixel.size())
+					{
+						int ph = ev->roc[0].pixel[0].ph;
+						if (j & 1)
+						{
+							db_odd += ph;
+							db_nodd++;
+						}
+						else
+						{
+							db_even += ph;
+							db_neven++;
+						}
+					}
+				}
+			}
+
+			tb.roc_ClrCal();
+			tb.roc_Pix_Mask(x0, y);
+			tb.roc_Col_Enable(x0, false);
+
+			if (db_nodd && db_neven)
+			{
+				db_even /= db_neven;
+				db_odd  /= db_nodd;
+				Log.printf("%2i: %5.1f  %5.1f  %5.1f %4u\n", y, db_even, db_odd, db_even-db_odd, db_neven+db_nodd);
+			} else Log.printf("%2i:\n", y);
+		}
+	}
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	src.Disable();
+	src.Close();
+
+	Log.flush();
+}
+
+
+CMD_PROC(enapx)
+{
+	int x, y;
+	tb.roc_Chip_Mask();
+	while (PAR_IS_INT(x, 0, 55))
+	{
+		PAR_INT(y, 0, 79);
+		tb.roc_Col_Enable(x, true);
+		tb.roc_Pix_Trim(x, y, 15);
+		tb.roc_Pix_Cal(x, y);
+	}
+}
+
+
+// --- DB & readout test ----------
+
+class CPgEvent
+{
+public:
+	int type;
+	int time;
+
+	CPgEvent() {};
+	CPgEvent(int t, int ev) : type(ev), time(t) {}
+	bool operator <(const CPgEvent &b) { return time < b.time; }
+};
+
+
+class CPgEventList
+{
+	bool sorted, created;
+	unsigned int nToken;
+	list<CPgEvent> el;
+	vector<uint16_t> pg_sequence;
+	void Sort() { el.sort(); sorted = true; }
+	void Add(const CPgEvent &ev);
+	bool ReadLine(const char *s);
+	void Clear();
+public:
+	CPgEventList() : sorted(false), created(false), nToken(0) {}
+
+	void Add_RESR(int t) { Add(CPgEvent(t, PG_RESR)); }
+	void Add_REST(int t) { Add(CPgEvent(t, PG_REST)); }
+	void Add_SYNC(int t)  { Add(CPgEvent(t, PG_SYNC)); }
+	void Add_CAL(int t, int wbc = 0)
+	{ Add(CPgEvent(t, PG_CAL)); if (wbc) Add_TRG(t+wbc); }
+	void Add_TRG(int t)  { Add(CPgEvent(t, PG_TRG)); }
+	void Add_TOK(int t)  { Add(CPgEvent(t, PG_TOK)); }
+	bool Read(const char *filename);
+	bool Check();
+	unsigned int GetTokenCnt() { return nToken; }
+	void Load();
+	void Print();
+};
+
+void CPgEventList::Clear()
+{
+	sorted = created = false;
+	nToken = 0;
+	el.clear();
+	pg_sequence.clear();
+}
+
+void CPgEventList::Add(const CPgEvent &ev)
+{
+	sorted = created = false;
+	list<CPgEvent>::iterator i = el.begin();
+	while (i != el.end())
+	{
+		if (ev.time == i->time)
+		{
+			i->type |= ev.type;
+			return;
+		}
+		i++;
+	}
+	el.push_back(ev);
+}
+
+bool CPgEventList::ReadLine(const char *s)
+{
+/*
+	RESR 100
+	REST 110
+	SYNC 110
+	CAL  200
+	CAL  200 100
+	TRG  210
+	TOK  2
+*/
+	char ev[16];
+	int t, t2;
+	int n = sscanf(s, "%14s %i %i", ev, &t, &t2);
+
+	if (n <= 0) return true; // empty line
+	if (ev[0] == '-') return true; // comment
+	if (n < 2) return false; // missing parameter
+	if (n < 3) t2 = 0; // 0 if 2nd parameter not exists
+
+	if      (!strcmp(ev, "CAL" )) Add_CAL(t,t2);
+	else if (!strcmp(ev, "TRG" )) Add_TRG(t);
+	else if (!strcmp(ev, "TOK" )) Add_TOK(t);
+	else if (!strcmp(ev, "SYNC")) Add_SYNC(t);
+	else if (!strcmp(ev, "RESR")) Add_RESR(t);
+	else if (!strcmp(ev, "REST")) Add_REST(t);
+	else return false;
+
+	return true;
+}
+
+
+bool CPgEventList::Read(const char *filename)
+{
+	Clear();
+	FILE *f = fopen(filename, "rt");
+	if (!f) return false;
+
+	char s[256];
+
+	while (!feof(f))
+	{
+		if (fgets(s, 254, f))
+		{
+			if (!ReadLine(s)) { Clear(); fclose(f);  return false; }
+		}
+	}
+	fclose(f);
+	return Check();
+}
+
+
+bool CPgEventList::Check()
+{
+	if (created) return true;
+	if (!sorted) Sort();
+	pg_sequence.clear();
+	created = false;
+	nToken  = 0;
+
+	unsigned int tk = 0;
+	list<CPgEvent>::iterator i = el.begin();
+	while (i != el.end())
+	{
+		list<CPgEvent>::iterator k = i; k++;
+		if (k == el.end())
+		{
+			pg_sequence.push_back(i->type);
+			created = true;
+			break;
+		}
+
+		int t = k->time - i->time;
+		if (t > 1)
+		{
+			int dt = (t <= 255)? t : 255;
+			pg_sequence.push_back(i->type + dt-1); t -= dt;
+			while (t > 0)
+			{
+				dt = (t <= 255)? t : 255;
+				pg_sequence.push_back(dt); t -= dt;
+				if (pg_sequence.size() > 256) break;
+			}
+		}
+		else
+		{
+			pg_sequence.clear();
+			created = false;
+			break;
+		}
+		i = k;
+	}
+	if (!created || pg_sequence.size() > 256) { pg_sequence.clear(); created = false; }
+	
+	if (created)
+	{
+		for (unsigned int j = 0; j < pg_sequence.size(); j++)
+			if (pg_sequence[j] & PG_TOK) nToken++;
+	}
+	
+	return created;
+}
+
+
+void CPgEventList::Load()
+{
+	if (created && pg_sequence.size()) tb.Pg_SetCmdAll(pg_sequence);
+	else tb.Pg_SetCmd(0, 0);
+}
+
+void CPgEventList::Print()
+{
+	unsigned int i;
+	if (created && pg_sequence.size())
+	{
+		for (i = 0; i < pg_sequence.size(); i++)
+		{
+			int x = pg_sequence[i];
+			printf(" 0x%c%c%c%c%c%c %3i\n",
+				(x&PG_SYNC)?'1':'0', (x&PG_REST)?'1':'0', (x&PG_RESR)?'1':'0',
+				(x&PG_CAL)?'1':'0', (x&PG_TRG)?'1':'0', (x&PG_TOK)?'1':'0', int(x & 0xff));
+		}
+	}
+	else printf("sequence not valid!\n");
+}
+
+
+#define ENAPX(x,y) tb.roc_Pix_Trim(x, y, 15); tb.roc_Pix_Cal(x, y);
+
+CMD_PROC(rotest0)
+{
+	CPgEventList seq_fill;
+	seq_fill.Add_SYNC( 0);
+	seq_fill.Add_RESR( 0);
+	seq_fill.Add_CAL( 20, 201);
+	seq_fill.Add_CAL( 40, 201);
+	seq_fill.Add_CAL( 60, 201);
+	seq_fill.Add_CAL( 80, 201);
+	if (!seq_fill.Check()) { printf("ERROR: seq_fill\n"); return; }
+
+	seq_fill.Print();
+	seq_fill.Load();
+	tb.Pg_Loop(10000);
+	DO_FLUSH
+}
+
+
+CMD_PROC(rotest1)
+{
+	Log.section("ROTEST1");
+
+	const int trgDel = 210;
+	int x, k;
+
+	// --- create test sequences --------------------------------------------
+	// --- RB fill sequence
+	CPgEventList seq_fill;
+	seq_fill.Add_SYNC( 0);
+	seq_fill.Add_RESR( 0);
+	seq_fill.Add_CAL( 20, trgDel);
+	seq_fill.Add_CAL( 40, trgDel);
+	seq_fill.Add_CAL( 60, trgDel);
+	seq_fill.Add_CAL( 80, trgDel);
+	if (!seq_fill.Check()) { printf("ERROR: seq_fill\n"); return; }
+
+	// --- test sequence
+	CPgEventList seq_test;
+	seq_test.Add_CAL(   0);  //  1
+	seq_test.Add_CAL( 100);  //  2
+	seq_test.Add_CAL( 200);  //  3
+	seq_test.Add_CAL( 300);  //  4
+	seq_test.Add_CAL( 400, trgDel);
+	seq_test.Add_CAL( 500);  //  6
+	seq_test.Add_CAL( 600);  //  7
+	seq_test.Add_CAL( 700);  //  8
+	seq_test.Add_CAL( 800);  //  9
+	seq_test.Add_CAL( 900);  // 10
+	seq_test.Add_CAL(1000);  // 11
+	seq_test.Add_CAL(1100);  // 12
+	seq_test.Add_CAL(1200);  // 13
+	seq_test.Add_CAL(1300, trgDel);
+	seq_test.Add_CAL(1400);  // 14
+	seq_test.Add_CAL(1500);  // 15
+	seq_test.Add_CAL(1600);  // 16
+	seq_test.Add_CAL(1700, trgDel);
+	seq_test.Add_CAL(1800);  // 18
+	seq_test.Add_CAL(1850);  // 19
+	seq_test.Add_CAL(1900);  // 20
+	seq_test.Add_CAL(1950);  // 21
+	seq_test.Add_CAL(2000);  // 22
+	seq_test.Add_CAL(2050);  // 23
+	seq_test.Add_CAL(2100);  // 24
+	seq_test.Add_CAL(2150);  // 25
+
+	if (!seq_test.Check()) { printf("ERROR: seq_test\n"); return; }
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+	src.Enable();
+
+	// --- fill RB -----------------------------------------------------------
+	tb.Pg_Stop();
+	tb.roc_Chip_Mask();
+	// load PG
+	seq_fill.Load();
+	// tb.Pg_SetCmdAll(seq_fill);
+
+	// enable pixels
+	for (x = 0; x < 52; x++) tb.roc_Col_Enable(x, true);
+	for (x = 12; x < 28; x++)
+	{
+		tb.roc_Pix_Trim(x, 0, 15);
+		tb.roc_Pix_Cal (x, 0);
+	}
+
+	tb.roc_SetDAC(0xfe, trgDel-5); // WBC
+
+	// send CAL TRG
+	tb.uDelay(10);
+	tb.Pg_Single();
+	tb.uDelay(10);
+
+	// mask pixel
+	for (x = 10; x < 26; x++) tb.roc_Pix_Mask(x, 0);
+	tb.roc_ClrCal();
+
+	// --- test -------------------------------------------------------------
+	seq_test.Load();
+	// tb.Pg_SetCmdAll(seq_test);
+
+	ENAPX(10,  0)
+	ENAPX(10,  2)
+	ENAPX(10,  4)
+	ENAPX(10,  6)
+	ENAPX(10,  8)
+	ENAPX(10, 10)
+	ENAPX(10, 12)
+	ENAPX(10, 14)
+	ENAPX(10, 16)
+	ENAPX(10, 18)
+
+	tb.uDelay(10);
+	tb.Pg_Single();
+	tb.uDelay(50);
+
+	// --- readout ----------------------------------------------------------
+	tb.Pg_SetCmd(0, PG_TOK);
+	int evCnt = 0;
+	try
+	{
+		while (!keypressed())
+		{
+			tb.Pg_Single();
+			tb.uDelay(100);
+			CEvent *ev = data.Get();
+			if (ev->roc.size() && ev->roc[0].pixel.size())
+			{
+				evCnt++;
+				Log.printf("%3i:<%2i>", evCnt, int(ev->roc[0].pixel.size()));
+				for (k = 0; k < int(ev->roc[0].pixel.size()); k++)
+				{
+//					int r = ev->roc[0].pixel[k].raw;
+					int f = ev->roc[0].pixel[k].error;
+					int x = ev->roc[0].pixel[k].x;
+					int y = ev->roc[0].pixel[k].y;
+					int a = ev->roc[0].pixel[k].ph;
+					Log.printf (" (%2i%c%2i)", x, f ? '*' : '/', y);
+//					Log.printf (" (%2i%c%2i/%3i)", x, f ? '*' : '/', y, a);
+				}
+				Log.puts("\n");
+			} else break;
+		}
+	} 
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	src.Disable();
+	src.Close();
+
+	Log.printf("\n", evCnt);
+	Log.flush();
+
+	printf("%i events read.\n", evCnt);
+	DO_FLUSH
+}
+
+
+CMD_PROC(rotest2)
+{
+	Log.section("ROTEST2");
+
+	const int trgDel = 210;
+	int x, y, k;
+
+	// --- create test sequences --------------------------------------------
+	// --- RB fill sequence
+	CPgEventList seq_fill;
+//	seq_fill.Add_SYNC( 0);
+	seq_fill.Add_RESR( 0);
+	seq_fill.Add_CAL( 20, trgDel);
+	seq_fill.Add_CAL( 40, trgDel);
+	seq_fill.Add_CAL( 60, trgDel);
+	seq_fill.Add_CAL( 80, trgDel);
+	if (!seq_fill.Check()) { printf("ERROR: seq_fill\n"); return; }
+
+	// --- test sequence
+	CPgEventList seq_test;
+	seq_test.Add_SYNC(  0);
+	seq_test.Add_CAL(   0);  //  1
+	seq_test.Add_CAL( 100);  //  2
+	seq_test.Add_CAL( 200);  //  3
+	seq_test.Add_CAL( 300, trgDel);
+
+
+	if (!seq_test.Check()) { printf("ERROR: seq_test\n"); return; }
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+	src.Enable();
+
+	// --- fill RB -----------------------------------------------------------
+	tb.Pg_Stop();
+	tb.roc_Chip_Mask();
+	// load PG
+	seq_fill.Load();
+	// tb.Pg_SetCmdAll(seq_fill);
+
+	// enable pixels
+	for (x = 0; x < 52; x++) tb.roc_Col_Enable(x, true);
+	for (x = 12; x < 28; x++)
+	{
+		tb.roc_Pix_Trim(x, 0, 15);
+		tb.roc_Pix_Cal (x, 0);
+	}
+
+	tb.roc_SetDAC(0xfe, trgDel-5); // WBC
+
+	// send CAL TRG
+	tb.uDelay(10);
+	tb.Pg_Single();
+	tb.uDelay(10);
+
+	// mask pixel
+	for (x = 10; x < 26; x++) tb.roc_Pix_Mask(x, 0);
+	tb.roc_ClrCal();
+
+	// --- test -------------------------------------------------------------
+	seq_test.Load();
+	// tb.Pg_SetCmdAll(seq_test);
+
+	for (y = 0; y < 80; y++) tb.roc_Pix_Trim(10, y, 0);
+	
+	tb.roc_Pix_Cal(10,  0);
+	tb.roc_Pix_Cal(10,  2);
+	tb.roc_Pix_Cal(10,  4);
+	tb.roc_Pix_Cal(10,  6);
+	tb.roc_Pix_Cal(10,  8);
+	tb.uDelay(30);
+	tb.Pg_Single();
+	tb.uDelay(50);
+
+	tb.roc_ClrCal();
+	tb.roc_Pix_Cal(10, 18);
+	tb.roc_Pix_Cal(10, 20);
+	tb.roc_Pix_Cal(10, 22);
+	tb.roc_Pix_Cal(10, 24);
+	tb.uDelay(30);
+	tb.Pg_Single();
+	tb.uDelay(10);
+
+	tb.roc_ClrCal();
+	tb.roc_Pix_Cal(10, 36);
+	tb.roc_Pix_Cal(10, 38);
+	tb.roc_Pix_Cal(10, 40);
+	tb.roc_Pix_Cal(10, 42);
+	tb.roc_Pix_Cal(10, 44);
+	tb.uDelay(30);
+	tb.Pg_Single();
+	tb.uDelay(50);
+
+/*	tb.roc_ClrCal();
+	tb.roc_Pix_Cal(10, 54);
+	tb.roc_Pix_Cal(10, 56);
+	tb.roc_Pix_Cal(10, 58);
+	tb.uDelay(5);
+	tb.Pg_Single();
+	tb.uDelay(100);
+*/
+
+	// --- readout ----------------------------------------------------------
+	tb.Pg_SetCmd(0, PG_TOK);
+	int evCnt = 0;
+	try
+	{
+		while (!keypressed())
+		{
+			tb.Pg_Single();
+			tb.uDelay(100);
+			CEvent *ev = data.Get();
+			if (ev->roc.size() && ev->roc[0].pixel.size())
+			{
+				evCnt++;
+				Log.printf("%3i:<%2i>", evCnt, int(ev->roc[0].pixel.size()));
+				for (k = 0; k < int(ev->roc[0].pixel.size()); k++)
+				{
+//					int r = ev->roc[0].pixel[k].raw;
+					int f = ev->roc[0].pixel[k].error;
+					int x = ev->roc[0].pixel[k].x;
+					int y = ev->roc[0].pixel[k].y;
+					int a = ev->roc[0].pixel[k].ph;
+					Log.printf (" (%2i%c%2i)", x, f ? '*' : '/', y);
+//					Log.printf (" (%2i%c%2i/%3i)", x, f ? '*' : '/', y, a);
+				}
+				Log.puts("\n");
+			} else break;
+		}
+	} 
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	src.Disable();
+	src.Close();
+
+	Log.printf("\n", evCnt);
+	Log.flush();
+
+	printf("%i events read.\n", evCnt);
+	DO_FLUSH
+}
+
+CMD_PROC(rotest3)
+{
+
+	int trgDel;
+	PAR_INT(trgDel, 10, 255)
+	Log.section("ROTEST3", false);
+	Log.printf("trgDel = %i\n", trgDel);
+
+	unsigned int x, k;
+
+	// --- create test sequences --------------------------------------------
+
+	// --- RB fill sequence
+	CPgEventList seq_fill;
+	seq_fill.Add_RESR( 0);
+	seq_fill.Add_CAL( 20, trgDel);
+	seq_fill.Add_CAL( 40, trgDel);
+	seq_fill.Add_CAL( 60, trgDel);
+	seq_fill.Add_CAL( 80, trgDel);
+	if (!seq_fill.Check()) { printf("ERROR: seq_fill\n"); return; }
+
+	// --- test sequence
+	CPgEventList seq_test;
+	if (!seq_test.Read("seq.txt"))
+	{
+		printf("Error loading test sequence!\n");
+		return;
+	}
+
+	// --- setup decoding chain ---------------------------------------------
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 1000000);
+	src.Enable();
+
+		// --- fill RB -----------------------------------------------------------
+	tb.Pg_Stop();
+	tb.roc_Chip_Mask();
+	// load PG
+	seq_fill.Load();
+
+	// enable pixels
+	for (x = 12; x < 28; x++) tb.roc_Col_Enable(x, true);
+	for (x = 12; x < 28; x++)
+	{
+		tb.roc_Pix_Trim(x, 0, 15);
+		tb.roc_Pix_Cal (x, 0);
+	}
+
+	tb.roc_SetDAC(0xfe, trgDel-5); // WBC
+
+	// send CAL TRG
+	tb.uDelay(10);
+	tb.Pg_Single();
+	tb.uDelay(10);
+
+	// mask pixel
+	for (x = 10; x < 26; x++) tb.roc_Pix_Mask(x, 0);
+	tb.roc_ClrCal();
+
+	// --- test -------------------------------------------------------------
+	for (int y = 0; y < 80; y++) tb.roc_Pix_Trim(10, y, 0);
+	
+	tb.roc_Pix_Cal(10,  0);
+	tb.roc_Pix_Cal(10,  2);
+	tb.roc_Pix_Cal(10,  4);
+	tb.roc_Pix_Cal(10,  6);
+	tb.roc_Pix_Cal(10,  8);
+	tb.roc_Pix_Cal(10, 10);
+	tb.roc_Pix_Cal(10, 12);
+	tb.roc_Pix_Cal(10, 14);
+	tb.roc_Pix_Cal(10, 16);
+	tb.roc_Pix_Cal(10, 18);
+
+	tb.uDelay(10);
+	tb.roc_Col_Enable(10, true);
+	tb.uDelay(50);
+	seq_test.Load();
+	tb.Pg_Single();
+	tb.uDelay(100);
+
+	// --- readout ----------------------------------------------------------
+	int evCnt = 0;
+	try
+	{
+		for (unsigned int j=0; j<seq_test.GetTokenCnt(); j++)
+		{
+			CEvent *ev = data.Get();
+			if (ev->roc.size())
+			{
+				evCnt++;
+				Log.printf("%3i:<%2i>", evCnt, int(ev->roc[0].pixel.size()));
+				for (k = 0; k < ev->roc[0].pixel.size(); k++)
+				{
+//					int r = ev->roc[0].pixel[k].raw;
+					int f = ev->roc[0].pixel[k].error;
+					int x = ev->roc[0].pixel[k].x;
+					int y = ev->roc[0].pixel[k].y;
+					int a = ev->roc[0].pixel[k].ph;
+					Log.printf (" (%2i%c%2i)", x, f ? '*' : '/', y);
+//					Log.printf (" (%2i%c%2i/%3i)", x, f ? '*' : '/', y, a);
+				}
+				Log.puts("\n");
+			} else break;
+		}
+	} 
+	catch (DataPipeException &e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+	src.Disable();
+	src.Close();
+
+	Log.printf("\n", evCnt);
+	Log.flush();
+
+	printf("%i events read.\n", evCnt);
+	DO_FLUSH
+}
+
+
+double GetSlopeId(int t = 0)
+{
+	if (t) tb.Pg_Loop(t); else tb.Pg_Stop();
+	tb.mDelay(100);
+
+	double id = 0.0;
+	for (int i=0; i<10; i++)
+	{
+		id += tb.GetID();
+		tb.mDelay(100);
+	}
+	id *= 100; // mA
+	printf("%4i  %5.2f\n", t, id);
+	return id;
+}
+
+CMD_PROC(idslope)
+{
+	Log.section("IDSLOPE");
+	tb.Pg_Stop();
+
+	Log.printf("inf  %5.2f\n", GetSlopeId());
+	Log.printf("1000 %5.2f\n", GetSlopeId(1000));
+	Log.printf(" 300 %5.2f\n", GetSlopeId( 300));
+	Log.printf(" 150 %5.2f\n", GetSlopeId( 150));
+	Log.printf(" 100 %5.2f\n", GetSlopeId( 100));
+	Log.printf("  80 %5.2f\n", GetSlopeId(  80));
+	Log.printf("  65 %5.2f\n", GetSlopeId(  65));
+	Log.printf("  55 %5.2f\n", GetSlopeId(  55));
+	Log.printf("  45 %5.2f\n", GetSlopeId(  45));
+	Log.printf("  40 %5.2f\n", GetSlopeId(  40));
+	Log.printf("  35 %5.2f\n", GetSlopeId(  35));
+	Log.printf("  32 %5.2f\n", GetSlopeId(  32));
+	Log.printf("  29 %5.2f\n", GetSlopeId(  29));
+	Log.printf("  27 %5.2f\n", GetSlopeId(  27));
+	Log.printf("  25 %5.2f\n", GetSlopeId(  25));
+	Log.printf("  23 %5.2f\n", GetSlopeId(  23));
+	Log.printf("  20 %5.2f\n", GetSlopeId(  20));
+
+	tb.Pg_Loop(10000);
+	tb.Flush();
+	Log.flush();
 }

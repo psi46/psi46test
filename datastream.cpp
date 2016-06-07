@@ -431,6 +431,7 @@ CEvent* CRocAnaDecoder::Read()
 
 	CDataRecord *sample = Get();
 	x.recordNr = sample->recordNr;
+	x.error = 0;
 	x.deviceType = CEvent::ROCA;
 	x.header = x.trailer = 0;
 	x.roc.resize(1);
@@ -446,6 +447,7 @@ CEvent* CRocAnaDecoder::Read()
 			CRocPixel pix;
 			pix.raw = 0;
 			pix.DecodeAna(dec, &((*sample)[pos]));
+			if (pix.error) { x.roc[0].error = 1; x.error |= 1; }
 			x.roc[0].pixel.push_back(pix);
 			pos += 6;
 		}
@@ -462,6 +464,7 @@ CEvent* CRocDigDecoder::Read()
 
 	CDataRecord *sample = Get();
 	x.recordNr = sample->recordNr;
+	x.error = 0;
 	x.deviceType = CEvent::ROCD;
 	x.header = x.trailer = 0;
 	x.roc.resize(1);
@@ -478,6 +481,7 @@ CEvent* CRocDigDecoder::Read()
 			pix.raw =  (*sample)[pos++] << 12;
 			pix.raw += (*sample)[pos++];
 			pix.DecodeRaw();
+			if (pix.error) { x.roc[0].error = 1; x.error |= 1; }
 			x.roc[0].pixel.push_back(pix);
 		}
 	}
@@ -493,6 +497,7 @@ CEvent* CRocDigLinearDecoder::Read()
 
 	CDataRecord *sample = Get();
 	x.recordNr = sample->recordNr;
+	x.error = 0;
 	x.deviceType = CEvent::ROCX;
 	x.header = x.trailer = 0;
 	x.roc.resize(1);
@@ -501,6 +506,7 @@ CEvent* CRocDigLinearDecoder::Read()
 	if (n > 0)
 	{
 		if (n > 4) x.roc[0].pixel.reserve((n-1)/2);
+		x.roc[0].error = 0;
 		x.roc[0].header = (*sample)[0];
 		unsigned int pos = 1;
 		while (pos < n-1)
@@ -509,6 +515,7 @@ CEvent* CRocDigLinearDecoder::Read()
 			pix.raw =  (*sample)[pos++] << 12;
 			pix.raw += (*sample)[pos++];
 			pix.DecodeRawLinear();
+			if (pix.error) { x.roc[0].error = 1; x.error |= 1; }
 			x.roc[0].pixel.push_back(pix);
 		}
 	}

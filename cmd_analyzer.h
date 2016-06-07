@@ -40,12 +40,25 @@ CMD_REG(ethrx, "", "shows number of received packets")
 CMD_REG(shmoo, "", "shmoo vx xrange vy ymin yrange")
 CMD_REG(deser160, "", "align deser160")
 // CMD_REG(readback, "", "")
-CMD_REG(phscan, "", "pulse height scan")
+CMD_REG(phscan, "<x> <y> <cal range>", "pulse height scan")
 
 
 // === DROC600 test ======================================================
 HELP_CAT("droc600")
-CMD_REG(addrscan, "", "address scan");
-CMD_REG(multiread, "<n readouts>", "multiple readout");
-CMD_REG(cluster, "<n readouts>", "cluster test");
-CMD_REG(cluster2, "<n readouts>", "cluster test");
+CMD_REG(scanaddr, "", "address scan")
+CMD_REG(scanphxy, "<range x> <range y> [<count>]", "scan pulse heigth")
+CMD_REG(scanph, "<count>", "scan pulse heigth repeated")
+CMD_REG(dbmatch, "<count>", "DB analog cell uniformity")
+CMD_REG(dbmatch2, "<count>", "DB analog cell uniformity (2nd methode)")
+CMD_REG(evenodd, "<x> <y>", "pulse height even odd effect")
+CMD_REG(multiread, "<n readouts>", "multiple readout")
+CMD_REG(cluster, "<n readouts>", "cluster test")
+CMD_REG(cluster2, "<n readouts>", "cluster test")
+CMD_REG(db1, "", "Data buffer test")
+CMD_REG(enapx, "{<x> <y>}", "enables n pixels and calibrate")
+
+CMD_REG(rotest0, "", "DB test 0")
+CMD_REG(rotest1, "", "DB test 1")
+CMD_REG(rotest2, "", "DB test 2")
+CMD_REG(rotest3, "", "DB test 3")
+CMD_REG(idslope, "", "Id vs Pixel Rate")

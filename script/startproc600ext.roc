@@ -6,7 +6,7 @@ mdelay 100
 resoff
 
 --- set voltages ----------------------------
-vd 2500 mV
+vd 2650 mV
 id  200 mA
 va 1500 mV
 ia  200 mA
@@ -28,7 +28,8 @@ select 0
 --- power on --------------------------------
 pon
 mdelay 500
-
+
+
 getid
 mdelay 20
 getia
@@ -48,10 +49,10 @@ dac  12  80  VthrComp
 dac  13 100  *NEW* VColor (prev VIBias_Bus 30)
 - dac  22  99  VIColOr
 
-dac  17 180  *NEW* VoffsetRO (prev 170)
+dac  17 170  *NEW* VoffsetRO (prev 170)
 
 dac  19  50  Vcomp_ADC
-dac  20  45  VIref_ADC
+dac  20  60  VIref_ADC
 
 dac  25  70  Vcal
 dac  26  70  CalDel 24@20MHz
@@ -87,18 +88,11 @@ pgset 3 b100001   0  pg_tok pg_sync
 --- enable pixel ----------------------------
 cald
 cole :
--pixe 0 0 0
--pixe 0 68 0
 
-pixe 0 65 0
-pixe 1 67 0
-cal  0 65
-cal  1 67
-
--pixe : : 0
--cal 47 0
--cal 48 0
--cal 49 0
+pixe 10  0 0
+pixe 11 30 0
+cal  10  0
+cal  11 30
 
 flush
 
@@ -112,6 +106,19 @@ flush
 -dread
 -dclose
 
-pgloop 10000
+udelay 100
+-multiread 50
 
+-pgloop 10000
+-log *** cluster test
+-mdelay 5000
+-multiread 30
+
+-pgset 0 b001000 15 pg_resr
+-mdelay 500
+-pgset 0 b000000 15
+
+-mdelay 500
+-multiread 30
+pgloop 10000
 flush

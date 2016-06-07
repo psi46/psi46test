@@ -1358,6 +1358,16 @@ CMD_PROC(dac)
 	DO_FLUSH
 }
 
+CMD_PROC(vdig)
+{
+	int value;
+	PAR_INT(value,0,15)
+	for (int i=0; i<16; i++) if (roclist[i])
+	{ tb.roc_I2cAddr(i); tb.roc_SetDAC(Vdig, value); }
+
+	DO_FLUSH
+}
+
 CMD_PROC(vana)
 {
 	int value;
@@ -1398,12 +1408,42 @@ CMD_PROC(vcal)
 	DO_FLUSH
 }
 
+CMD_PROC(caldel)
+{
+	int value;
+	PAR_INT(value,0,255)
+	for (int i=0; i<16; i++) if (roclist[i])
+	{ tb.roc_I2cAddr(i); tb.roc_SetDAC(CalDel, value); }
+
+	DO_FLUSH
+}
+
 CMD_PROC(wbc)
 {
 	int value;
 	PAR_INT(value,0,255)
 	for (int i=0; i<16; i++) if (roclist[i])
 	{ tb.roc_I2cAddr(i);  tb.roc_SetDAC(WBC, value); }
+
+	DO_FLUSH
+}
+
+CMD_PROC(adcoffset)
+{
+	int value;
+	PAR_INT(value,0,255)
+	for (int i=0; i<16; i++) if (roclist[i])
+	{ tb.roc_I2cAddr(i);  tb.roc_SetDAC(17, value); }
+
+	DO_FLUSH
+}
+
+CMD_PROC(adcref)
+{
+	int value;
+	PAR_INT(value,0,255)
+	for (int i=0; i<16; i++) if (roclist[i])
+	{ tb.roc_I2cAddr(i);  tb.roc_SetDAC(20, value); }
 
 	DO_FLUSH
 }

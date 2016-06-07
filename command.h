@@ -19,7 +19,7 @@
 class CInterpreter;
 
 
-#define CMDLINELENGTH 80
+#define CMDLINELENGTH 200
 
 
 bool keypressed();
