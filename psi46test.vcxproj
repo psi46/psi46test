@@ -181,6 +181,7 @@
     <ClCompile Include="rpc.cpp" />
     <ClCompile Include="rpc_calls.cpp" />
     <ClCompile Include="rpc_error.cpp" />
+    <ClCompile Include="test.cpp" />
     <ClCompile Include="test_ana.cpp" />
     <ClCompile Include="test_dig.cpp" />
     <ClCompile Include="test_PROC600.cpp" />

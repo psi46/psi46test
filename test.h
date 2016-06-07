@@ -17,6 +17,11 @@
 
 #include "config.h"
 
+
+int test_roc(bool &repeat);
+int test_roc_bumpbonder();
+
+
 namespace TestPROC600
 {
 

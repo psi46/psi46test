@@ -161,13 +161,7 @@ bool test_wafer()
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin;
-	switch (settings.rocType)
-	{
-		case 0:  bin = TestRocAna::test_roc(repeat); break;
-		case 1:  bin = TestRocDig::test_roc(repeat); break;
-		default: bin = TestPROC600::test_roc(repeat);
-	}
+	int bin = test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 	GetTimeStamp(g_chipdata.endTime);
@@ -199,13 +193,7 @@ bool test_chip(char chipid[])
 
 	tb.SetLed(0x10);
 	bool repeat;
-	int bin;
-	switch (settings.rocType)
-	{
-		case 0:  bin = TestRocAna::test_roc(repeat); break;
-		case 1:  bin = TestRocDig::test_roc(repeat); break;
-		default: bin = TestPROC600::test_roc(repeat);
-	}
+	int bin = test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 
@@ -329,13 +317,7 @@ bool go_TestDefects()
 		GetTimeStamp(g_chipdata.startTime);
 		Log.timestamp("BEGIN");
 		bool repeat;
-		int bin;
-		switch (settings.rocType)
-		{
-			case 0:  bin = TestRocAna::test_roc(repeat); break;
-			case 1:  bin = TestRocDig::test_roc(repeat); break;
-			default: bin = TestPROC600::test_roc(repeat);
-		}
+		int bin = test_roc(repeat);
 		GetTimeStamp(g_chipdata.endTime);
 		Log.timestamp("END");
 		Log.puts("\n");
@@ -368,12 +350,7 @@ bool TestSingleChip(int &bin, bool &repeat)
 	GetTimeStamp(g_chipdata.startTime);
 	Log.timestamp("BEGIN");
 	tb.SetLed(0x10);
-	switch (settings.rocType)
-	{
-		case 0:  bin = TestRocAna::test_roc(repeat); break;
-		case 1:  bin = TestRocDig::test_roc(repeat); break;
-		default: bin = TestPROC600::test_roc(repeat);
-	}
+	bin = test_roc(repeat);
 	tb.SetLed(0x00);
 	tb.Flush();
 
