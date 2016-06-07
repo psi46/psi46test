@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 
-CSettings::CSettings()
+void CSettings::Init()
 {
 	dtbId = -1;
 	scriptPath = "script";
@@ -120,7 +120,6 @@ void CSettings::ReadString(std::string &s)
 		f.GetNext();
 	}
 }
-
 
 
 

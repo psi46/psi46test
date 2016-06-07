@@ -277,6 +277,9 @@ CMD_PROC(boardid)
 
 CMD_PROC(init)
 {
+	CSettings s;
+	if (s.Read("psi46test.ini")) settings = s;
+	else printf("error reload \"psi46test.ini\"\n");
 	tb.Init();
 	DO_FLUSH
 }
@@ -290,7 +293,6 @@ CMD_PROC(clear)
 {
 	tb.Clear();
 }
-
 
 
 

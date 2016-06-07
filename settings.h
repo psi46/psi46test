@@ -26,8 +26,9 @@ class CSettings
 	bool ReadBool();
 	int  ReadInt(int min, int max);
 	void ReadString(std::string &s);
+	void Init();
 public:
-	CSettings();
+	CSettings() { Init(); }
 	bool Read(const char filename[]);
 
 // --- data --------------------------------------------------------------

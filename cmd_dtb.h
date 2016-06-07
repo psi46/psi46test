@@ -36,7 +36,6 @@ CMD_REG(init, "", "inits the testboard")
 CMD_REG(flush, "", "flushes usb buffer")
 CMD_REG(clear, "", "clears usb data buffer")
 
-
 // =======================================================================
 //  delay commands
 // =======================================================================
