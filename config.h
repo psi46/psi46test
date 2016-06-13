@@ -4,7 +4,7 @@
 
 // === psi46test version ====================================================
 
-#define TITLE        "PSI46V2 ROC/Wafer Tester"
+#define TITLE        "PROC600V2 ROC/Wafer Tester"
 #define VERSION      "V2.0"
 #define TIMESTAMP    "13.6.2016"
 
