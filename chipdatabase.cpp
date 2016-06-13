@@ -29,6 +29,46 @@ bool CLogFile::open(char logFileName[])
 }
 
 
+void CChipPos::ReadString(const std::string &s)
+{
+	int x, y;
+	char p;
+
+	if (s.length() < 3) throw int(201);
+
+	char ch = s[0];
+	if ('0' <= ch && ch <= '7') y = ch - '0';
+	else throw int(202);
+
+	ch = s[1];
+	if ('0' <= ch && ch <= '9') x = ch - '0';
+	else if (ch == 'A') x = 10;
+	else throw int(203);
+
+	switch (s[2])
+	{
+		case 'a': case 'A':  p = 'A'; break;
+		case 'b': case 'B':  p = 'B'; break;
+		case 'c': case 'C':  p = 'C'; break;
+		case 'd': case 'D':  p = 'D'; break;
+		default: throw int(203);
+	}
+
+	pos = (y << 12) + (x << 8) + p;
+}
+
+
+void CChipPos::WriteString(std::string &s)
+{
+	char t[4];
+	t[0] = GetY() + '0';
+	t[1] = GetX() <= 9 ? GetX() + '0' : 'A';
+	t[2] = GetPos();
+	t[3] = 0;
+	s = t;
+}
+
+
 // logDate "Apr 17 13:53:45 2006"
 // xmlDate "04-17-2006 13:53:45"
 
@@ -151,7 +191,7 @@ void CChip::Invalidate()
 	multi = 0;
 	nEntry = 0;
 	productId[0]=waferId[0]=waferNr[0]=chipId[0]=0;
-	mapX = mapY = mapPos = 0;
+	map.Invalidate();
 	startTime[0] = endTime[0] = 0;
 	frequency = -1;
 	IdigOn = IanaOn = IdigInit = IanaInit = -1.0;
@@ -196,9 +236,9 @@ void CChip::Save(FILE *f)
 	fprintf(f,"productId: %s\n", productId);
 	fprintf(f,"waferId:   %s\n", waferId);
 	fprintf(f,"waferNr:   %s\n", waferNr);
-	fprintf(f,"mapX:      %i\n", mapX);
-	fprintf(f,"mapY:      %i\n", mapY);
-	fprintf(f,"mapPos:    %i\n", mapPos);
+	fprintf(f,"mapX:      %i\n", map.GetX());
+	fprintf(f,"mapY:      %i\n", map.GetY());
+	fprintf(f,"mapPos:    %c\n", map.GetPos());
 	fprintf(f,"chipId:    %s\n", chipId);
 	fprintf(f,"startTime: %s",   startTime);
 	fprintf(f,"endTime:   %s",   endTime);
@@ -243,19 +283,20 @@ bool CChip::Read(CScanner &Log)
 	// read [CHIP] section
 	if (Log.isSection("CHIP")) // chip on wafer
 	{
+		int mapX, mapY;
 		char ch;
-		if (sscanf(Log.getNextLine(),"%i%i %c",&mapX, &mapY, &ch)!=3)
+		if (sscanf(Log.getNextLine(),"%X%X %c",&mapX, &mapY, &ch)!=3)
 			ERROR_ABORT(ERROR_CHIP);
+		if (!('A'<=ch && ch<='D')) ERROR_ABORT(ERROR_CHIP);
+		map.Set(mapX, mapY, ch);
 
-		if ('A'<=ch && ch<='D')	mapPos = ch - 'A';
-		else ERROR_ABORT(ERROR_CHIP);
 		sprintf(chipId, "%i%i%c", mapY, mapX, ch);
 	}
 	else if (Log.isSection("CHIP1")) // single chip
 	{
 		if (sscanf(Log.getNextLine(),"%40s",chipId) != 1)
 			ERROR_ABORT(ERROR_CHIP);
-		mapX = mapY = mapPos = 0;
+		map.Invalidate();
 	}
 	else ERROR_ABORT(ERROR_OK)
 	Log.getNextSection();
@@ -538,10 +579,10 @@ void CChip::SetAoutOffset(double offset)
 void CChip::Calculate()
 {
 	// set pic coordinates
-	if (mapX!=0 || mapY!=0)
+	if (map.IsValid())
 	{
-		picX = 2*mapX + mapPos%2 + 1;
-		picY = 2*mapY - mapPos/2 + 2;
+		picX = 2*map.GetX() + map.GetPosId()%2 + 1;
+		picY = 2*map.GetY() - map.GetPosId()/2 + 2;
 	}
 	else { picX = picY = 0; }
 
@@ -1108,7 +1149,7 @@ bool CWaferDataBase::WriteXML_File(char path[], CChip &chip)
 	char datetime[24];
 	if (!chip.ConvertDate(datetime)) return false;
 	sprintf(filename, "%s\\%s_%i%i%c.xml", path, chip.waferId,
-		chip.mapY, chip.mapX, "ABCD"[chip.mapPos]);
+		chip.map.GetY(), chip.map.GetX(), chip.map.GetPos());
 	FILE *f = fopen(filename,"wt");
 	if (f==NULL) return false;
 
@@ -1146,7 +1187,7 @@ bool CWaferDataBase::WriteXML_File(char path[], CChip &chip)
 		"     </ATTRIBUTE>\n"
 		"    </CHILD_UNIQUELY_IDENTIFIED_BY>\n"
 		"  </PART_ASSEMBLY>\n", chip.waferId, chip.waferId, chip.waferId,
-			chip.mapY, chip.mapX, "ABCD"[chip.mapPos]);
+			chip.map.GetY(), chip.map.GetX(), chip.map.GetPos());
 	fputs(
 		"  <DATA>\n",f);
 
@@ -1232,8 +1273,9 @@ bool CWaferDataBase::GenerateErrorReport(char filename[])
 	{
 		if (p->chipClass > 1)
 		{
-			fprintf(f,"Chip %i%i%c Class %i: ",
-				p->mapY, p->mapX, "ABCD"[p->mapPos], p->chipClass);
+			std::string s;
+			p->map.WriteString(s);
+			fprintf(f,"Chip %s Class %i: ", s.c_str(), p->chipClass);
 			p->PrintFailString(f);
 			fputs("\n", f);
 		}
@@ -1255,8 +1297,10 @@ bool CWaferDataBase::GenerateDataTable(char filename[])
 	CChip *p = GetFirst();
 	while (p)
 	{
-		fprintf(f, "%-9s %i%i%c  %2i %2i %2i  %i %2i  %5.1f %5.1f",
-			p->waferId, p->mapY, p->mapX, "ABCD"[p->mapPos], p->picX, p->picY, p->bin,
+		std::string s;
+		p->map.WriteString(s);
+		fprintf(f, "%-9s %s %2i %2i %2i  %i %2i  %5.1f %5.1f",
+			p->waferId, s.c_str(), p->picX, p->picY, p->bin,
 			p->pickClass, p->pickGroup, p->IdigOn, p->IanaOn);
 		if (p->IdigInit>=0.0)  fprintf(f," %5.1f", p->IdigInit);    else fputs("      ",f);
 		if (p->IanaInit>=0.0)  fprintf(f," %5.1f", p->IanaInit);    else fputs("      ",f);
@@ -1445,8 +1489,9 @@ bool CWaferDataBase::GenerateWaferMap(char filename[], unsigned int mode)
 			case 2:  bin = COLOR_CLASS[p->chipClass-1]; break;
 			default: bin = COLOR_BIN[p->bin];
 		}
+		std::string s;
 		ps.printf("[%i %i %i %i]\n",
-		bin, p->mapPos, p->mapX-WMAPOFFSX, p->mapY-WMAPOFFSY);
+		bin, p->map.GetPosId(), p->map.GetX()-WMAPOFFSX, p->map.GetY()-WMAPOFFSY);
 		p = GetNext(p);
 	}
 

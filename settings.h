@@ -5,11 +5,11 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 #include "config.h"
 #include "file.h"
+#include "chipdatabase.h"
 
-
-#define NUMSETTING 3
 
 class CSettings
 {
@@ -26,6 +26,8 @@ class CSettings
 	bool ReadBool();
 	int  ReadInt(int min, int max);
 	void ReadString(std::string &s);
+	void ReadWaferMask();
+	void ReadWaferExclude();
 	void Init();
 public:
 	CSettings() { Init(); }
@@ -53,6 +55,8 @@ public:
 
 	std::string waferList;
 	bool IsWaferList() { return waferList.length() != 0; }
+	std::string waferMask;
+	std::vector<CChipPos> waferExclude;
 };
 
 

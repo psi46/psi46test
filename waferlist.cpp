@@ -79,6 +79,8 @@ bool CWaferList::Read(const std::string &fileName)
 	}
 	fclose(f);
 	modified = false;
+	current = wafer.end();
+
 	return true;
 }
 

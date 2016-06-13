@@ -68,6 +68,34 @@ struct CProbeCardData
 struct CLogFile;
 class CWaferDataBase;
 
+class CChipPos
+{
+	int pos; // YXPP
+public:
+	CChipPos() : pos(0) {}
+	CChipPos(int x, int y, char p) { Set(x, y, p); }
+	void Invalidate() { pos = 0; }
+	bool IsValid()  { return pos != 0; }
+	void ReadString(const std::string &s);
+	void WriteString(std::string &s);
+
+	static int Pos2Id(char c) { return (c - 'A') ^ 0x02; }
+	static char Id2Pos(int i) { return "CDAB"[i]; }
+
+	int  GetX()   { return (pos>>8)  & 0xf; }
+	int  GetY()   { return (pos>>12) & 0xf; }
+	char GetPos() { return char(pos & 0x00ff); }
+	int  GetPosId() { return Pos2Id(pos & 0x00ff); }
+
+	void Set(int x, int y, char p) { pos = (y << 12) + (x << 8) + p; }
+	void SetX(int x)    { pos = (pos & 0xf0ff) | ((x & 0xf) <<  8); }
+	void SetY(int x)    { pos = (pos & 0x0fff) | ((x & 0xf) << 12); }
+	void SetPos(char x) { pos = (pos & 0xff00) |   x; }
+
+	bool operator==(CChipPos b) { return pos == b.pos; }
+	bool operator!=(CChipPos b) { return pos != b.pos; }
+};
+
 
 class CChip
 {
@@ -111,7 +139,7 @@ public:
 	char waferId[40];
 	char waferNr[10];
 //	[CHIP] chip on wafer
-	int mapX, mapY, mapPos;
+	CChipPos map;
 //	[CHIP1] single chip
 	char chipId[42];
 //	[BEGIN]

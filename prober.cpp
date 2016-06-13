@@ -5,7 +5,7 @@
  *  description: connection to the Suess prober via RS232
  *
  *  author:      Beat Meier
- *  modified:    24.1.2004
+ *  modified:    13.6.2016
  *
  *  rev:
  *
@@ -20,52 +20,70 @@
 #include "rs232.h"
 #include "prober.h"
 
+const char defAnswer[] = " no response";
 
-bool CProber::open (int portNr)
+CProber::CProber()
 {
-	if (isOpen()) return false;
+	rs232 = -1;
+	readback[0] = 0;
+	result = 0;
+	message = defAnswer;
+}
+
+bool CProber::Open (int portNr)
+{
+	if (IsOpen()) return false;
 	rs232 = rs232_open(portNr, 9600, 'N', 8, 1, 0);
 	return rs232 >= 0;
 }
 
 
-void CProber::close ()
+void CProber::Close ()
 {
-	if (!isOpen()) return;
+	if (!IsOpen()) return;
 	rs232_exit(rs232);
 	rs232 = -1;
 	return;
 }
 
 
-void CProber::clear()
+void CProber::Clear()
 {
-	if (!isOpen()) return;
+	if (!IsOpen()) return;
 	rs232_clearRx(rs232);
 	readback[0] = 0;
 }
 
 
-char* CProber::read(int ms)
+void CProber::Read(int ms)
 {
 	int cnt;
+
+	result = -1;
+	message = defAnswer;
+	
 	cnt = rs232_gets(rs232, readback, sizeof(readback)-1, "\n", ms);
 
-	if (cnt>=2) readback[cnt-2] = 0;
-	else readback[0] = 0;
+	if (cnt>=2) readback[cnt-2] = 0; else { readback[0] = 0; return; }
 
-	return readback;
+	message = strchr(readback, ':');
+	if (message == 0) { message = defAnswer; result = -1; return; }
+	message++;
+	while (*message == ' ') message++;
+
+	if (sscanf(readback, "%i", &result) != 1)
+	{ message = defAnswer; result = -1; return; }
 }
 
 
-char* CProber::printf(const char *fmt, ...)
+int CProber::SendCmd(const char *fmt, ...)
 {
-	if (!isOpen()) return readback;
+	if (!IsOpen()) return -2;
 
 	va_list ap;
 	char cmd[256];
 
-	clear();
+	Clear();
 
 	va_start(ap,fmt);
 #ifdef _WIN32
@@ -78,6 +96,17 @@ char* CProber::printf(const char *fmt, ...)
 	rs232_puts(rs232,cmd);
 	rs232_puts(rs232,"\r\n");
 
-	return read();
+	Read();
+	if (result != 0) PrintErrorMsg();
+
+	return GetRsp();
 }
 
+
+void CProber::PrintErrorMsg()
+{
+	if (result < 0)
+		printf(" RSP no response\n");
+	else
+		printf(" RSP %s\n", readback);
+}

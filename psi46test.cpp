@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 
 		// --- open prober ------------------------------------
 		if (settings.proberPort>=0)
-			if (!prober.open(settings.proberPort))
+			if (!prober.Open(settings.proberPort))
 			{
 				printf("Prober: could not open port %i\n",
 					settings.proberPort);

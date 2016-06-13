@@ -24,6 +24,10 @@ void CSettings::Init()
 	cableLength = 50; 
 
 	errorRep = 1;
+
+	waferList.clear();
+	waferMask.clear();
+	waferExclude.clear();
 }
 
 void CSettings::SkipWhitespace()
@@ -122,6 +126,39 @@ void CSettings::ReadString(std::string &s)
 }
 
 
+void CSettings::ReadWaferMask()
+{
+	std::string mask;
+	ReadString(mask);
+	for (unsigned int i=0; i<mask.length(); i++)
+	{
+		char ch;
+		switch (mask[i])
+		{
+			case 'a': case 'A':  ch = 'A'; break;
+			case 'b': case 'B':  ch = 'B'; break;
+			case 'c': case 'C':  ch = 'C'; break;
+			case 'd': case 'D':  ch = 'D'; break;
+			default: throw int(107);
+		}
+		if (waferMask.find(ch) == std::string::npos) waferMask.push_back(ch);
+	}
+}
+
+
+void CSettings::ReadWaferExclude()
+{
+	std::string s;
+	ReadString(s);
+	while (s.length() != 0)
+	{
+		CChipPos map;
+		map.ReadString(s);
+		waferExclude.push_back(map);
+		ReadString(s);
+	}
+}
+
 
 bool CSettings::Read(const char filename[])
 {
@@ -146,6 +183,8 @@ bool CSettings::Read(const char filename[])
 			else if (s == "ADC_TOUT_DELAY")     adc_toutDelay = ReadInt(0, 63);
 			else if (s == "ADC_CLK_DELAY")      adc_clkDelay = ReadInt(0, 320);
 			else if (s == "WAFERLIST")          ReadString(waferList);
+			else if (s == "WAFERMASK")          ReadWaferMask();
+			else if (s == "WAFEREXCLUDE")       ReadWaferExclude();
 		}
 	}
 	catch (int e)
