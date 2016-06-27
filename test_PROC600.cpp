@@ -22,7 +22,7 @@
 #define VDIG0               4
 #define VSH0              150   // 225
 
-
+#define MAX_TIME_BUFFER    24   // number of timestamp buffers
 
 namespace TestPROC600
 {
@@ -1145,6 +1145,111 @@ int test_PUCsC(bool forceDefTest = false)
 	return 0;
 }
 
+// =======================================================================
+//
+//    DC Buffer Test
+//
+// =======================================================================
+
+void test_DCbuffer()
+{PROFILING
+	// load settings
+	unsigned char col, row;
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigLinearDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	//Injection pattern needs to be scanned in a loop to test all buffers. Maybe finally only last buffer is sufficient
+	for (int bufferInTest = 0; bufferInTest < MAX_TIME_BUFFER; bufferInTest++){
+		std::cout << "test buffer number " << bufferInTest << std::endl;
+		InitDAC();
+		tb.roc_Chip_Mask();
+		tb.roc_SetDAC(Vcal, VCAL_TEST);
+		tb.roc_SetDAC(CtrlReg, 0x04); // 0x04
+		tb.Pg_SetCmd(0, PG_RESR + 25);
+		//Inject until buffer in test -1 to fill the buffers
+		for (int i = 0; i < bufferInTest; i++)
+			tb.Pg_SetCmd(1, PG_CAL + 15);
+		//Inject into buffer in test and then wait WBC, trigger, token
+		tb.Pg_SetCmd(1, PG_CAL + 15 + tct_wbc);
+		tb.Pg_SetCmd(2, PG_TRG + 16);
+		tb.Pg_SetCmd(3, PG_TOK);
+		tb.uDelay(100);
+		tb.Flush();
+
+		src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
+		src.Enable();
+
+		// --- scan all pixel ------------------------------------------------------
+		for (col = 0; col < ROC_NUMCOLS; col++)
+		{
+			//enable the column in test
+			tb.roc_Col_Enable(col, true);
+			tb.uDelay(10);
+			
+			//enable the four pixels to be used for test.
+			for (row = 20; row < 24; row++)
+			{
+				// set pixel calibrate pulse at col, row. Sensor calib pulse: false
+				tb.roc_Pix_Cal(col, row, false);
+				tb.uDelay(20);
+			}
+				//Inject once
+			tb.Pg_Single();
+			tb.uDelay(10);
+				
+			//tb.roc_Pix_Trim(col, row, 15);
+			//tb.uDelay(5);
+			//tb.Pg_Single();
+			//tb.uDelay(10);
+				
+			//mask the four pixels again
+			for (row = 20; row < 24; row++)
+				tb.roc_Pix_Mask(col, row);
+			//clear cal
+			tb.roc_ClrCal();
+
+			//disable the full column after test
+			tb.roc_Col_Enable(col, false);
+			tb.uDelay(10);
+		}
+		src.Disable();
+	}
+
+
+	// --- analyze data --------------------------------------------------------
+	// data analysis to be implemented. So far just quick test
+	try
+	{
+		for (int bufferInTest = 0; bufferInTest < MAX_TIME_BUFFER; bufferInTest++){
+
+			for (col = 0; col<ROC_NUMCOLS; col++)
+			{
+				//get the next event and set nHits to size of event.
+				CEvent *ev = data.Get();
+				int nHits = ev->roc[0].pixel.size();
+
+				std::cout << "buffer test " << bufferInTest << " in column " << col << " has " << nHits << "hits." << std::endl;
+			}
+		}
+	}
+	catch (DataPipeException e) { printf("\nERROR TestPixel: %s\n", e.what()); }
+
+	src.Close();
+	tb.roc_SetDAC(CtrlReg, 0);
+}
+
+
+
+
+
+
+
+
+
+
 
 // =======================================================================
 //
@@ -1233,6 +1338,9 @@ int test_roc(bool &repeat)
 	}
 
 //	test_DCOLs();
+
+	//M.Backhaus: experimental. uncomment to try... 
+	//test_DCbuffer();
 
 	test_PUCsC(pixcnt<500);
 
