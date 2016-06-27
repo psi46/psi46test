@@ -35,6 +35,7 @@ int test_i2c();
 int test_TempSensor();
 int getTemperature();
 bool test_Pixel();
+void test_Dcbuffer();
 
 int test_roc(bool &repeat);
 int test_roc_bumpbonder();
