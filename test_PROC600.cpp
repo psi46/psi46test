@@ -132,7 +132,6 @@ int test_startup(bool probecard)
 
 	g_chipdata.IdigInit = Idig = tb.GetID()*1000.0;
 	Log.printf("Idig=%6.2lf mA\n", Idig);
-
 	g_chipdata.IanaInit = Iana = tb.GetIA()*1000.0;
 	Log.printf("Iana=%6.2lf mA\n", Iana);
 
@@ -1153,36 +1152,40 @@ int test_PUCsC(bool forceDefTest = false)
 
 void test_DCbuffer()
 {PROFILING
+
+	InitDAC();
 	// load settings
+	tb.roc_Chip_Mask();
+	tb.roc_SetDAC(Vcal, VCAL_DCOL_TEST);
+	tb.roc_SetDAC(CtrlReg, 0x04); // 0x04
 	unsigned char col, row;
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigLinearDecoder dec;
+	CRocDigDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
+
+	Log.section("DCBUFFER");
 
 	//Injection pattern needs to be scanned in a loop to test all buffers. Maybe finally only last buffer is sufficient
 	for (int bufferInTest = 0; bufferInTest < MAX_TIME_BUFFER; bufferInTest++){
 		std::cout << "test buffer number " << bufferInTest << std::endl;
-		InitDAC();
-		tb.roc_Chip_Mask();
-		tb.roc_SetDAC(Vcal, VCAL_TEST);
-		tb.roc_SetDAC(CtrlReg, 0x04); // 0x04
-		tb.Pg_SetCmd(0, PG_RESR + 25);
-		//Inject until buffer in test -1 to fill the buffers
-		for (int i = 0; i < bufferInTest; i++)
-			tb.Pg_SetCmd(1, PG_CAL + 15);
-		//Inject into buffer in test and then wait WBC, trigger, token
-		tb.Pg_SetCmd(1, PG_CAL + 15 + tct_wbc);
-		tb.Pg_SetCmd(2, PG_TRG + 16);
-		tb.Pg_SetCmd(3, PG_TOK);
+		//tb.Pg_SetCmd(0, PG_RESR + 25);
+		////Inject until buffer in test -1 to fill the buffers
+		//for (int i = 0; i < bufferInTest; i++)
+		//	tb.Pg_SetCmd(1, PG_CAL + 15);
+		////Inject into buffer in test and then wait WBC, trigger, token
+		//tb.Pg_SetCmd(1, PG_CAL + 15 + tct_wbc);
+		//tb.Pg_SetCmd(2, PG_TRG + 16);
+		//tb.Pg_SetCmd(3, PG_TOK);
 		tb.uDelay(100);
 		tb.Flush();
 
 		src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
 		src.Enable();
+		tb.uDelay(100);
 
-		// --- scan all pixel ------------------------------------------------------
+		// --- scan four pixels per double column --------------------------------
 		for (col = 0; col < ROC_NUMCOLS; col++)
 		{
 			//enable the column in test
@@ -1196,14 +1199,29 @@ void test_DCbuffer()
 				tb.roc_Pix_Cal(col, row, false);
 				tb.uDelay(20);
 			}
-				//Inject once
+
+			tb.Pg_Stop();
+			//reset once
+			tb.Pg_SetCmd(0, PG_RESR + 25);
+			tb.Pg_SetCmd(1, 0x0000 + 50);
+			tb.Pg_SetCmd(2, 0x0000 + 16);
+			tb.Pg_SetCmd(3, 0x0000);
+			tb.Pg_Single();
+			//prepare pattern with injection only
+			tb.Pg_SetCmd(0, 0x0000 + 25);
+			tb.Pg_SetCmd(1, PG_CAL + 50);
+			tb.Pg_SetCmd(2, 0x0000 + 16);
+			tb.Pg_SetCmd(3, 0x0000);
+			//Inject until buffer in test -1 to fill the buffers
+			for (int i = 0; i < bufferInTest; i++)
+				tb.Pg_Single();
+			//Issue injection into buffer under test and trigger + token
+			tb.Pg_SetCmd(0, 0x0000 + 25); 
+			tb.Pg_SetCmd(1, PG_CAL + 15 + tct_wbc);
+			tb.Pg_SetCmd(2, PG_TRG + 16);
+			tb.Pg_SetCmd(3, PG_TOK);
 			tb.Pg_Single();
 			tb.uDelay(10);
-				
-			//tb.roc_Pix_Trim(col, row, 15);
-			//tb.uDelay(5);
-			//tb.Pg_Single();
-			//tb.uDelay(10);
 				
 			//mask the four pixels again
 			for (row = 20; row < 24; row++)
@@ -1216,28 +1234,25 @@ void test_DCbuffer()
 			tb.uDelay(10);
 		}
 		src.Disable();
-	}
 
 
-	// --- analyze data --------------------------------------------------------
-	// data analysis to be implemented. So far just quick test
-	try
-	{
-		for (int bufferInTest = 0; bufferInTest < MAX_TIME_BUFFER; bufferInTest++){
-
+		// --- analyze data --------------------------------------------------------
+		// data analysis to be implemented. So far just quick test
+		try
+		{
 			for (col = 0; col<ROC_NUMCOLS; col++)
 			{
 				//get the next event and set nHits to size of event.
 				CEvent *ev = data.Get();
 				int nHits = ev->roc[0].pixel.size();
 
-				std::cout << "buffer test " << bufferInTest << " in column " << col << " has " << nHits << "hits." << std::endl;
+				std::cout << "buffer test " << bufferInTest << " in column " << (int)col << " has " << nHits << " hits." << std::endl;
 			}
 		}
+		catch (DataPipeException e) { printf("\nERROR DC Buffer Test: %s\n", e.what()); }
+		src.Close();
 	}
-	catch (DataPipeException e) { printf("\nERROR TestPixel: %s\n", e.what()); }
-
-	src.Close();
+	
 	tb.roc_SetDAC(CtrlReg, 0);
 }
 
@@ -1340,7 +1355,7 @@ int test_roc(bool &repeat)
 //	test_DCOLs();
 
 	//M.Backhaus: experimental. uncomment to try... 
-	//test_DCbuffer();
+	test_DCbuffer();
 
 	test_PUCsC(pixcnt<500);
 
