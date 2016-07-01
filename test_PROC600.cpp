@@ -1169,7 +1169,7 @@ void test_DCbuffer()
 
 	//Injection pattern needs to be scanned in a loop to test all buffers. Maybe finally only last buffer is sufficient
 	for (int bufferInTest = 0; bufferInTest < MAX_TIME_BUFFER; bufferInTest++){
-		std::cout << "test buffer number " << bufferInTest << std::endl;
+		//std::cout << "test buffer number " << bufferInTest << std::endl;
 		//tb.Pg_SetCmd(0, PG_RESR + 25);
 		////Inject until buffer in test -1 to fill the buffers
 		//for (int i = 0; i < bufferInTest; i++)
@@ -1252,7 +1252,7 @@ void test_DCbuffer()
 				CEvent *ev = data.Get();
 				int nHits = ev->roc[0].pixel.size();
 
-				std::cout << "buffer test " << bufferInTest << " in DC " << (int)col << " has " << nHits << " hits." << std::endl;
+			//	std::cout << "buffer test " << bufferInTest << " in DC " << (int)col << " has " << nHits << " hits." << std::endl;
 				std::stringstream ss;
 				ss  << "DC Buffer Test " << bufferInTest << " in DC " << (int)col << " has " << nHits << " hits." << std::endl;
 				Log.puts(ss.str());	
