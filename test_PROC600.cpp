@@ -1253,9 +1253,11 @@ void test_DCbuffer()
 				int nHits = ev->roc[0].pixel.size();
 
 			//	std::cout << "buffer test " << bufferInTest << " in DC " << (int)col << " has " << nHits << " hits." << std::endl;
-				std::stringstream ss;
-				ss  << "DC Buffer Test " << bufferInTest << " in DC " << (int)col << " has " << nHits << " hits." << std::endl;
-				Log.puts(ss.str());	
+				if(nHits != 4){
+					std::stringstream ss;
+					ss  << "Failure: DC Buffer Test " << bufferInTest << " in DC " << (int)col << " has " << nHits << " hits." << std::endl;
+					Log.puts(ss.str());	
+				}
 			}
 		}
 		catch (DataPipeException e) { printf("\nERROR DC Buffer Test: %s\n", e.what()); }
