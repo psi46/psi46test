@@ -1246,19 +1246,21 @@ void test_DCbuffer()
 		// data analysis to be implemented. So far just quick test
 		try
 		{
+
+			std::stringstream ss;
 			for (col = 0; col<ROC_NUMCOLS/2; col++)
 			{
 				//get the next event and set nHits to size of event.
 				CEvent *ev = data.Get();
 				int nHits = ev->roc[0].pixel.size();
 
-			//	std::cout << "buffer test " << bufferInTest << " in DC " << (int)col << " has " << nHits << " hits." << std::endl;
-				if(nHits != 4){
-					std::stringstream ss;
-					ss  << "Failure: DC Buffer Test " << bufferInTest << " in DC " << (int)col << " has " << nHits << " hits." << std::endl;
-					Log.puts(ss.str());	
-				}
+				if (nHits == 4) 
+					ss << "." << " "; 
+				else 
+					ss << nHits << " ";		
 			}
+			ss << endl;
+			Log.puts(ss.str());
 		}
 		catch (DataPipeException e) { printf("\nERROR DC Buffer Test: %s\n", e.what()); }
 		src.Close();
@@ -1364,11 +1366,13 @@ int test_roc(bool &repeat)
 	}
 
 //	test_DCOLs();
+//	}
 
-	//M.Backhaus: experimental. uncomment to try... 
-	test_DCbuffer();
+//	test_DCOLs();
 
 	test_PUCsC(pixcnt<500);
+
+	test_DCbuffer();
 
 	// --- Testresultat auswerten ------------------------------
 
@@ -1527,9 +1531,6 @@ int test_roc_bumpbonder()
 
 	if (                              70.0 < g_chipdata.IdigOn)   goto fail;
 	if (                              10.0 < g_chipdata.IanaOn)   goto fail;
-	if (g_chipdata.IdigInit < 10.0 || 50.0 < g_chipdata.IdigInit) goto fail;
-	if (g_chipdata.IanaInit <  8.0 || 60.0 < g_chipdata.IanaInit) goto fail;
-
 	// --- class 3 ----------------------------------------------------------
 	chipClass = 3;
 
