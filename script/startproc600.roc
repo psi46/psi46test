@@ -12,10 +12,10 @@ va 1500 mV
 ia  200 mA
 
 --- setup timing & levels -------------------
-clk 15
-sda 30  (CLK + 15)
-ctr 15  (CLK + 0)
-tin 20  (CLK + 5)
+clk 17
+sda 32  (CLK + 15)
+ctr 17  (CLK + 0)
+tin 22  (CLK + 5)
 
 clklvl 10
 ctrlvl 10

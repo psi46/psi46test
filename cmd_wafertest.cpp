@@ -66,8 +66,8 @@ bool ReportWafer()
 	strcpy(g_chipdata.productId, prober.GetParamString());
 
 	// WaferID
-	const char *msg;
-	if (settings.IsWaferList()) msg = waferList.GetId().c_str();
+	string id;
+	if (settings.IsWaferList()) id = waferList.GetId();
 	else
 	{
 		rsp = prober.SendCmd("GetWaferID");
@@ -77,9 +77,10 @@ bool ReportWafer()
 			Log.printf(" waferId?\n");
 			return false;
 		}
+		id = prober.GetParamString();
 	}
-	Log.printf(" %s", prober.GetParamString());
-	strcpy(g_chipdata.waferId, prober.GetParamString());
+	Log.printf(" %s", id.c_str());
+	strcpy(g_chipdata.waferId, id.c_str());
 
 	// Wafer Number
 	int num;
