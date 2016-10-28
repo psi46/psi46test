@@ -92,6 +92,8 @@
       <OutputFile>.\win32\Debug\psi46test.exe</OutputFile>
       <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ROOTSYS)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>psi46test.map</MapFileName>
     </Link>
     <CustomBuildStep>
       <Command>rpcgen pixel_dtb.h -hrpc_calls.cpp</Command>
@@ -141,6 +143,8 @@
       <OutputFile>.\win32\Release\psi46test.exe</OutputFile>
       <AdditionalDependencies>win32\FTD2XX.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ROOTSYS)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>psi46test.map</MapFileName>
     </Link>
     <CustomBuildStep>
       <Command>rpcgen pixel_dtb.h -hrpc_calls.cpp</Command>
@@ -156,11 +160,12 @@
   <ItemGroup>
     <ClCompile Include="chipdatabase.cpp" />
     <ClCompile Include="cmd.cpp">
-      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">All</AssemblerOutput>
-      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NoListing</AssemblerOutput>
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NoListing</AssemblerOutput>
     </ClCompile>
     <ClCompile Include="cmd_analyzer.cpp" />
     <ClCompile Include="cmd_dtb.cpp" />
+    <ClCompile Include="cmd_stb.cpp" />
     <ClCompile Include="cmd_wafertest.cpp" />
     <ClCompile Include="color.cpp" />
     <ClCompile Include="command.cpp" />
@@ -169,6 +174,7 @@
     <ClCompile Include="error.cpp" />
     <ClCompile Include="file.cpp" />
     <ClCompile Include="histo.cpp" />
+    <ClCompile Include="modulesettings.cpp" />
     <ClCompile Include="pipe.cpp" />
     <ClCompile Include="pixelmap.cpp" />
     <ClCompile Include="plot.cpp" />
@@ -177,10 +183,20 @@
     <ClCompile Include="protocol.cpp" />
     <ClCompile Include="pixel_dtb.cpp" />
     <ClCompile Include="ps.cpp" />
-    <ClCompile Include="psi46test.cpp" />
+    <ClCompile Include="psi46test.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">psi46test.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">psi46test.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="rpc.cpp" />
     <ClCompile Include="rpc_calls.cpp" />
     <ClCompile Include="rpc_error.cpp" />
+    <ClCompile Include="stb.cpp">
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">All</AssemblerOutput>
+      <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>
+    </ClCompile>
+    <ClCompile Include="stb_tools.cpp" />
     <ClCompile Include="test.cpp" />
     <ClCompile Include="test_ana.cpp" />
     <ClCompile Include="test_dig.cpp" />
@@ -199,6 +215,7 @@
     <ClInclude Include="cmd.h" />
     <ClInclude Include="cmd_analyzer.h" />
     <ClInclude Include="cmd_dtb.h" />
+    <ClInclude Include="cmd_stb.h" />
     <ClInclude Include="cmd_wafertest.h" />
     <ClInclude Include="color.h" />
     <ClInclude Include="command.h" />
@@ -209,6 +226,7 @@
     <ClInclude Include="error.h" />
     <ClInclude Include="file.h" />
     <ClInclude Include="htable.h" />
+    <ClInclude Include="modulesettings.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="pixelmap.h" />
     <ClInclude Include="plot.h" />
@@ -218,6 +236,8 @@
     <ClInclude Include="rpc.h" />
     <ClInclude Include="rpc_error.h" />
     <ClInclude Include="rpc_io.h" />
+    <ClInclude Include="stb.h" />
+    <ClInclude Include="stb_tools.h" />
     <ClInclude Include="usb.h" />
     <ClInclude Include="waferlist.h" />
     <ClInclude Include="win32\FTD2XX.H" />

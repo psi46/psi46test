@@ -192,5 +192,6 @@ bool CSettings::Read(const char filename[])
 		if (e != ERROR_FILE_END_OF_FILE) ok = false;
 	}
 
+	f.Close();
 	return ok;
 }

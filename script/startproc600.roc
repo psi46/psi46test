@@ -23,7 +23,7 @@ sdalvl 10
 tinlvl 10
 
 rocaddr 0
-select 0
+select  0
 
 --- power on --------------------------------
 pon

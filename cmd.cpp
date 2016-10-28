@@ -18,6 +18,7 @@
 #include "cmd_dtb.h"
 #include "cmd_wafertest.h"
 #include "cmd_analyzer.h"
+#include "cmd_stb.h"
 
 
 void cmdHelp()
@@ -72,6 +73,7 @@ void cmd()
 #include "cmd_dtb.h"
 #include "cmd_wafertest.h"
 #include "cmd_analyzer.h"
+#include "cmd_stb.h"
 
 
 	CMD_REG(h, "", "simple help");

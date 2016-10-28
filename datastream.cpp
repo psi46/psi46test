@@ -892,18 +892,19 @@ CEvent* CEventPrinter::Read()
 				// print TBM trailer
 				fprintf(f, "Trailer: ");
 				d = x->trailer;
-				fprintf(f, " NTOK(%c) RES(%c%c) SYN(%c%c) CTC(%c) CAL(%c) STK(%c%2u) RES(%c%c)",
+				fprintf(f, " NTOK(%c) RES(%c%c%c%c) SYN(%c%c) CTC(%c) CAL(%c) STK(%c%2u)",
 					(d & 0x8000)?'1':'0', // NTOK
-					(d & 0x4000)?'T':' ', // RES
-					(d & 0x2000)?'R':' ',
+					(d & 0x4000)?'T':' ', // REST
+					(d & 0x2000)?'R':' ', // RESR
+					(d & 0x0080)?'A':' ', // RES auto
+					(d & 0x0040)?'P':' ', // RES PCAM
+
 					(d & 0x1000)?'E':' ', // SYN
 					(d & 0x0800)?'T':' ',
 					(d & 0x0400)?'1':'0', // CTC
 					(d & 0x0200)?'1':'0', // CAL
 					(d & 0x0100)?'F':' ', // STK
-					(unsigned int)(d & 0x003f),
-					(d & 0x0080)?'A':' ',
-					(d & 0x0040)?'P':' ');
+					(unsigned int)(d & 0x003f));
 				fprintf(f, "\n");
 
 				break;
@@ -924,16 +925,26 @@ void CReadbackValue::Add(unsigned int v)
 	if (v&2)
 	{
 		value = shift;
-		updated = true;
+		updated = newValue = true;
 		shift = 0; n = 0;
 	}
 }
+
 
 bool CReadbackValue::Get(unsigned short &rdbValue)
 {
 	rdbValue = value;
 	bool upd = updated;
 	updated = false;
+	return upd;
+}
+
+
+bool CReadbackValue::Read(unsigned short &rdbValue)
+{
+	rdbValue = value;
+	bool upd = newValue;
+	newValue = false;
 	return upd;
 }
 
@@ -952,16 +963,16 @@ CEvent* CReadbackLogger::Read()
 			} else rdb[r].Reset();
 		}
 	}
-	else for (r = 0; r < 8; r++) rdb[r].Reset();
+	else { for (r = 0; r < 8; r++) rdb[r].Reset(); }
 
 	if (f)
 	{
 		fprintf(f, "%4u:", x->recordNr);
-		unsigned short value;
 		for (r = 0; r < 8; r++)
 		{
-			if (rdb[r].Get(value))
-				fprintf(f, " %04X", int(value));
+			unsigned short v;
+			if (rdb[r].Get(v))
+				fprintf(f, " %04X", int(v));
 			else fputs(" ----", f);
 		}
 		fputs("\n", f);
@@ -969,3 +980,14 @@ CEvent* CReadbackLogger::Read()
 	return x;
 }
 
+
+void CReadbackLogger::Print()
+{
+	printf("RDB:");
+	for (int r=0; r<8; r++)
+	{
+		unsigned short v;
+		if (rdb[r].Read(v)) printf(" %04x", (int)v);
+	}
+	printf("\n");
+}

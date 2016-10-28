@@ -15,15 +15,19 @@
 #ifndef PSI46TEST_H
 #define PSI46TEST_H
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "config.h"
 #include "pixel_dtb.h"
 #include "settings.h"
+#include "chipdatabase.h"
 #include "prober.h"
 #include "waferlist.h"
 #include "protocol.h"
 #include "pixelmap.h"
 #include "test.h"
-#include "chipdatabase.h"
+#include "datastream.h"
+
 
 #define VERSIONINFO TITLE " " VERSION " (" TIMESTAMP ")"
 

@@ -319,6 +319,61 @@ public:
 	RPC_EXPORT void SetRocAddress(uint8_t addr);
 
 
+	// === Sector Test Board STB =========================================
+
+	RPC_EXPORT void stb_SetPresent(bool present);
+
+	RPC_EXPORT bool stb_WriteFlash(string &text);
+	RPC_EXPORT bool stb_ReadFlash(stringR &text);
+
+	RPC_EXPORT bool stb_IsPresent();
+
+	// --- Layer test adapter detection
+	// 0 = Layer 1 & 2
+	// 1 = Layer 3
+	// 2 = layer 4
+	// 3 = adapter not connected
+	RPC_EXPORT uint8_t stb_GetAdapterId();
+
+	// src = power source 0..5
+	RPC_EXPORT void stb_Pon(uint8_t src);
+	RPC_EXPORT void stb_Poff(uint8_t src);
+
+	RPC_EXPORT void _stb_SetVD(uint8_t src, uint16_t mV);
+	RPC_EXPORT void _stb_SetVA(uint8_t src, uint16_t mV);
+	RPC_EXPORT void _stb_SetID(uint8_t src, uint16_t uA100);
+	RPC_EXPORT void _stb_SetIA(uint8_t src, uint16_t uA100);
+
+	void stb_SetVD(uint8_t src, double V) { _stb_SetVD(src, uint16_t(V*1000)); }
+	void stb_SetVA(uint8_t src, double V) { _stb_SetVA(src, uint16_t(V*1000)); }
+	void stb_SetID(uint8_t src, double A) { _stb_SetID(src, uint16_t(A*10000)); }
+	void stb_SetIA(uint8_t src, double A) { _stb_SetIA(src, uint16_t(A*10000)); }
+
+	RPC_EXPORT uint16_t _stb_GetVD(uint8_t src);
+	RPC_EXPORT uint16_t _stb_GetVA(uint8_t src);
+	RPC_EXPORT uint16_t _stb_GetID(uint8_t src);
+	RPC_EXPORT uint16_t _stb_GetIA(uint8_t src);
+
+	double stb_GetVA(uint8_t src) { return _stb_GetVA(src)/1000.0; }
+	double stb_GetVD(uint8_t src) { return _stb_GetVD(src)/1000.0; }
+	double stb_GetIA(uint8_t src) { return _stb_GetIA(src)/10000.0; }
+	double stb_GetID(uint8_t src) { return _stb_GetID(src)/10000.0; }
+
+	RPC_EXPORT void stb_HVon(uint8_t channel);
+	RPC_EXPORT void stb_HVoff(uint8_t channel);
+
+	RPC_EXPORT void stb_SetSdata(uint8_t channel);
+
+	RPC_EXPORT uint16_t _stb_GetVSdata(uint8_t channel, bool pos); // mV
+	double stb_GetVSdata(uint8_t channel, bool pos) // V
+	{ return _stb_GetVSdata(channel, pos) / 1000.0; }
+
+	static uint16_t stb_mV_to_DAC(uint16_t mV);
+	static uint16_t stb_uA100_to_DAC(uint16_t ua100);
+	static uint16_t stb_ADC_to_mV(uint16_t adc);
+	static uint16_t stb_ADC_to_uA100(uint16_t adc);
+
+
 	// --- pulse pattern generator ------------------------------------------
 	#define PG_TOK   0x0100
 	#define PG_TRG   0x0200

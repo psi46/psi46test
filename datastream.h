@@ -7,13 +7,13 @@
 #include <vector>
 
 #include "config.h"
-#include "psi46test.h"
+// #include "psi46test.h"
+#include "profiler.h"
+#include "pixel_dtb.h"
 #include "datapipe.h"
 #include "protocol.h"
 #include "histo.h"
 
-
-using namespace std;
 
 
 // === Error Messages =======================================================
@@ -294,9 +294,12 @@ class CRocRawDataPrinter : public CDataPipe<CDataRecord*, CDataRecord*>
 	CDataRecord* Read();
 	CDataRecord* ReadLast() { return record; }
 public:
+	CRocRawDataPrinter() : f(0) {}
 	CRocRawDataPrinter(const char *filename, bool roc_ana = false)
+	{ Open(filename, roc_ana); }
+	void Open(const char *filename, bool roc_ana = false)
 	{ adc_samples = roc_ana, f = fopen(filename, "wt"); }
-	~CRocRawDataPrinter() { fclose(f); }
+	~CRocRawDataPrinter() { if (f) fclose(f); }
 };
 
 
@@ -422,9 +425,12 @@ class CEventPrinter : public CAnalyzer
 	bool listAll;
 	CEvent* Read();
 public:
+	CEventPrinter() : f(0) {}
 	CEventPrinter(const char *filename)
-	{ x = 0; listAll = true; f = fopen(filename, "wt"); }
-	~CEventPrinter() { fclose(f); }
+	{ x = 0; listAll = true; Open(filename); }
+	~CEventPrinter() { Close(); }
+	void Open(const char *filename)	{ f = fopen(filename, "wt"); }
+	void Close() { if (f) fclose(f); f = 0; }
 	void ListOnlyErrors(bool on) { listAll = !on; }
 };
 
@@ -432,16 +438,20 @@ public:
 
 class CReadbackValue
 {
+protected:
 	bool updated;
+	bool newValue;
 	unsigned short n;
 	unsigned short shift;
 
 	unsigned short value;
+
 public:
-	CReadbackValue() : updated(false), n(0), shift(0), value(0) {}
-	void Reset() { updated = false; n = 0; shift = 0; value = 0;  }
+	CReadbackValue() : updated(false), newValue(false), n(0), shift(0), value(0) {}
+	void Reset() { updated = false; newValue = false; n = 0; shift = 0; value = 0;  }
 	void Add(unsigned int v);
 	bool Get(unsigned short &rdbValue);
+	bool Read(unsigned short &rdbValue);
 };
 
 
@@ -452,6 +462,8 @@ class CReadbackLogger : public CAnalyzer
 
 	CEvent* Read();
 public:
+	CReadbackLogger() : f(0) {}
 	CReadbackLogger(const char *filename) { f = fopen(filename, "wt"); }
-	~CReadbackLogger() { fclose(f); }
+	~CReadbackLogger() { if (f) fclose(f); }
+	void Print();
 };

@@ -282,6 +282,11 @@ CMD_PROC(init)
 	else printf("error reload \"psi46test.ini\"\n");
 	tb.Init();
 	DO_FLUSH
+
+//	if (tb.stb_IsPresent())
+//		printf("STB detected\n");
+//	else
+//		printf("STB not detected\n");
 }
 
 CMD_PROC(flush)
