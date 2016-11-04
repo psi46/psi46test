@@ -69,6 +69,8 @@ void Roc_Init(int id);
 
 void Mod_Init(int hub);
 
+void SetDefaultHub(unsigned int id, int hub);
 void Sectortest(const char *name);
+void StartAllModules(int id_min, int id_max); // for HV test
 
 } // namespace stb

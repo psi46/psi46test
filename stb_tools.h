@@ -121,16 +121,17 @@ class CDataProcessing
 	unsigned int nChannels;
 	CDataChannel c[8];
 	CModType m;
+	CAnalyzer* debug_event[8];
 public:
-	CDataProcessing() : nChannels(0) {}
-	CDataProcessing(CModType mod) : nChannels(0) { Open(mod); }
+	CDataProcessing();
+	CDataProcessing(CModType mod);
 	~CDataProcessing() { Close(); }
 
 	void Open(CModType mod);
 	void AddPipe(unsigned int channel, CAnalyzer &a);
 	void AddPipe(unsigned int channel, CDataPipe<CDataRecord*> &a);
 	void RemoveAllPipes();
-	void Close()   { for (unsigned int i=0; i<nChannels; i++) c[i].Close(); }
+	void Close();
 
 	int GetDeser(int channel) { return c[channel].GetChannel()/2; }
 	int GetDeserChannel(int channel) { return c[channel].GetChannel(); }
@@ -145,6 +146,9 @@ public:
 	void SendTrigger(unsigned int count);
 
 	void TakeData(unsigned int nTrigger);
+
+	// debug methods
+	void EnableLogging(const char *prefix);
 };
 
 
@@ -202,10 +206,14 @@ public:
 
 class CReadback : public CAnalyzer
 {
+	FILE *f;
 	CRdbValue rdb[8];
 protected:
 	CEvent* Read();
 public:
+	CReadback() : f(0) {}
+	~CReadback() { if (f) fclose(f); }
+	void Logging(const char *filename);
 	int operator[] (unsigned int i) { return rdb[i].value; }
 	void Clear() { for (int i=0; i<8; i++) rdb[i].Clear(); }
 	void Print();

@@ -7,79 +7,88 @@
 CModuleSettings modSettings;
 
 
-void CModuleSettings::SetDelay(unsigned int br, unsigned int value)
-{
-	if (value > 7) value = 7;
+/*
+DELAYA = 0xed; // 1_1_101_101
+DELAYB = 0xed; // 1_1_101_101
+PHASE  = 0x24; // 001_001_--  160 MHz, 400 MHz
 
-	switch (br)
+DELAYA = 0x6d; // 0_1_101_101
+DELAYB = 0x6d; // 0_1_101_101
+PHASE  = 0x2d; // 001_011_01  160 MHz, 400 MHz
+*/
+
+void CTbmSettings::SetDefault(stb::CModType mod)
+{
+	phase0 = phase1 = 0x24; // 001_001_00  160 MHz, 400 MHz
+}
+
+
+void CModuleSettings::SetDefault()
+{
+	delayA = delayB = 0x00; // 0x6d:0_1_101_101; 0xed:1_1_101_101
+	for (int i=0; i<42; i++)
 	{
-	case 0:
-		delayA = (delayA & 0xf8) + value;
-		tb.tbm_Set( 0xea, delayA);
-		break;
-	case 1:
-		delayA = (delayA & 0xc7) + (value<<3);
-		tb.tbm_Set( 0xea, delayA);
-		break;
-	case 2:
-		delayB = (delayA & 0xf8) + value;
-		tb.tbm_Set( 0xfa, delayB);
-		break;
-	case 3:
-		delayB = (delayA & 0xc7) + (value<<3);
-		tb.tbm_Set( 0xfa, delayB);
-		break;
+		stb::CModType mod = i;
+		module[i].SetDefault(mod);
 	}
 }
 
 
-void CModuleSettings::SeTokenDelayA(unsigned int value)
+void CTbmSettings::SetPhase160(unsigned int ph160, unsigned int tbm)
 {
-	if (value) delayA |=  0x80;
-	else       delayA &= ~0x80;
-	tb.tbm_Set( 0xea, delayA);
+	if (ph160 > 7) ph160 = 7;
+
+	if (tbm == 0) phase0 = (phase0 & 0x1f) + (ph160 << 5);
+	else          phase1 = (phase1 & 0x1f) + (ph160 << 5);
 }
 
 
-void CModuleSettings::SeTokenDelayB(unsigned int value)
+void CTbmSettings::SetPhase400(unsigned int ph400, unsigned int tbm)
 {
-	if (value) delayB |=  0x80;
-	else       delayB &= ~0x80;
-	tb.tbm_Set( 0xfa, delayB);
+	if (ph400 > 7) ph400 = 7;
+
+	if (tbm == 0) phase0 = (phase0 & 0xe3) + (ph400 << 2);
+	else          phase1 = (phase1 & 0xe3) + (ph400 << 2);
 }
 
 
-void CModuleSettings::SetHdrTrlDelayA(unsigned int value)
+void CModuleSettings::SetPhase160(stb::CModType mod, unsigned int ph160, unsigned int tbm)
 {
-	if (value) delayA |=  0x40;
-	else       delayA &= ~0x40;
-	tb.tbm_Set( 0xea, delayA);
+	int id = mod.GetSel();
+	if (0 <= id && id < 42)	module[id].SetPhase160(ph160, tbm);
 }
 
 
-void CModuleSettings::SetHdrTrlDelayB(unsigned int value)
+void CModuleSettings::SetPhase400(stb::CModType mod, unsigned int ph400, unsigned int tbm)
 {
-	if (value) delayB |=  0x40;
-	else       delayB &= ~0x40;
-	tb.tbm_Set( 0xfa, delayB);
+	int id = mod.GetSel();
+	if (0 <= id && id < 42)	module[id].SetPhase400(ph400, tbm);
 }
 
 
-void CModuleSettings::SetPhase160(unsigned int value)
-{
-	if (value > 7) value = 7;
+void CModuleSettings::UpdateTBM(stb::CModType mod)
+{ PROFILING
+	int id = mod.GetSel();
+	if (!(0 <= id && id < 42)) return;
 
-	phase = (phase & 0x1f) + (value<<5);
-	tb.tbm_Set( 0xea, phase);
-}
+	if (mod.Get().tbm == stb::MC::TBM10)
+	{
+		mod.SetRocAddr(0); // switch to TBM n+1
+		tb.tbm_Set( 0xea, delayA);
+		tb.tbm_Set( 0xfa, delayB);
+		tb.tbm_Set( 0xee, module[id].phase1);
 
-
-void CModuleSettings::SetPhase400(unsigned int value)
-{
-	if (value > 7) value = 7;
-
-	phase = (phase & 0xe3) + (value<<2);
-	tb.tbm_Set( 0xea, phase);
+		mod.SetRocAddr(4); // switch to TBM n
+		tb.tbm_Set( 0xea, delayA);
+		tb.tbm_Set( 0xfa, delayB);
+		tb.tbm_Set( 0xee, module[id].phase0);
+	}
+	else
+	{
+		tb.tbm_Set( 0xea, delayA);
+		tb.tbm_Set( 0xfa, delayB);
+		tb.tbm_Set( 0xee, module[id].phase0);
+	}
 }
 
 
@@ -143,7 +152,7 @@ void CModuleSettings::InitROC(stb::CModType mod)
 }
 
 
-void CModuleSettings::InitTBM(stb::CModType mod)
+void CModuleSettings::InitTBM(stb::CModType mod, unsigned int tbm)
 { PROFILING
 	// Init TBM, Reset ROC
 	tb.tbm_Set( 0xe4, 0xf0); // 11110000
@@ -170,7 +179,8 @@ void CModuleSettings::InitTBM(stb::CModType mod)
 	tb.tbm_Set( 0xfc, 128);
 
 	// 160/400 MHz phase adjust
-	tb.tbm_Set( 0xee, phase);
+	int id = mod.GetSel();
+	tb.tbm_Set( 0xee, (tbm==0)? module[id].phase0 : module[id].phase1);
 
 	// Temp measurement control
 	tb.tbm_Set( 0xfe, 0x00);
@@ -182,12 +192,14 @@ void CModuleSettings::InitModule(stb::CModType mod)
 	if (mod.Get().tbm == stb::MC::TBM10)
 	{
 		mod.SetRocAddr(0); // switch to TBM n+1
-		InitTBM(mod);
+		InitTBM(mod, 1);
 		mod.SetRocAddr(4); // switch to TBM n
-		InitTBM(mod);
-
+		InitTBM(mod, 0);
 	}
-	else InitTBM(mod);
+	else
+	{
+		InitTBM(mod);
+	}
 	
 	for (int roc=0; roc<16; roc++)
 	{

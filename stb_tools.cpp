@@ -302,6 +302,19 @@ void CDataChannel::GetAll()
 
 // === CDataProcessing ======================================================
 
+CDataProcessing::CDataProcessing() : nChannels(0)
+{
+	for (unsigned int i=0; i<8; i++) debug_event[i] = 0;
+}
+
+
+CDataProcessing::CDataProcessing(CModType mod) : nChannels(0)
+{
+	for (unsigned int i=0; i<8; i++) debug_event[i] = 0;
+	Open(mod);
+}
+
+
 void CDataProcessing::Open(CModType mod)
 {
 	m = mod;
@@ -397,6 +410,32 @@ void CDataProcessing::RemoveAllPipes()
 {
 	for (unsigned int i=0; i<nChannels; i++)
 		c[i].RemoveAllPipes();
+}
+
+
+void CDataProcessing::Close()
+{
+	for (unsigned int i=0; i<nChannels; i++)
+	{
+		c[i].Close();
+		if (debug_event[i])
+		{
+			delete debug_event[i];
+			debug_event[i] = 0;
+		}
+	}
+}
+
+
+void CDataProcessing::EnableLogging(const char *prefix)
+{
+	for (unsigned int i=0; i<nChannels; i++)
+	{
+		char filename[128];
+		sprintf(filename, "%s%u.txt", prefix, i);
+		debug_event[i] = new CEventPrinter(filename);
+		c[i].AddPipe(*(debug_event[i]));
+	}
 }
 
 
@@ -552,6 +591,10 @@ CEvent* CReadback::Read()
 			{
 				rdb[r].Add(x->roc[r].header);
 			} else rdb[r].Clear();
+		}
+		if (f)
+		{
+
 		}
 	}
 	else { for (r = 0; r < 8; r++) rdb[r].value = -1; }
