@@ -5,8 +5,8 @@
 // === psi46test version ====================================================
 
 #define TITLE        "PROC600V2 ROC/Wafer Tester"
-#define VERSION      "V2.0"
-#define TIMESTAMP    "13.6.2016"
+#define VERSION      "V2.0_stb"
+#define TIMESTAMP    "201611101016"
 
 
 // === set profiling options ================================================

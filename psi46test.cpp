@@ -84,7 +84,9 @@ int main(int argc, char* argv[])
 		filename = filename + ".log";
 	}
 
-	if (!Log.open(filename.c_str()))
+	string fn  = "logfile\\logs\\" + filename;
+	string fns = "logfile\\rpt_" + filename;
+	if (!Log.append(fn.c_str(), fns.c_str()))
 	{
 		printf("log: error creating file\n");
 		return 3;

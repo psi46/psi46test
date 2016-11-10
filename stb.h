@@ -20,7 +20,7 @@ public:
 	void Invalidate() { valid = false; }
 	T& Get() { return value; }
 	void Put(T& x) { value = x; valid = true; }
-	void operator=(T x) { Put(x); }
+	T operator=(T x) { Put(x); return x; }
 	operator const T&() { return value; }
 };
 
@@ -39,6 +39,7 @@ struct ModuleData
 {
 	Value<CModType> mod;
 	Value<int> hub;
+	Value<double> vd, va, id, ia;
 	SigSdata sdata[4];
 
 	Value<int> roc_present[16];
@@ -51,6 +52,7 @@ struct ModuleData
 struct SlotData
 {
 	string name;
+	Value<double> cb_voltage;
 	Value<double> cb_current;
 	Value<double> cb_current_lo;
 	Value<double> cb_current_hi;

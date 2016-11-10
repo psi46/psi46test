@@ -129,53 +129,126 @@ bool ModuleData::Report()
 void SlotData::Report()
 {
 	bool error = false;
-
+	Log.puts("\n");
 	Log.section("REPORT", name.c_str());
 
-	if (cb_current.IsValid())
+	list<ModuleData>::iterator i;
+
+	// --- connector board power -----------------------------------------------
+	if (cb_voltage.IsValid())
 	{
 		char s[128];
-		sprintf(s, "connector_board  %0.0f mA (lo:%0.0fmA  hi:%0.0fmA)\n",
-			1000.0*cb_current, 1000.0*cb_current_lo, 1000.0*cb_current_hi);
+		sprintf(s, "cb  %4.2f V  %0.0f mA (lo:%0.0f mA  hi:%0.0f mA)\n",
+			cb_voltage.Get(),  1000.0*cb_current, 1000.0*cb_current_lo, 1000.0*cb_current_hi);
 		Log.puts(s); printf(s);
 	}
 
-	static const char title[] = "    Con Hub   SDATA1  SDATA2  SDATA3  SDATA4  ------ROC-------\n";
+	// --- power groups -----------------------------------------------------
+	int k;
+	unsigned int n[6], nexist[6];
+	double vd[6], id[6], va[6], ia[6];
+	for (k=0; k<6; k++) { vd[k] = id[k] = va[k] = ia[k] = 0.0; n[k] = nexist[k] = 0; }
+
+	int pgrp;
+	for (i=module.begin(); i != module.end(); i++)
+	{
+		pgrp = i->mod.Get().Get().powerGrp;
+		if (0 <= pgrp && pgrp < 6 && i->vd.IsValid())
+		{
+			n[pgrp]++;
+			if (i->hub >= 0) nexist[pgrp]++;
+			vd[pgrp] += i->vd;
+			id[pgrp] += i->id;
+			va[pgrp] += i->va;
+			ia[pgrp] += i->ia;
+		}
+	}
+
+	for (pgrp=0; pgrp<6; pgrp++)
+	{
+		if (n[pgrp])
+		{
+			vd[pgrp] /= n[pgrp];
+			id[pgrp] /= n[pgrp];
+			va[pgrp] /= n[pgrp];
+			ia[pgrp] /= n[pgrp];
+			char s[256];
+			sprintf(s, "pg%i (%i/%u): VD(%4.2f V, %4.2f A) VA(%4.2f V, %4.2f A)\n",
+				pgrp, nexist[pgrp], n[pgrp], vd[pgrp], id[pgrp], va[pgrp], ia[pgrp]);
+			Log.puts(s);
+			fputs(s, stdout);
+		}
+	}
+
+	// --- data channels ----------------------------------------------------
+	static const char title[] = "sdata\n    Con Hub   SDATA1  SDATA2  SDATA3  SDATA4  ------ROC-------\n";
 	Log.puts(title); printf(title);
 
-	list<ModuleData>::iterator i;
 	for (i=module.begin(); i != module.end(); i++)
 	{
 		if (!i->Report()) error = true;
 	}
 
-	// check for multiple hub ids
+	// --- error report -----------------------------------------------------
+	// check for multiple hub ids and missing hubs
+	int missingHubId = 0;
+	int activeSdata  = 0;
 	int hubCount[32] = { 0 };
 	for (i=module.begin(); i != module.end(); i++)
 	{
+		// check sdata 0 levels
+		int chCnt = i->mod.Get().Get().nSdata;
+		int chActive = 0;
+		for (int ch = 0; ch < chCnt; ch++)
+		{
+			if (i->sdata[ch].vp.IsValid() && (i->sdata[ch].vp.Get() > 20.0)) chActive++;
+			if (i->sdata[ch].vn.IsValid() && (i->sdata[ch].vn.Get() > 20.0)) chActive++;
+		}
+		if (chActive > 0) activeSdata++;
+
+		// check hub id
 		int h = i->hub;
+		if (h < 0) missingHubId++;
 		if (h < 0 || h > 31) continue;
 		hubCount[h]++;
+		if (hubCount[h] > 1) error = true;
 	}
 
-	for (int h=0; h<32; h++)
+	int missingModule = module.size() - activeSdata;
+	if (missingModule || missingHubId) error = true;
+
+	if (error)
 	{
-		if (hubCount[h] > 1)
+		printf("=======ERROR=======\n");
+		Log.section("ERROR");
+
+		if (missingModule)
 		{
-			printf("Multiple hub id: %i\n", h);
-			error = true;
+			printf(    "missing modules: %2i\n", missingModule);
+			Log.printf("missing modules: %2i\n", missingModule);
 		}
-	}
-
-	if (error) printf("Errors exist!\n");
-
+	
+		if (missingHubId)
+		{
+			printf(    "missing hub ids: %2i\n", missingHubId);
+			Log.printf("missing hub ids: %2i\n", missingHubId);
+		}
+		for (int h=0; h<32; h++)
+		{
+			if (hubCount[h] > 1)
+			{
+				printf(    "multiple hub id: %2i\n", h);
+				Log.printf("multiple hub id: %2i\n", h);
+			}
+		}
+	} else printf("ok\n");
 	Log.section("REPORT_END");
 }
 
 
 void SlotData::Invalidate()
 {
-	cb_current.Invalidate();
+	cb_voltage.Invalidate();
 	module.clear();
 }
 
@@ -226,6 +299,7 @@ bool Test_ConnectorBoard()
 	power.CbPon();
 	tb.mDelay(500);
 	vc = power.GetVC();
+	result_slot.cb_voltage = vc;
 	ic = GetIC();
 	result_slot.cb_current = ic;
 	Log.printf(" VC(%0.3fV, %0.0fmA)\n", vc, ic*1000.0);
@@ -304,6 +378,10 @@ void Module_Init(CModType mod)
 	double va = power.GetVA(mod);
 	double ia = power.GetIA(mod);
 	Log.printf(" VD(%0.3fV, %0.3fA)\n VA(%0.3fV, %0.3fA)\n", vd, id, va, ia);
+	result_module.vd = vd;
+	result_module.id = id;
+	result_module.va = va;
+	result_module.ia = ia;
 }
 
 
@@ -687,9 +765,12 @@ void Sectortest(const char *name)
 			Log.section("MODULE_END");
 	}
 
+	Log.SummaryMode(true);
 	result_slot.Report();
-	Log.timestamp("TEST_END");
 	Log.puts("\n");
+	Log.flush();
+	Log.SummaryMode(false);
+	Log.timestamp("TEST_END");
 	Log.flush();
 }
 

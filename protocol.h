@@ -21,12 +21,13 @@
 
 class CProtocol
 {
-	FILE *f;
+	FILE *f, *fs;
+	bool smode;
 public:
-	CProtocol() { f = NULL; }
+	CProtocol() : f(0), fs(0), smode(false) {}
 	~CProtocol() { close(); }
-	bool open(const char filename[]);
-	bool append(const char filename[]);
+	bool open(const char filename[], const char *filenameS = 0);
+	bool append(const char filename[], const char *filenameS = 0);
 	void close();
 	void timestamp(const char s[]);
 	void section(const char s[], bool crlf = true);
@@ -35,6 +36,7 @@ public:
 	void puts(const std::string s);
 	void printf(const char *fmt, ...);
 	void flush();
+	void SummaryMode(bool on)  { smode = on && fs; }
 	FILE* File() { return f; }
 };
 
