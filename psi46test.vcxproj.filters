@@ -123,7 +123,7 @@
     <ClCompile Include="stb_tools.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
-    <ClCompile Include="modulesettings.cpp">
+    <ClCompile Include="stb_test.cpp">
       <Filter>Quellcodedateien</Filter>
     </ClCompile>
   </ItemGroup>
@@ -242,7 +242,7 @@
     <ClInclude Include="stb_tools.h">
       <Filter>Header-Dateien</Filter>
     </ClInclude>
-    <ClInclude Include="modulesettings.h">
+    <ClInclude Include="stb_test.h">
       <Filter>Header-Dateien</Filter>
     </ClInclude>
   </ItemGroup>

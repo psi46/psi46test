@@ -6,15 +6,34 @@
 // #include "datastream.h"
 
 
-namespace stb {
+namespace stb
+{
 
-// STB adapter
-enum { ADP_L12=0, ADP_L3=1, ADP_L4=2, ADP_NO=3 };
+
+template <class T>
+class Value
+{
+	bool valid;
+	T value;
+public:
+	Value() : valid(false) {}
+	bool IsValid() { return valid; };
+	void Invalidate() { valid = false; }
+	T& Get() { return value; }
+	void Put(T& x) { value = x; valid = true; }
+	T operator=(T x) { Put(x); return x; }
+	operator const T&() { return value; }
+};
+
+
 
 
 // Module Configuration
 struct MC
 {
+	// STB adapter
+	enum { ADP_L12=0, ADP_L3=1, ADP_L4=2, ADP_NO=3 } adapter;
+
 	int layer; // 0 = single module
 	enum 
 	{

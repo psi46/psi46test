@@ -11,53 +11,53 @@ namespace stb {
 // === CModType =============================================================
 
 const MC CModType::MODCONF[42] =
-{ // layer sdata     nSdata  powerGrp hvGrp  tbm        roc     moduleConnector
-	{ 1, MC::SDATA_4321, 4,     0, 1,    0,  MC::TBM10, MC::PROC600,  112}, //  0
-	{ 1, MC::SDATA_4321, 4,     1, 1,    1,  MC::TBM10, MC::PROC600,  113}, //  1
-	{ 1, MC::SDATA_4321, 4,     2, 1,    2,  MC::TBM10, MC::PROC600,  114}, //  2
+{ // adapter      layer sdata      nSdata  powerGrp hvGrp  tbm        roc     moduleConnector
+	{ MC::ADP_L12, 1, MC::SDATA_4321, 4,     0, 1,    0,  MC::TBM10, MC::PROC600,  112}, //  0
+	{ MC::ADP_L12, 1, MC::SDATA_4321, 4,     1, 1,    1,  MC::TBM10, MC::PROC600,  113}, //  1
+	{ MC::ADP_L12, 1, MC::SDATA_4321, 4,     2, 1,    2,  MC::TBM10, MC::PROC600,  114}, //  2
 
-	{ 2, MC::SDATA_43,   2,     3, 3,    3,  MC::TBM9,  MC::PSI46DIG, 211}, //  3
-	{ 2, MC::SDATA_21,   2,     3, 3,    4,  MC::TBM9,  MC::PSI46DIG, 212}, //  4
-	{ 2, MC::SDATA_43,   2,     3, 3,    5,  MC::TBM9,  MC::PSI46DIG, 213}, //  5
-	{ 2, MC::SDATA_21,   2,     4, 2,    6,  MC::TBM9,  MC::PSI46DIG, 214}, //  6
-	{ 2, MC::SDATA_43,   2,     4, 2,    3,  MC::TBM9,  MC::PSI46DIG, 221}, //  7
-	{ 2, MC::SDATA_21,   2,     5, 3,    4,  MC::TBM9,  MC::PSI46DIG, 222}, //  8
-	{ 2, MC::SDATA_43,   2,     5, 3,    5,  MC::TBM9,  MC::PSI46DIG, 223}, //  9
-	{ 2, MC::SDATA_21,   2,     5, 3,    6,  MC::TBM9,  MC::PSI46DIG, 224}, // 10
+	{ MC::ADP_L12, 2, MC::SDATA_43,   2,     3, 3,    3,  MC::TBM9,  MC::PSI46DIG, 211}, //  3
+	{ MC::ADP_L12, 2, MC::SDATA_21,   2,     3, 3,    4,  MC::TBM9,  MC::PSI46DIG, 212}, //  4
+	{ MC::ADP_L12, 2, MC::SDATA_43,   2,     3, 3,    5,  MC::TBM9,  MC::PSI46DIG, 213}, //  5
+	{ MC::ADP_L12, 2, MC::SDATA_21,   2,     4, 2,    6,  MC::TBM9,  MC::PSI46DIG, 214}, //  6
+	{ MC::ADP_L12, 2, MC::SDATA_43,   2,     4, 2,    3,  MC::TBM9,  MC::PSI46DIG, 221}, //  7
+	{ MC::ADP_L12, 2, MC::SDATA_21,   2,     5, 3,    4,  MC::TBM9,  MC::PSI46DIG, 222}, //  8
+	{ MC::ADP_L12, 2, MC::SDATA_43,   2,     5, 3,    5,  MC::TBM9,  MC::PSI46DIG, 223}, //  9
+	{ MC::ADP_L12, 2, MC::SDATA_21,   2,     5, 3,    6,  MC::TBM9,  MC::PSI46DIG, 224}, // 10
 
-	{ 3, MC::SDATA_4,    1,     0, 4,    0,  MC::TBM8,  MC::PSI46DIG, 311}, // 11
-	{ 3, MC::SDATA_3,    1,     0, 4,    1,  MC::TBM8,  MC::PSI46DIG, 312}, // 12
-	{ 3, MC::SDATA_2,    1,     0, 4,    2,  MC::TBM8,  MC::PSI46DIG, 313}, // 13
-	{ 3, MC::SDATA_1,    1,     0, 4,    3,  MC::TBM8,  MC::PSI46DIG, 314}, // 14
-	{ 3, MC::SDATA_4,    1,     1, 4,    0,  MC::TBM8,  MC::PSI46DIG, 321}, // 15
-	{ 3, MC::SDATA_3,    1,     1, 4,    1,  MC::TBM8,  MC::PSI46DIG, 322}, // 16
-	{ 3, MC::SDATA_2,    1,     1, 4,    2,  MC::TBM8,  MC::PSI46DIG, 323}, // 17
-	{ 3, MC::SDATA_1,    1,     1, 4,    3,  MC::TBM8,  MC::PSI46DIG, 324}, // 18
-	{ 3, MC::SDATA_4,    1,     2, 4,    0,  MC::TBM8,  MC::PSI46DIG, 331}, // 19
-	{ 3, MC::SDATA_3,    1,     2, 4,    1,  MC::TBM8,  MC::PSI46DIG, 332}, // 20
-	{ 3, MC::SDATA_2,    1,     2, 4,    2,  MC::TBM8,  MC::PSI46DIG, 333}, // 21
-	{ 3, MC::SDATA_1,    1,     2, 4,    3,  MC::TBM8,  MC::PSI46DIG, 334}, // 22
+	{ MC::ADP_L3,  3, MC::SDATA_4,    1,     0, 4,    0,  MC::TBM8,  MC::PSI46DIG, 311}, // 11
+	{ MC::ADP_L3,  3, MC::SDATA_3,    1,     0, 4,    1,  MC::TBM8,  MC::PSI46DIG, 312}, // 12
+	{ MC::ADP_L3,  3, MC::SDATA_2,    1,     0, 4,    2,  MC::TBM8,  MC::PSI46DIG, 313}, // 13
+	{ MC::ADP_L3,  3, MC::SDATA_1,    1,     0, 4,    3,  MC::TBM8,  MC::PSI46DIG, 314}, // 14
+	{ MC::ADP_L3,  3, MC::SDATA_4,    1,     1, 4,    0,  MC::TBM8,  MC::PSI46DIG, 321}, // 15
+	{ MC::ADP_L3,  3, MC::SDATA_3,    1,     1, 4,    1,  MC::TBM8,  MC::PSI46DIG, 322}, // 16
+	{ MC::ADP_L3,  3, MC::SDATA_2,    1,     1, 4,    2,  MC::TBM8,  MC::PSI46DIG, 323}, // 17
+	{ MC::ADP_L3,  3, MC::SDATA_1,    1,     1, 4,    3,  MC::TBM8,  MC::PSI46DIG, 324}, // 18
+	{ MC::ADP_L3,  3, MC::SDATA_4,    1,     2, 4,    0,  MC::TBM8,  MC::PSI46DIG, 331}, // 19
+	{ MC::ADP_L3,  3, MC::SDATA_3,    1,     2, 4,    1,  MC::TBM8,  MC::PSI46DIG, 332}, // 20
+	{ MC::ADP_L3,  3, MC::SDATA_2,    1,     2, 4,    2,  MC::TBM8,  MC::PSI46DIG, 333}, // 21
+	{ MC::ADP_L3,  3, MC::SDATA_1,    1,     2, 4,    3,  MC::TBM8,  MC::PSI46DIG, 334}, // 22
 
-	{ 4, MC::SDATA_4,    1,     0, 4,    0,  MC::TBM8,  MC::PSI46DIG, 411}, // 23
-	{ 4, MC::SDATA_3,    1,     0, 4,    1,  MC::TBM8,  MC::PSI46DIG, 412}, // 24
-	{ 4, MC::SDATA_2,    1,     0, 4,    2,  MC::TBM8,  MC::PSI46DIG, 413}, // 25
-	{ 4, MC::SDATA_1,    1,     0, 4,    3,  MC::TBM8,  MC::PSI46DIG, 414}, // 26
-	{ 4, MC::SDATA_4,    1,     1, 4,    0,  MC::TBM8,  MC::PSI46DIG, 421}, // 27
-	{ 4, MC::SDATA_3,    1,     1, 4,    1,  MC::TBM8,  MC::PSI46DIG, 422}, // 28
-	{ 4, MC::SDATA_2,    1,     1, 4,    2,  MC::TBM8,  MC::PSI46DIG, 423}, // 29
-	{ 4, MC::SDATA_1,    1,     1, 4,    3,  MC::TBM8,  MC::PSI46DIG, 424}, // 30
-	{ 4, MC::SDATA_4,    1,     2, 4,    0,  MC::TBM8,  MC::PSI46DIG, 431}, // 31
-	{ 4, MC::SDATA_3,    1,     2, 4,    1,  MC::TBM8,  MC::PSI46DIG, 432}, // 32
-	{ 4, MC::SDATA_2,    1,     2, 4,    2,  MC::TBM8,  MC::PSI46DIG, 433}, // 33
-	{ 4, MC::SDATA_1,    1,     2, 4,    3,  MC::TBM8,  MC::PSI46DIG, 434}, // 34
-	{ 4, MC::SDATA_4,    1,     3, 4,    0,  MC::TBM8,  MC::PSI46DIG, 441}, // 35
-	{ 4, MC::SDATA_3,    1,     3, 4,    1,  MC::TBM8,  MC::PSI46DIG, 442}, // 36
-	{ 4, MC::SDATA_2,    1,     3, 4,    2,  MC::TBM8,  MC::PSI46DIG, 443}, // 37
-	{ 4, MC::SDATA_1,    1,     3, 4,    3,  MC::TBM8,  MC::PSI46DIG, 444}, // 38
+	{ MC::ADP_L4,  4, MC::SDATA_4,    1,     0, 4,    0,  MC::TBM8,  MC::PSI46DIG, 411}, // 23
+	{ MC::ADP_L4,  4, MC::SDATA_3,    1,     0, 4,    1,  MC::TBM8,  MC::PSI46DIG, 412}, // 24
+	{ MC::ADP_L4,  4, MC::SDATA_2,    1,     0, 4,    2,  MC::TBM8,  MC::PSI46DIG, 413}, // 25
+	{ MC::ADP_L4,  4, MC::SDATA_1,    1,     0, 4,    3,  MC::TBM8,  MC::PSI46DIG, 414}, // 26
+	{ MC::ADP_L4,  4, MC::SDATA_4,    1,     1, 4,    0,  MC::TBM8,  MC::PSI46DIG, 421}, // 27
+	{ MC::ADP_L4,  4, MC::SDATA_3,    1,     1, 4,    1,  MC::TBM8,  MC::PSI46DIG, 422}, // 28
+	{ MC::ADP_L4,  4, MC::SDATA_2,    1,     1, 4,    2,  MC::TBM8,  MC::PSI46DIG, 423}, // 29
+	{ MC::ADP_L4,  4, MC::SDATA_1,    1,     1, 4,    3,  MC::TBM8,  MC::PSI46DIG, 424}, // 30
+	{ MC::ADP_L4,  4, MC::SDATA_4,    1,     2, 4,    0,  MC::TBM8,  MC::PSI46DIG, 431}, // 31
+	{ MC::ADP_L4,  4, MC::SDATA_3,    1,     2, 4,    1,  MC::TBM8,  MC::PSI46DIG, 432}, // 32
+	{ MC::ADP_L4,  4, MC::SDATA_2,    1,     2, 4,    2,  MC::TBM8,  MC::PSI46DIG, 433}, // 33
+	{ MC::ADP_L4,  4, MC::SDATA_1,    1,     2, 4,    3,  MC::TBM8,  MC::PSI46DIG, 434}, // 34
+	{ MC::ADP_L4,  4, MC::SDATA_4,    1,     3, 4,    0,  MC::TBM8,  MC::PSI46DIG, 441}, // 35
+	{ MC::ADP_L4,  4, MC::SDATA_3,    1,     3, 4,    1,  MC::TBM8,  MC::PSI46DIG, 442}, // 36
+	{ MC::ADP_L4,  4, MC::SDATA_2,    1,     3, 4,    2,  MC::TBM8,  MC::PSI46DIG, 443}, // 37
+	{ MC::ADP_L4,  4, MC::SDATA_1,    1,     3, 4,    3,  MC::TBM8,  MC::PSI46DIG, 444}, // 38
 
-	{ 0, MC::SDATA_L1,   4,    -1, 1,    0,  MC::TBM10, MC::PROC600,  0},   // MODTYPE_L1
-	{ 0, MC::SDATA_L2,   2,    -1, 1,    0,  MC::TBM9,  MC::PSI46DIG, 0},   // MODTYPE_L2
-	{ 0, MC::SDATA_L34,  1,    -1, 1,    0,  MC::TBM8,  MC::PSI46DIG, 0}    // MODTYPE_L34
+	{ MC::ADP_NO,  0, MC::SDATA_L1,   4,    -1, 1,    0,  MC::TBM10, MC::PROC600,  0},   // MODTYPE_L1
+	{ MC::ADP_NO,  0, MC::SDATA_L2,   2,    -1, 1,    0,  MC::TBM9,  MC::PSI46DIG, 0},   // MODTYPE_L2
+	{ MC::ADP_NO,  0, MC::SDATA_L34,  1,    -1, 1,    0,  MC::TBM8,  MC::PSI46DIG, 0}    // MODTYPE_L34
 
 };
 

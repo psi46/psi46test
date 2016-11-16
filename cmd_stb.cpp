@@ -283,7 +283,7 @@ CMD_PROC(smodstart)
 {
 	int id_min, id_max;
 	PAR_RANGE(id_min, id_max, 0, 38)
-	stb::StartAllModules(id_min, id_max);
+//	stb::StartAllModules(id_min, id_max);
 }
 
 
@@ -292,5 +292,5 @@ CMD_PROC(sdefhub)
 	int hub, id_min, id_max;
 	PAR_RANGE(id_min, id_max, 0, 41)
 	PAR_INT(hub, -1, 31)
-	for (int i=id_min; i<=id_max; i++) stb::SetDefaultHub(i, hub);
+//	for (int i=id_min; i<=id_max; i++) stb::SetDefaultHub(i, hub);
 }

@@ -174,7 +174,6 @@
     <ClCompile Include="error.cpp" />
     <ClCompile Include="file.cpp" />
     <ClCompile Include="histo.cpp" />
-    <ClCompile Include="modulesettings.cpp" />
     <ClCompile Include="pipe.cpp" />
     <ClCompile Include="pixelmap.cpp" />
     <ClCompile Include="plot.cpp" />
@@ -196,6 +195,7 @@
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">All</AssemblerOutput>
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>
     </ClCompile>
+    <ClCompile Include="stb_test.cpp" />
     <ClCompile Include="stb_tools.cpp" />
     <ClCompile Include="test.cpp" />
     <ClCompile Include="test_ana.cpp" />
@@ -226,7 +226,6 @@
     <ClInclude Include="error.h" />
     <ClInclude Include="file.h" />
     <ClInclude Include="htable.h" />
-    <ClInclude Include="modulesettings.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="pixelmap.h" />
     <ClInclude Include="plot.h" />
@@ -237,6 +236,7 @@
     <ClInclude Include="rpc_error.h" />
     <ClInclude Include="rpc_io.h" />
     <ClInclude Include="stb.h" />
+    <ClInclude Include="stb_test.h" />
     <ClInclude Include="stb_tools.h" />
     <ClInclude Include="usb.h" />
     <ClInclude Include="waferlist.h" />
