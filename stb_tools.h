@@ -82,13 +82,13 @@ class CPower
 	static const double VD_CB;
 	static const double ID_CB;
 
-	void PoffAll();
 public:
 	CPower();
 	void PowerSave(bool on) { singleMode = on; }
 
 	void ModPon(CModType mod);
 	void ModPoff(CModType mod);
+	void ModPoffAll();
 	void CbPon();
 	void CbPoff();
 

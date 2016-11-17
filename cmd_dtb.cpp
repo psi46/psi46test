@@ -281,6 +281,10 @@ CMD_PROC(init)
 	if (s.Read("psi46test.ini")) settings = s;
 	else printf("error reload \"psi46test.ini\"\n");
 	tb.Init();
+	if (tb.stb_IsPresent())
+	{
+		for (int i=0; i<=6; i++) tb.stb_HVoff(i);
+	}
 	DO_FLUSH
 
 //	if (tb.stb_IsPresent())

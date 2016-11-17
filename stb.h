@@ -5,5 +5,6 @@
 namespace stb {
 
 void Sectortest(const char *name);
+void HvTest();
 
 }

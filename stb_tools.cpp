@@ -98,19 +98,6 @@ CPower::CPower()
 }
 
 
-void CPower::PoffAll()
-{
-	if (tb.stb_IsPresent())
-	{
-		for (int i=0; i<6; i++)
-		{
-			tb.stb_Poff(i);
-			PGOn[i] = false;
-		}
-	}
-	tb.Poff();
-}
-
 
 void CPower::ModPon(CModType mod)
 {
@@ -134,6 +121,7 @@ void CPower::ModPon(CModType mod)
 			tb.stb_SetIA(grp, IA_MODULE*grpsize);
 			tb.stb_Pon(grp);
 			PGOn[grp] = true;
+			tb.mDelay(400);
 		}
 		else
 		{
@@ -147,7 +135,9 @@ void CPower::ModPon(CModType mod)
 				tb.stb_SetIA(gi, IA_MODULE*grpSize);
 				tb.stb_Pon(gi);
 				PGOn[gi] = true;
+				tb.mDelay(50);
 			}
+			tb.mDelay(400);
 		}
 	}
 	else
@@ -157,6 +147,7 @@ void CPower::ModPon(CModType mod)
 		tb.SetVA(VA_MODULE);
 		tb.SetIA(IA_MODULE);
 		tb.Pon();
+		tb.mDelay(400);
 	}
 }
 
@@ -172,6 +163,20 @@ void CPower::ModPoff(CModType mod)
 		}
 	}
 	else tb.Poff();
+}
+
+
+void CPower::ModPoffAll()
+{
+	if (tb.stb_IsPresent())
+	{
+		for (int i = 0; i<6; i++)
+		{
+			tb.stb_Poff(i);
+			PGOn[i] = false;
+		}
+	}
+	tb.Poff();
 }
 
 

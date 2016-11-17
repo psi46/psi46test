@@ -279,11 +279,9 @@ CMD_PROC(st)
 }
 
 
-CMD_PROC(smodstart)
+CMD_PROC(shv)
 {
-	int id_min, id_max;
-	PAR_RANGE(id_min, id_max, 0, 38)
-//	stb::StartAllModules(id_min, id_max);
+	stb::HvTest();
 }
 
 

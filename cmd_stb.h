@@ -43,5 +43,5 @@ CMD_REG(sselsdata, "<ch>", "STB select sdata channel")
 CMD_REG(sgetsdata, "<ch> [<pn>]", "Read sdata voltage level")
 
 CMD_REG(st, "<sector name>", "Sector Test")
-CMD_REG(smodstart, "<module selector>", "Intialize module and rocs")
+CMD_REG(shv, "", "HV test")
 CMD_REG(sdefhub, "<id range> <hub>", "Set default hub addr for module id")

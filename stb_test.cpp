@@ -61,7 +61,7 @@ const char* SigSdata::Report()
 // ==========================================================================
 
 void CModule::Invalidate()
-{
+{ PROFILING
 	hub.Invalidate();
 
 	vd_pon.Invalidate();
@@ -83,7 +83,7 @@ void CModule::Invalidate()
 
 
 bool CModule::Report()
-{
+{ PROFILING
 	int i;
 	char s[128];
 	bool error = false;
@@ -346,10 +346,8 @@ bool CModule::Test_PowerOn()
 	} else Log.section("PON");
 
 	power.ModPon(mod);
-
-	tb.mDelay(400);
 	tb.ResetOff();
-	tb.mDelay(100);
+	tb.uDelay(100);
 
 	vd_pon = power.GetVD(mod);
 	id_pon = power.GetID(mod);
@@ -360,12 +358,6 @@ bool CModule::Test_PowerOn()
 		vd_pon.Get(), id_pon.Get(), va_pon.Get(), ia_pon.Get());
 	if (id_pon.Get() > 2.4) { power.ModPoff(mod); return false; }
 	return true;
-}
-
-
-void CModule::Test_PowerOff()
-{ PROFILING
-	power.ModPoff(mod);
 }
 
 
@@ -649,7 +641,6 @@ void CModule::Test()
 		mod.SetHubAddr(hub);
 		Test_RocProgramming();
 	}
-	Test_PowerOff();
 	tb.Flush();
 }
 
@@ -661,7 +652,7 @@ void CModule::Test()
 
 
 void CSlot::Invalidate()
-{
+{ PROFILING
 	cb_voltage.Invalidate();
 	cb_current.Invalidate();
 	cb_current_lo.Invalidate();
@@ -671,7 +662,7 @@ void CSlot::Invalidate()
 
 
 void CSlot::Report()
-{
+{ PROFILING
 	bool error = false;
 	Log.puts("\n");
 	Log.section("REPORT", name.c_str());
@@ -700,7 +691,7 @@ void CSlot::Report()
 		if (0 <= pgrp && pgrp < 6 && i->vd.IsValid())
 		{
 			n[pgrp]++;
-			if (i->hub >= 0) nexist[pgrp]++;
+			if (i->hub.IsValid()) nexist[pgrp]++;
 			vd[pgrp] += i->vd;
 			id[pgrp] += i->id;
 			va[pgrp] += i->va;
@@ -751,11 +742,15 @@ void CSlot::Report()
 		if (chActive > 0) activeSdata++;
 
 		// check hub id
-		int h = i->hub;
-		if (h < 0) missingHubId++;
-		if (h < 0 || h > 31) continue;
-		hubCount[h]++;
-		if (hubCount[h] > 1) error = true;
+		if (i->hub.IsValid())
+		{
+			int h = i->hub;
+			if (0 <= h && h <= 31)
+			{
+				hubCount[h]++;
+				if (hubCount[h] > 1) error = true;
+			}
+		} else missingHubId++;
 	}
 
 	int missingModule = module.size() - activeSdata;
@@ -825,7 +820,7 @@ bool CSlot::Test_ConnectorBoard()
 
 	Log.section("CB_PON");
 	power.CbPon();
-	tb.mDelay(500);
+	tb.mDelay(800);
 	vc = power.GetVC();
 	cb_voltage = vc;
 	ic = GetIC();
@@ -863,7 +858,7 @@ bool CSlot::Test_ConnectorBoard()
 
 
 void CSlot::_Test()
-{ PROFILING
+{	PROFILING
 	Test_Init();
 	if (Test_ConnectorBoard())
 	{
@@ -883,6 +878,7 @@ void CSlot::_Test()
 
 			Log.section("MODULE_END");
 		}
+		power.ModPoffAll();
 		printf("\n");
 	}
 	power.CbPoff();
@@ -900,7 +896,7 @@ void CSlot::Test(const string &slotName)
 	stbPresent = tb.stb_IsPresent();
 	if (stbPresent) adapter = tb.stb_GetAdapterId();
 
-	// --- check slot/module name ----------------------------------------------
+	// --- check slot/module name  and create modules -----------------------
 	if (stbPresent)
 	{ // if STB present test via connector board
 		if (slotName.length() == 0) { printf("Slot name expected!\n"); return; }
@@ -911,8 +907,7 @@ void CSlot::Test(const string &slotName)
 			return;
 		}
 		name = slotName;
-		int sel;
-		for (sel = 0; sel <= 38; sel++)
+		for (int sel = 0; sel <= 38; sel++)
 		{
 			CModType mod = sel;
 			if (mod.Get().adapter == adapter) module.push_back(CModule(sel));
@@ -972,6 +967,24 @@ void CSlot::Test(const string &slotName)
 	Log.SummaryMode(false);
 	Log.timestamp("TEST_END");
 	Log.flush();
+}
+
+
+void CSlot::StartAllModules()
+{
+	power.PowerSave(false);
+	power.CbPon();
+	tb.mDelay(500);
+	printf("Module init:");
+	list<CModule>::iterator k;
+	for (k = module.begin(); k != module.end(); k++)
+	{
+		power.ModPon(k->mod);
+		if (k->hub.IsValid())
+			printf(" %i(%i)", k->mod.Get().moduleConnector, k->hub.Get());
+		k->InitModule();
+	}
+	printf("\n");
 }
 
 

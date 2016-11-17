@@ -51,16 +51,15 @@ private:
 	void UpdateTBM();
 	void InitTBM(unsigned int tbm = 0);
 	void InitROC();
-	void InitModule(bool forceAllHubs = false);
 
 	bool Test_PowerOn();
-	void Test_PowerOff();
 	void Test_Init();
 	void Test_Sdata();
 	bool Find_HubAddress(bool debug = false);
 	void CModule::Test_RocProgramming();
 public:
 	CModule(int selector) : mod(selector) { SetTBM_Default(); }
+	void InitModule(bool forceAllHubs = false);
 	void Invalidate();
 	bool Report();
 	void Test();
@@ -89,6 +88,7 @@ public:
 	void Invalidate();
 	void Report();
 	void Test(const string &slotName);
+	void StartAllModules();
 };
 
 
