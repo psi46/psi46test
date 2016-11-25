@@ -44,4 +44,6 @@ CMD_REG(sgetsdata, "<ch> [<pn>]", "Read sdata voltage level")
 
 CMD_REG(st, "<sector name>", "Sector Test")
 CMD_REG(shv, "", "HV test")
-CMD_REG(sdefhub, "<id range> <hub>", "Set default hub addr for module id")
+CMD_REG(shubdef, "<id range> <hub>", "Set default hub addr for module id")
+CMD_REG(shubundef, "<id range>", "Set hub addr for module id as undefined")
+CMD_REG(sdelayscan, "<id> <port>", "Delay scan for ROC data port")

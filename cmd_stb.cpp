@@ -285,10 +285,26 @@ CMD_PROC(shv)
 }
 
 
-CMD_PROC(sdefhub)
+CMD_PROC(shubdef)
 {
 	int hub, id_min, id_max;
 	PAR_RANGE(id_min, id_max, 0, 41)
-	PAR_INT(hub, -1, 31)
-//	for (int i=id_min; i<=id_max; i++) stb::SetDefaultHub(i, hub);
+	PAR_INT(hub, 0, 31)
+	for (int i=id_min; i<=id_max; i++) stb::AssignHub(i, hub);
+}
+
+CMD_PROC(shubundef)
+{
+	int id_min, id_max;
+	PAR_RANGE(id_min, id_max, 0, 41)
+	for (int i=id_min; i<=id_max; i++) stb::AssignHub(i);
+}
+
+CMD_PROC(sdelayscan)
+{
+	int sel, group;
+	PAR_INT(sel, 0, 41)
+	PAR_INT(group, 0, 7);
+
+	stb::DelayScan(sel, group);
 }

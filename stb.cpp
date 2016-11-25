@@ -36,4 +36,18 @@ void HvTest()
 }
 
 
+void AssignHub(unsigned int sel, int hub)
+{
+	slot.AssignHub(sel, hub);
+}
+
+
+void DelayScan(unsigned int sel, unsigned int group)
+{
+	slot.DelayScan(sel, group);
+}
+
+
 } // namespace stb
+
+

@@ -39,10 +39,10 @@ const char* SigSdata::Report()
 	{
 		bool lvlErr = false;
 		strcpy(s, " {     }");
-		if      (vp < VMIN) { s[2] = 'P'; s[3] = 'L'; lvlErr = true; }
-		else if (vp > VMAX) { s[2] = 'P'; s[3] = 'H'; lvlErr = true; }
-		if      (vn < VMIN) { s[5] = 'N'; s[6] = 'L'; lvlErr = true; }
-		else if (vn > VMAX) { s[5] = 'N'; s[6] = 'H'; lvlErr = true; }
+		if      (vp < VMIN) { s[2] = '+'; s[3] = 'L'; lvlErr = true; }
+		else if (vp > VMAX) { s[2] = '+'; s[3] = 'H'; lvlErr = true; }
+		if      (vn < VMIN) { s[5] = '-'; s[6] = 'L'; lvlErr = true; }
+		else if (vn > VMAX) { s[5] = '-'; s[6] = 'H'; lvlErr = true; }
 		if     (fabs(vp-vn) > VDIFFMAX) { s[4] = '*'; lvlErr = true; }
 		if (lvlErr) return s;
 	}
@@ -88,7 +88,8 @@ bool CModule::Report()
 	char s[128];
 	bool error = false;
 
-	sprintf(s, " %2i %3i", mod.GetSel(), mod.Get().moduleConnector);
+	sprintf(s, " %2i %3i %2i %2i", mod.GetSel(), mod.Get().moduleConnector,
+		mod.Get().powerGrp, mod.Get().hvGrp);
 	Log.puts(s); printf(s);
 
 	if (hub.IsValid() && hub >= 0)
@@ -142,20 +143,20 @@ bool CModule::Report()
 }
 
 
-/*
-DELAYA = 0xed; // 1_1_101_101
-DELAYB = 0xed; // 1_1_101_101
-PHASE  = 0x24; // 001_001_--  160 MHz, 400 MHz
-
-DELAYA = 0x6d; // 0_1_101_101
-DELAYB = 0x6d; // 0_1_101_101
-PHASE  = 0x2d; // 001_011_01  160 MHz, 400 MHz
-*/
-
 void CModule::SetTBM_Default()
 {
 	tbm_phase0 = tbm_phase1 = 0x24; // 001_001_00  160 MHz, 400 MHz
-	tbm_delayA = tbm_delayB = 0x00; // 0x6d:0_1_101_101; 0xed:1_1_101_101
+
+	if (mod.Get().tbm == MC::TBM10)
+	{
+		for (int i=0; i<4; i++)
+			tbm_delay[i] = 0x00; // 0_0_000_000
+	}
+	else
+	{
+		for (int i=0; i<4; i++)
+			tbm_delay[i] = 0xe4; // 1_1_100_100
+	}
 }
 
 
@@ -177,6 +178,38 @@ void CModule::SetTBM_Phase400(unsigned int ph400, unsigned int tbm)
 }
 
 
+void CModule::SetTBM_Delay(unsigned int delay, unsigned int group)
+{ // (TBM n, Reg e7) (TBM n, Reg f7) (TBM n+1, Reg e7) (TBM n+1, Reg f7)
+  // 1_1_100_100
+	if (delay > 7) delay = 7;
+
+	if (mod.Get().tbm == MC::TBM10)
+	{ // Layer 1 module
+		switch (group)
+		{
+		case 0: tbm_delay[3] = (tbm_delay[3] & 0xf8) + delay;      break;
+		case 1: tbm_delay[3] = (tbm_delay[3] & 0xc7) + (delay<<3); break;
+		case 2: tbm_delay[0] = (tbm_delay[0] & 0xf8) + delay;      break;
+		case 3: tbm_delay[0] = (tbm_delay[0] & 0xc7) + (delay<<3); break;
+		case 4: tbm_delay[1] = (tbm_delay[1] & 0xf8) + delay;      break;
+		case 5: tbm_delay[1] = (tbm_delay[1] & 0xc7) + (delay<<3); break;
+		case 6: tbm_delay[2] = (tbm_delay[2] & 0xf8) + delay;      break;
+		case 7: tbm_delay[2] = (tbm_delay[2] & 0xc7) + (delay<<3); break;
+		}
+	}
+	else
+	{ // Layer 2, 3, 4 module
+		switch (group)
+		{
+		case 0: tbm_delay[0] = (tbm_delay[0] & 0xf8) + delay;      break;
+		case 1: tbm_delay[0] = (tbm_delay[0] & 0xc7) + (delay<<3); break;
+		case 2: tbm_delay[1] = (tbm_delay[1] & 0xf8) + delay;      break;
+		case 3: tbm_delay[1] = (tbm_delay[1] & 0xc7) + (delay<<3); break;
+		}
+	}
+}
+
+
 void CModule::UpdateTBM()
 { PROFILING
 	int id = mod.GetSel();
@@ -184,19 +217,19 @@ void CModule::UpdateTBM()
 	if (mod.Get().tbm == stb::MC::TBM10)
 	{
 		mod.SetRocAddr(0); // switch to TBM n+1
-		tb.tbm_Set( 0xea, tbm_delayA);
-		tb.tbm_Set( 0xfa, tbm_delayB);
+		tb.tbm_Set( 0xea, tbm_delay[2]);
+		tb.tbm_Set( 0xfa, tbm_delay[3]);
 		tb.tbm_Set( 0xee, tbm_phase1);
 
 		mod.SetRocAddr(4); // switch to TBM n
-		tb.tbm_Set( 0xea, tbm_delayA);
-		tb.tbm_Set( 0xfa, tbm_delayB);
+		tb.tbm_Set( 0xea, tbm_delay[0]);
+		tb.tbm_Set( 0xfa, tbm_delay[1]);
 		tb.tbm_Set( 0xee, tbm_phase0);
 	}
 	else
 	{
-		tb.tbm_Set( 0xea, tbm_delayA);
-		tb.tbm_Set( 0xfa, tbm_delayB);
+		tb.tbm_Set( 0xea, tbm_delay[0]);
+		tb.tbm_Set( 0xfa, tbm_delay[1]);
 		tb.tbm_Set( 0xee, tbm_phase0);
 	}
 }
@@ -221,8 +254,8 @@ void CModule::InitTBM(unsigned int tbm)
 	tb.tbm_Set( 0xf8, 128);
 
 	// Delays: Tok _ Hdr/Trl _ Port 1 _ Port 0
-	tb.tbm_Set( 0xea, tbm_delayA);
-	tb.tbm_Set( 0xfa, tbm_delayB);
+	tb.tbm_Set( 0xea, (tbm==0)? tbm_delay[0] : tbm_delay[2]);
+	tb.tbm_Set( 0xfa, (tbm==0)? tbm_delay[1] : tbm_delay[3]);
 
 	// Auto reset rate (x+1)*256
 	tb.tbm_Set( 0xec, 128);
@@ -356,7 +389,7 @@ bool CModule::Test_PowerOn()
 
 	Log.printf(" VD(%0.3fV, %0.3fA)\n VA(%0.3fV, %0.3fA)\n",
 		vd_pon.Get(), id_pon.Get(), va_pon.Get(), ia_pon.Get());
-	if (id_pon.Get() > 2.4) { power.ModPoff(mod); return false; }
+	if (id_pon.Get() > 2.4 || ia_pon.Get() > 2.2) { power.ModPoff(mod); return false; }
 	return true;
 }
 
@@ -628,20 +661,96 @@ void CModule::Test_RocProgramming()
 }
 
 
+void CModule::DelayScan(unsigned int group)
+{
+	if (!hub.IsValid())
+	{
+		printf("No hub address assigned!\n");
+		return;
+	}
+
+	Log.SummaryMode(true);
+	Log.section("DELAY", false);
+	Log.printf(" sel:%i; hub:%i; grp:%i\n", mod.GetSel(), hub.Get(), group);
+	Log.SummaryMode(false);
+	// --- module power on
+	power.PowerSave(true);
+	power.ModPon(mod);
+	
+	// --- init module
+	mod.SetHubAddr(hub);
+	_InitModule();
+	
+	// --- setup data processing
+	int ch, nCh = mod.Get().nSdata*2;
+	int i, roc, nRoc = 8/mod.Get().nSdata;
+	CDataProcessing data(mod);
+//	data.EnableLogging("delayscan");
+	CReadback rdb[8];
+	for (ch=0; ch<nCh; ch++) data.AddPipe(ch, rdb[ch]);
+
+	// --- scan
+	std::string map[8];
+	for (int i=0; i<8; i++) map[i] = "........";
+
+	for (int del0 = 0; del0 < 8; del0++) for (int del1 = 0; del1 < 8; del1++)
+	{
+		SetTBM_Delay(del0, group);
+		SetTBM_Delay(del1, group+1);
+		UpdateTBM();
+		data.TakeData(32);
+		roc = 0;
+		std::string s = "................";
+		for (ch = 0; ch < nCh; ch++) for (i=0; i<nRoc; i++)
+		{
+			int value = rdb[ch][i];
+			if (value >= 0)
+			{
+				int vRoc = value >> 12;
+				s[roc] = (vRoc > 9) ? 'A' + vRoc - 10 : '0' + vRoc;
+			} else s[roc] = '.';
+			roc++;
+		}
+		bool isOk = s == "0123456789ABCDEF";
+		if (isOk) map[del0][del1] = 'X';
+
+		Log.printf("Delay %i %i: %s", del0, del1, s.c_str());
+		if (!isOk) Log.puts(" ERROR\n"); else Log.puts("\n");
+	}
+	Log.SummaryMode(true);
+	printf("   01234567\n");
+	Log.puts("   01234567\n");
+	for (int i=0; i<8; i++)
+	{
+		printf(" %i %s\n", i, map[i].c_str());
+		Log.printf(" %i %s\n", i, map[i].c_str());
+	}
+	Log.flush();
+	Log.SummaryMode(false);
+
+	// module power off
+	power.ModPoff(mod);
+	Log.flush();
+}
+
+
 void CModule::Test()
 { PROFILING
 	Invalidate();
 
-	Test_PowerOn();
-	Test_Init();
-	Test_Sdata();
-	Find_HubAddress(false);
-	if (hub.IsValid())
+	if (Test_PowerOn())
 	{
-		mod.SetHubAddr(hub);
-		Test_RocProgramming();
+		Test_Init();
+		Test_Sdata();
+		Find_HubAddress(false);
+		if (hub.IsValid())
+		{
+			mod.SetHubAddr(hub);
+			Test_RocProgramming();
+		}
 	}
 	tb.Flush();
+
 }
 
 
@@ -681,21 +790,36 @@ void CSlot::Report()
 	// --- power groups -----------------------------------------------------
 	int k;
 	unsigned int n[6], nexist[6];
+	char ct[6];
 	double vd[6], id[6], va[6], ia[6];
-	for (k=0; k<6; k++) { vd[k] = id[k] = va[k] = ia[k] = 0.0; n[k] = nexist[k] = 0; }
+	for (k=0; k<6; k++) { vd[k] = id[k] = va[k] = ia[k] = 0.0; n[k] = nexist[k] = 0; ct[k] = '?'; }
 
 	int pgrp;
 	for (i=module.begin(); i != module.end(); i++)
 	{
 		pgrp = i->mod.Get().powerGrp;
-		if (0 <= pgrp && pgrp < 6 && i->vd.IsValid())
+		if (0 <= pgrp && pgrp < 6)
 		{
-			n[pgrp]++;
-			if (i->hub.IsValid()) nexist[pgrp]++;
-			vd[pgrp] += i->vd;
-			id[pgrp] += i->id;
-			va[pgrp] += i->va;
-			ia[pgrp] += i->ia;
+			if (i->vd.IsValid())
+			{
+				ct[pgrp] = ' ';
+				n[pgrp]++;
+				if (i->hub.IsValid()) nexist[pgrp]++;
+				vd[pgrp] += i->vd;
+				id[pgrp] += i->id;
+				va[pgrp] += i->va;
+				ia[pgrp] += i->ia;
+			}
+			else if (i->vd_pon.IsValid())
+			{
+				ct[pgrp] = '*';
+				n[pgrp]++;
+				if (i->hub.IsValid()) nexist[pgrp]++;
+				vd[pgrp] += i->vd_pon;
+				id[pgrp] += i->id_pon;
+				va[pgrp] += i->va_pon;
+				ia[pgrp] += i->ia_pon;
+			}
 		}
 	}
 
@@ -708,15 +832,15 @@ void CSlot::Report()
 			va[pgrp] /= n[pgrp];
 			ia[pgrp] /= n[pgrp];
 			char s[256];
-			sprintf(s, "pg%i (%i/%u): VD(%4.2f V, %4.2f A) VA(%4.2f V, %4.2f A)\n",
-				pgrp, nexist[pgrp], n[pgrp], vd[pgrp], id[pgrp], va[pgrp], ia[pgrp]);
+			sprintf(s, "pg%i%c(%i/%u): VD(%4.2f V, %4.2f A) VA(%4.2f V, %4.2f A)\n",
+				pgrp, ct[pgrp], nexist[pgrp], n[pgrp], vd[pgrp], id[pgrp], va[pgrp], ia[pgrp]);
 			Log.puts(s);
 			fputs(s, stdout);
 		}
 	}
 
 	// --- data channels ----------------------------------------------------
-	static const char title[] = "sdata\n    Con Hub   SDATA1  SDATA2  SDATA3  SDATA4  ------ROC-------\n";
+	static const char title[] = "sdata\n    Con  P HV Hub   SDATA1  SDATA2  SDATA3  SDATA4  ------ROC-------\n";
 	Log.puts(title); printf(title);
 
 	for (i=module.begin(); i != module.end(); i++)
@@ -820,7 +944,6 @@ bool CSlot::Test_ConnectorBoard()
 
 	Log.section("CB_PON");
 	power.CbPon();
-	tb.mDelay(800);
 	vc = power.GetVC();
 	cb_voltage = vc;
 	ic = GetIC();
@@ -985,6 +1108,40 @@ void CSlot::StartAllModules()
 		k->InitModule();
 	}
 	printf("\n");
+}
+
+
+CModule* CSlot::FindModuleBySelector(unsigned int sel)
+{
+	list<CModule>::iterator k;
+	for (k = module.begin(); k != module.end(); k++)
+		if (k->mod.GetSel() == sel) return &(*k);
+	return 0;
+}
+
+
+void CSlot::AssignHub(unsigned int sel, int hub)
+{
+	CModule *k = FindModuleBySelector(sel);
+	if (k)
+	{
+		if (hub < 0) k->hub.Invalidate();
+		else k->hub = hub;
+	}
+}
+
+
+void CSlot::DelayScan(unsigned int sel, unsigned int group)
+{
+	CModule *k = FindModuleBySelector(sel);
+	if (k)
+	{
+		power.CbPon();
+		k->DelayScan(group);
+		k->SetTBM_Default();
+		power.CbPoff();
+	}
+	tb.Flush();
 }
 
 

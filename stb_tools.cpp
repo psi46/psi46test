@@ -83,11 +83,17 @@ void CModType::SetRocAddr(int roc)
 	bool PGOn[6];
 */
 
-const double CPower::VD_MODULE = 2.65; // V
-const double CPower::ID_MODULE = 0.7;  // A
-const double CPower::VA_MODULE = 1.65; // V
-const double CPower::IA_MODULE = 0.6;  // A
-const double CPower::VD_CB     = 2.5;  // V
+const double CPower::VD_MODULE = 2.7;  // V
+const double CPower::VD_SLOPE  = 0.07; // V/module
+const double CPower::ID_0      = 0.2;  // A
+const double CPower::ID_MODULE = 0.6;  // A/module
+
+const double CPower::VA_MODULE = 1.7;  // V
+const double CPower::VA_SLOPE  = 0.05; // V/module
+const double CPower::IA_0      = 0.15; // A
+const double CPower::IA_MODULE = 0.5;  // A/module
+
+const double CPower::VD_CB     = 2.6;  // V
 const double CPower::ID_CB     = 0.4;  // A
 
 
@@ -115,40 +121,47 @@ void CPower::ModPon(CModType mod)
 			
 			// switch on
 			int grpsize = mod.Get().powerGrpSize;
-			tb.stb_SetVD(grp, VD_MODULE);
-			tb.stb_SetID(grp, ID_MODULE*grpsize);
-			tb.stb_SetVA(grp, VA_MODULE);
-			tb.stb_SetIA(grp, IA_MODULE*grpsize);
+			tb.stb_SetVD(grp, VD_MODULE + VD_SLOPE*grpsize);
+			tb.stb_SetID(grp, ID_0      + ID_MODULE*grpsize);
+			tb.stb_SetVA(grp, VA_MODULE + VA_SLOPE*grpsize);
+			tb.stb_SetIA(grp, IA_0      + IA_MODULE*grpsize);
 			tb.stb_Pon(grp);
 			PGOn[grp] = true;
-			tb.mDelay(400);
 		}
 		else
 		{
 			// switch on all power groups
-			int grpSize = mod.Get().powerGrpSize;
-			for (int gi=0; gi<6; gi++)
+			int adpt = mod.Get().adapter;
+			for (int i=0; i<=41; i++)
 			{
-				tb.stb_SetVD(gi, VD_MODULE);
-				tb.stb_SetID(gi, ID_MODULE*grpSize);
-				tb.stb_SetVA(gi, VA_MODULE);
-				tb.stb_SetIA(gi, IA_MODULE*grpSize);
-				tb.stb_Pon(gi);
-				PGOn[gi] = true;
-				tb.mDelay(50);
+				CModType m = i;
+				if (m.Get().adapter == adpt)
+				{
+					int pgrp = m.Get().powerGrp;
+					if (!PGOn[pgrp])
+					{
+						int grpsize = m.Get().powerGrpSize;
+						tb.stb_SetVD(pgrp, VD_MODULE + VD_SLOPE*grpsize);
+						tb.stb_SetID(pgrp, ID_0      + ID_MODULE*grpsize);
+						tb.stb_SetVA(pgrp, VA_MODULE + VA_SLOPE*grpsize);
+						tb.stb_SetIA(pgrp, IA_0      + IA_MODULE*grpsize);
+						tb.stb_Pon(grp);
+						PGOn[pgrp] = true;
+						tb.mDelay(50);
+					}
+				}
 			}
-			tb.mDelay(400);
 		}
 	}
 	else
 	{ // single module test on DTB
-		tb.SetVD(VD_MODULE);
-		tb.SetID(ID_MODULE);
-		tb.SetVA(VA_MODULE);
-		tb.SetIA(IA_MODULE);
+		tb.SetVD(VD_MODULE + VD_SLOPE);
+		tb.SetID(ID_0      + ID_MODULE);
+		tb.SetVA(VA_MODULE + VA_SLOPE);
+		tb.SetIA(IA_0      + IA_MODULE);
 		tb.Pon();
-		tb.mDelay(400);
 	}
+	tb.mDelay(400);
 }
 
 
@@ -187,6 +200,7 @@ void CPower::CbPon()
 		tb.SetVD(VD_CB);
 		tb.SetID(ID_CB);
 		tb.Pon();
+		tb.mDelay(800);
 	}
 }
 

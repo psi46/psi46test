@@ -75,12 +75,19 @@ class CPower
 {
 	bool singleMode; // only one power group on
 	bool PGOn[6];
-	static const double VD_MODULE;
-	static const double ID_MODULE;
-	static const double VA_MODULE;
-	static const double IA_MODULE;
-	static const double VD_CB;
-	static const double ID_CB;
+
+	static const double VD_MODULE; // V
+	static const double VD_SLOPE;  // V/module
+	static const double ID_0;      // A
+	static const double ID_MODULE; // A/module
+
+	static const double VA_MODULE; // V
+	static const double VA_SLOPE;  // V/module
+	static const double IA_0;      // A
+	static const double IA_MODULE; // A/module
+
+	static const double VD_CB;  // V
+	static const double ID_CB;  // A
 
 public:
 	CPower();
