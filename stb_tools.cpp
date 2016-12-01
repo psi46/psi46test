@@ -117,7 +117,11 @@ void CPower::ModPon(CModType mod)
 			if (PGOn[grp]) return;
 
 			// switch off all active power groups
-			for (int gi=0; gi<6; gi++) if (PGOn[gi]) tb.stb_Poff(gi);
+			for (int gi=0; gi<6; gi++) if (PGOn[gi])
+			{
+				tb.stb_Poff(gi);
+				PGOn[gi] = false;
+			}
 			
 			// switch on
 			int grpsize = mod.Get().powerGrpSize;
@@ -145,7 +149,7 @@ void CPower::ModPon(CModType mod)
 						tb.stb_SetID(pgrp, ID_0      + ID_MODULE*grpsize);
 						tb.stb_SetVA(pgrp, VA_MODULE + VA_SLOPE*grpsize);
 						tb.stb_SetIA(pgrp, IA_0      + IA_MODULE*grpsize);
-						tb.stb_Pon(grp);
+						tb.stb_Pon(pgrp);
 						PGOn[pgrp] = true;
 						tb.mDelay(50);
 					}

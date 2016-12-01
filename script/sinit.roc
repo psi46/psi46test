@@ -1,0 +1,4 @@
+stbena
+init
+resoff
+flush

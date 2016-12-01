@@ -300,7 +300,7 @@ void CModule::InitROC()
 	else
 	{ // PSI46dig
 		tb.roc_SetDAC(  1,  10);    // Vdig
-		tb.roc_SetDAC(  2,  70);
+		tb.roc_SetDAC(  2,  40);
 		tb.roc_SetDAC(  3,  30);    // Vsf
 		tb.roc_SetDAC(  4,  12);    // Vcomp
 
