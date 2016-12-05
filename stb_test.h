@@ -89,11 +89,16 @@ private:
 	void Test_Init();
 	bool Test_ConnectorBoard();
 	void _Test();
+
+	void RdaSingleTest(int sel, int hub, CModType m);
 public:
 	void Invalidate();
 	void Report();
 	void Test(const string &slotName);
+
 	void StartAllModules();
+	void StopAllModules();
+	void RdaTest(int sel = -1, int hub = -1);
 	void AssignHub(unsigned int sel, int hub = -1);
 
 	CModule* FindModuleBySelector(unsigned int sel);

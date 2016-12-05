@@ -19,20 +19,65 @@ void Sectortest(const char *name)
 }
 
 
+bool StartModules()
+{
+	if (!tb.stb_IsPresent())
+	{
+		printf("STB not present!\n");
+		return false;
+	}
+
+	if (slot.module.size() == 0)
+	{
+		printf("Run sectortest first!\n");
+		return false;
+	}
+
+	slot.StartAllModules();
+	tb.Flush();
+
+	return true;
+}
+
+
+void StopModules()
+{
+	if (!tb.stb_IsPresent())
+	{
+		printf("STB not present!\n");
+		return;
+	}
+	slot.StopAllModules();
+	tb.Flush();
+}
+
+
 void HvTest()
 {	PROFILING
-	if (tb.stb_IsPresent())
+	if (StartModules())
 	{
-		if (slot.module.size() == 0)
-		{
-			printf("Run sectortest first!\n");
-			return;
-		}
-		slot.StartAllModules();
 		tb.HVon();
 		for (int i = 0; i <= 6; i++) tb.stb_HVon(i);
 		tb.Flush();
 	}
+}
+
+
+void RdaTest(int sel, int hub)
+{
+	if (!tb.stb_IsPresent())
+	{
+		printf("STB not present!\n");
+		return;
+	}
+
+	if (sel >= 0 && slot.module.size() == 0)
+	{
+		printf("Run sectortest first!\n");
+		return;
+	}
+
+	slot.RdaTest(sel, hub);
 }
 
 

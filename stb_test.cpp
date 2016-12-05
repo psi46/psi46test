@@ -1,5 +1,6 @@
 // stb_test.cpp
 
+#include "conio.h"
 #include "psi46test.h"
 #include "datastream.h"
 // #include "stb_tools.h"
@@ -1104,10 +1105,90 @@ void CSlot::StartAllModules()
 	{
 		power.ModPon(k->mod);
 		if (k->hub.IsValid())
+		{
 			printf(" %i(%i)", k->mod.Get().moduleConnector, k->hub.Get());
-		k->InitModule();
+			k->InitModule();
+		}
 	}
 	printf("\n");
+}
+
+
+void CSlot::StopAllModules()
+{
+	power.ModPoffAll();
+	power.PowerSave(false);
+}
+
+
+void CSlot::RdaSingleTest(int sel, int hub, CModType m)
+{
+	for (int r=0; r<16; r++)
+	{
+		m.SetRocAddr(r);
+		tb.roc_SetDAC(2, 0); // vana
+		tb.uDelay(100);
+	}
+	tb.mDelay(500);
+	printf("Sel:%2i   Hub:%2i   IA_lo: %3.0f mA", sel, hub, power.GetIA(m)*1000.0);
+
+	for (int r=0; r<16; r++)
+	{
+		m.SetRocAddr(r);
+		tb.roc_SetDAC(2, 40); // vana
+		tb.uDelay(100);
+	}
+	tb.mDelay(500);
+	printf("  IA_hi: %3.0f mA\n", power.GetIA(m)*1000.0);
+}
+
+
+void CSlot::RdaTest(int sel, int hub)
+{
+	if (sel >= 0)
+	{
+		CModType m = sel;
+
+		if (hub < 0)
+		{
+			list<CModule>::iterator k;
+			for (k = module.begin(); k != module.end(); k++)
+			{
+				if (k->mod.GetSel() == sel && k->hub.IsValid())
+				{
+					hub = k->hub;
+					break;
+				}
+			}
+			if (hub < 0) return;
+		}
+
+		char ch = 0;
+		m.SetHubAddr(hub);
+		do
+		{
+			RdaSingleTest(sel, hub, m);
+			ch = getch();
+		} while (ch != 27);
+	}
+	else
+	{
+		char ch = 0;
+		list<CModule>::iterator k;
+		for (k = module.begin(); k != module.end(); k++)
+		{
+			if (k->hub.IsValid())
+			{
+				k->mod.SetHubAddr(k->hub);
+				do
+				{
+					RdaSingleTest(k->mod.GetSel(), k->hub, k->mod);
+					ch = getch();
+				} while(ch == 'r');
+			}
+			if (ch == 27) break;
+		}
+	}
 }
 
 

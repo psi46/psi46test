@@ -285,19 +285,50 @@ CMD_PROC(shv)
 }
 
 
+CMD_PROC(smodon)
+{
+	stb::StartModules();
+}
+
+
+CMD_PROC(smodoff)
+{
+	stb::StopModules();
+}
+
+
+CMD_PROC(srda) // [<sel> [<hub>]]
+{
+	tb.Sig_SetLCDS();  // ROC TOUT is module RDA
+	tb.SignalProbeD1(PROBE_SDA_SEND); // trigger signal on D1
+	tb.SignalProbeA1(PROBEA_SDA);     // data sent to module
+	tb.SignalProbeA2(PROBEA_TOUT);    // data from module
+
+	int sel, hub;
+	if (PAR_IS_INT(sel, 0, 38))
+	{
+		if (PAR_IS_INT(hub, 0, 31))
+			stb::RdaTest(sel, hub);
+		else
+			stb::RdaTest(sel);
+	}
+	else stb::RdaTest();
+}
+
+
 CMD_PROC(shubdef)
 {
-	int hub, id_min, id_max;
-	PAR_RANGE(id_min, id_max, 0, 41)
+	int hub, sel_min, sel_max;
+	PAR_RANGE(sel_min, sel_max, 0, 41)
 	PAR_INT(hub, 0, 31)
-	for (int i=id_min; i<=id_max; i++) stb::AssignHub(i, hub);
+	for (int i=sel_min; i<=sel_max; i++) stb::AssignHub(i, hub);
 }
 
 CMD_PROC(shubundef)
 {
-	int id_min, id_max;
-	PAR_RANGE(id_min, id_max, 0, 41)
-	for (int i=id_min; i<=id_max; i++) stb::AssignHub(i);
+	int sel_min, sel_max;
+	PAR_RANGE(sel_min, sel_max, 0, 41)
+	for (int i=sel_min; i<=sel_max; i++) stb::AssignHub(i);
 }
 
 CMD_PROC(sdelayscan)
