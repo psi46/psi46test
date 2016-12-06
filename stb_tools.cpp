@@ -105,7 +105,7 @@ CPower::CPower()
 
 
 
-void CPower::ModPon(CModType mod)
+void CPower::ModPon(CModType mod, int msDelay)
 {
 	int grp = mod.Get().powerGrp;
 
@@ -165,7 +165,7 @@ void CPower::ModPon(CModType mod)
 		tb.SetIA(IA_0      + IA_MODULE);
 		tb.Pon();
 	}
-	tb.mDelay(400);
+	tb.mDelay(msDelay);
 }
 
 

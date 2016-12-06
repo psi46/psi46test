@@ -48,7 +48,11 @@ const char* SigSdata::Report()
 		if (lvlErr) return s;
 	}
 
-	if (idle.IsValid() && idle) return " { LOS }";
+	if (idle.IsValid())
+	{
+		if (idle.Get() == 1) return " { LOS }";
+		if (idle.Get() == 2) return " {ASYNC}";
+	}
 
 	if (quality.IsValid()) { sprintf(s, " {%3.0f%% }", quality*100.0); return s; }
 
@@ -274,8 +278,8 @@ void CModule::InitROC()
 { PROFILING
 	if (mod.Get().roc == stb::MC::PROC600)
 	{ // PROC600
-		tb.roc_SetDAC(  1,  10); // Vdig
-		tb.roc_SetDAC(  2,  50);
+		tb.roc_SetDAC(  1,  10);    // Vdig
+		tb.roc_SetDAC(  2,  35);    // Vana
 		tb.roc_SetDAC(  3,   8);    // *new* Iph (new 4 bit, previously Vsf)
 		tb.roc_SetDAC(  4,  12);    // Vcomp
 
@@ -301,7 +305,7 @@ void CModule::InitROC()
 	else
 	{ // PSI46dig
 		tb.roc_SetDAC(  1,  10);    // Vdig
-		tb.roc_SetDAC(  2,  40);
+		tb.roc_SetDAC(  2,  30);    // Vana
 		tb.roc_SetDAC(  3,  30);    // Vsf
 		tb.roc_SetDAC(  4,  12);    // Vcomp
 
@@ -461,7 +465,7 @@ void CModule::Test_Sdata()
 	{
 		if (transCount[sd] == 10) // transitions detected ?
 		{
-			sdata[sd].idle = 3; // assume async
+			sdata[sd].idle = 2; // assume async
 			for (int i=0; i<8; i++)
 			{
 				if ((patternOr[sd] & 3) == 0) // gap found XXXXXX..
@@ -1103,10 +1107,11 @@ void CSlot::StartAllModules()
 	list<CModule>::iterator k;
 	for (k = module.begin(); k != module.end(); k++)
 	{
-		power.ModPon(k->mod);
+		power.ModPon(k->mod, 50);
 		if (k->hub.IsValid())
 		{
 			printf(" %i(%i)", k->mod.Get().moduleConnector, k->hub.Get());
+			tb.mDelay(300);
 			k->InitModule();
 		}
 	}
@@ -1135,7 +1140,7 @@ void CSlot::RdaSingleTest(int sel, int hub, CModType m)
 	for (int r=0; r<16; r++)
 	{
 		m.SetRocAddr(r);
-		tb.roc_SetDAC(2, 40); // vana
+		tb.roc_SetDAC(2, 30); // vana
 		tb.uDelay(100);
 	}
 	tb.mDelay(500);

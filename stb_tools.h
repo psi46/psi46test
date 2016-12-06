@@ -93,7 +93,7 @@ public:
 	CPower();
 	void PowerSave(bool on) { singleMode = on; }
 
-	void ModPon(CModType mod);
+	void ModPon(CModType mod, int msDelay = 400);
 	void ModPoff(CModType mod);
 	void ModPoffAll();
 	void CbPon();
