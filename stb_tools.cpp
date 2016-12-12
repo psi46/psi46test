@@ -204,7 +204,7 @@ void CPower::CbPon()
 		tb.SetVD(VD_CB);
 		tb.SetID(ID_CB);
 		tb.Pon();
-		tb.mDelay(800);
+		tb.mDelay(500);
 	}
 }
 

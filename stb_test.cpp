@@ -376,6 +376,7 @@ void CModule::InitModule(bool forceAllHubs)
 
 bool CModule::Test_PowerOn()
 { PROFILING
+	tb.ResetOff();
 
 	if (mod.Get().powerGrp >= 0)
 	{
@@ -384,9 +385,6 @@ bool CModule::Test_PowerOn()
 	} else Log.section("PON");
 
 	power.ModPon(mod);
-	tb.ResetOff();
-	tb.uDelay(100);
-
 	vd_pon = power.GetVD(mod);
 	id_pon = power.GetID(mod);
 	va_pon = power.GetVA(mod);
@@ -985,11 +983,54 @@ bool CSlot::Test_ConnectorBoard()
 }
 
 
+void CSlot::Test_Signal()
+{ PROFILING
+	// show CLK signal
+	printf("CLK");
+	tb.SignalProbeD1(PROBE_CLK);
+	tb.SignalProbeA1(PROBEA_CLK);
+	tb.mDelay(2000);
+
+	// show SDA signal
+	printf(" SDA");
+	tb.SignalProbeD1(PROBE_SDA_SEND);
+	tb.SignalProbeA1(PROBEA_SDA);
+	tb.mDelay(1000);
+	tb.tbm_Enable(true);
+	tb.mod_Addr(0);
+	tb.roc_I2cAddr(0);
+	for (int i=0; i<100; i++)
+	{
+		tb.roc_SetDAC(30, i);
+		tb.mDelay(20);
+	}
+
+	// show CTR signal
+	printf(" CTR");
+	tb.Pg_Stop();
+	tb.Pg_SetCmd(0, PG_CAL+PG_SYNC+5);
+	tb.Pg_SetCmd(1, PG_TRG);
+	tb.SignalProbeD1(PROBE_PG_SYNC);
+	tb.SignalProbeA1(PROBEA_CTR);
+	for (int i=0; i<100; i++)
+	{
+		tb.Pg_Single();
+		tb.mDelay(20);
+	}
+
+	tb.SignalProbeD1(PROBE_OFF);
+	tb.SignalProbeA1(PROBEA_OFF);
+
+	printf("\n");
+}
+
+
 void CSlot::_Test()
 {	PROFILING
 	Test_Init();
 	if (Test_ConnectorBoard())
 	{
+		Test_Signal();
 		printf("HUB:");
 		
 		list<CModule>::iterator i;
@@ -1102,12 +1143,11 @@ void CSlot::StartAllModules()
 {
 	power.PowerSave(false);
 	power.CbPon();
-	tb.mDelay(500);
 	printf("Module init:");
 	list<CModule>::iterator k;
 	for (k = module.begin(); k != module.end(); k++)
 	{
-		power.ModPon(k->mod, 50);
+		power.ModPon(k->mod, 30);
 		if (k->hub.IsValid())
 		{
 			printf(" %i(%i)", k->mod.Get().moduleConnector, k->hub.Get());

@@ -88,6 +88,7 @@ private:
 
 	void Test_Init();
 	bool Test_ConnectorBoard();
+	void Test_Signal();
 	void _Test();
 
 	void RdaSingleTest(int sel, int hub, CModType m);

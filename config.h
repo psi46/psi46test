@@ -4,20 +4,20 @@
 
 // === psi46test version ====================================================
 
-#define TITLE        "PROC600V2 ROC/Wafer Tester"
+#define TITLE        "psi46test Sector Tester"
 #define VERSION      "V2.0_stb"
-#define TIMESTAMP    "201611101016"
+#define TIMESTAMP    "20161207"
 
 
 // === set profiling options ================================================
 // if defined a profiling infos are collected during execution
 // and a report is created after termination (only Windows)
 
-#define ENABLE_PROFILING
+// #define ENABLE_PROFILING
 
 // add profiling infos for rpc calls (ENABLE_PROFILING must be defined)
 
-#define ENABLE_RPC_PROFILING
+// #define ENABLE_RPC_PROFILING
 
 
 // === thread safe CTestboard class =========================================
