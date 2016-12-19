@@ -13,5 +13,6 @@ void HvTest();
 void RdaTest(int sel = -1, int hub = -1);
 void AssignHub(unsigned int sel, int hub = -1);
 void DelayScan(unsigned int sel, unsigned int group);
+void PhaseScan(unsigned int sel, int hub);
 
 }

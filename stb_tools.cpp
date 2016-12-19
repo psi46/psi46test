@@ -83,7 +83,7 @@ void CModType::SetRocAddr(int roc)
 	bool PGOn[6];
 */
 
-const double CPower::VD_MODULE = 2.7;  // V
+const double CPower::VD_MODULE = 2.8;  // V
 const double CPower::VD_SLOPE  = 0.07; // V/module
 const double CPower::ID_0      = 0.2;  // A
 const double CPower::ID_MODULE = 0.6;  // A/module

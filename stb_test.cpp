@@ -150,7 +150,8 @@ bool CModule::Report()
 
 void CModule::SetTBM_Default()
 {
-	tbm_phase0 = tbm_phase1 = 0x24; // 001_001_00  160 MHz, 400 MHz
+	// default phase:  001_001_00  160 MHz, 400 MHz
+	tbm_phase0 = tbm_phase1 = 0x24;
 
 	if (mod.Get().tbm == MC::TBM10)
 	{
@@ -160,7 +161,8 @@ void CModule::SetTBM_Default()
 	else
 	{
 		for (int i=0; i<4; i++)
-			tbm_delay[i] = 0xe4; // 1_1_100_100
+//			tbm_delay[i] = 0xe4; // 1_1_100_100
+			tbm_delay[i] = 0xed; // 1_1_101_101
 	}
 }
 
@@ -169,8 +171,12 @@ void CModule::SetTBM_Phase160(unsigned int ph160, unsigned int tbm)
 {
 	if (ph160 > 7) ph160 = 7;
 
-	if (tbm == 0) tbm_phase0 = (tbm_phase0 & 0x1f) + (ph160 << 5);
-	else          tbm_phase1 = (tbm_phase1 & 0x1f) + (ph160 << 5);
+//	if (tbm == 0) tbm_phase0 = (tbm_phase0 & 0xc7) + (ph160 << 3);
+//	else          tbm_phase1 = (tbm_phase1 & 0xc7) + (ph160 << 3);
+
+	// according to pxar and TBM doc (Ed Bartz) ddd...00
+	if (tbm == 0) tbm_phase0 = (tbm_phase0 & 0x1c) + (ph160 << 5);
+	else          tbm_phase1 = (tbm_phase1 & 0x1c) + (ph160 << 5);
 }
 
 
@@ -178,8 +184,12 @@ void CModule::SetTBM_Phase400(unsigned int ph400, unsigned int tbm)
 {
 	if (ph400 > 7) ph400 = 7;
 
-	if (tbm == 0) tbm_phase0 = (tbm_phase0 & 0xe3) + (ph400 << 2);
-	else          tbm_phase1 = (tbm_phase1 & 0xe3) + (ph400 << 2);
+//	if (tbm == 0) tbm_phase0 = (tbm_phase0 & 0xf8) + ph400;
+//	else          tbm_phase1 = (tbm_phase1 & 0xf8) + ph400;
+
+	// according to pxar and TBM doc (Ed Bartz) ...ddd00
+	if (tbm == 0) tbm_phase0 = (tbm_phase0 & 0xe0) + (ph400 << 2);
+	else          tbm_phase1 = (tbm_phase1 & 0xe0) + (ph400 << 2);
 }
 
 
@@ -544,6 +554,8 @@ void CModule::Test_Sdata()
 bool CModule::Find_HubAddress(bool debug)
 { PROFILING
 	int ch, nCh, i, roc, nRoc, hub_id, hub_id_incr;
+	int test_value[16];
+
 	// set up data pipe
 	CDataProcessing data(mod);
 	nCh = mod.Get().nSdata*2;
@@ -568,7 +580,8 @@ bool CModule::Find_HubAddress(bool debug)
 		for (roc=0; roc<16; roc++)
 		{
 			mod.SetRocAddr(roc);
-			tb.roc_SetDAC(30, 10+roc);
+			test_value[roc] = rand() % 256;
+			tb.roc_SetDAC(30, test_value[roc]);
 		}
 
 		data.TakeData(32);
@@ -583,7 +596,7 @@ bool CModule::Find_HubAddress(bool debug)
 			{
 				int vRoc = value >> 12;
 				value &= 0xff;
-				if (vRoc == roc && value == (10+roc)) nGood++;
+				if (vRoc == roc && value == test_value[roc]) nGood++;
 			}
 			roc++;
 		}
@@ -737,6 +750,81 @@ void CModule::DelayScan(unsigned int group)
 }
 
 
+void CModule::PhaseScan()
+{
+	if (mod.Get().tbm == MC::TBM10)
+	{
+/*		int ph160, ph400;
+		// default 0_0_000_000
+		SetTBM_Phase160(ph160, 0);
+		SetTBM_Phase400(ph400, 0);
+		SetTBM_Phase160(ph160, 1);
+		SetTBM_Phase400(ph400, 1);
+*/
+	}
+	else
+	{
+		int ch, nCh, i, roc, nRoc;
+		// set up data pipe
+		CDataProcessing data(mod);
+		nCh = mod.Get().nSdata*2;
+		CReadback rdb[8];
+		for (ch=0; ch<nCh; ch++) data.AddPipe(ch, rdb[ch]);
+
+		int ph160, ph400;
+		std::string map[8];
+		for (int i=0; i<8; i++) map[i] = "........";
+
+		for (ph160 = 0; ph160 < 8; ph160++) for (ph400 = 0; ph400 < 8; ph400++)
+		{
+			// default 1_1_100_100
+			SetTBM_Phase160(ph160);
+			SetTBM_Phase400(ph400);
+			mod.SetHubAddr(hub);
+			UpdateTBM();
+			for (i=0; i<8; i++) rdb[i].Clear();
+
+			// readback select "last dac" for all rocs
+			for (roc=0; roc<16; roc++) { mod.SetRocAddr(roc); tb.roc_SetDAC(255, 0); }
+
+			// write (10+rocAddr) to register 30
+			for (roc=0; roc<16; roc++)
+			{
+				mod.SetRocAddr(roc);
+				tb.roc_SetDAC(30, 10+roc);
+			}
+
+			data.TakeData(32);
+
+			nRoc = 8/mod.Get().nSdata;
+			roc = 0;
+			int nGood = 0;
+			for (ch = 0; ch < nCh; ch++) for (i=0; i<nRoc; i++)
+			{
+				int value = rdb[ch][i];
+				if (value >= 0)
+				{
+					int vRoc = value >> 12;
+					value &= 0xff;
+					if (vRoc == roc && value == (10+roc)) nGood++;
+				}
+				roc++;
+			}
+			if (nGood >=4) map[ph160][ph400] = 'X';
+		}
+		Log.section("PHASE_SCAN", false);
+		Log.printf("sel:%i; hub:%i\n", mod.GetSel(), hub.Get());
+		Log.puts(" -ph400->\n");
+		for (int i=0; i<8; i++)
+		{
+			printf("%s\n", map[i].c_str());
+			Log.printf(" %s\n", map[i].c_str());
+		}
+		SetTBM_Default();
+	}
+}
+
+
 void CModule::Test()
 { PROFILING
 	Invalidate();
@@ -745,7 +833,21 @@ void CModule::Test()
 	{
 		Test_Init();
 		Test_Sdata();
+		// default 1 1
+		
 		Find_HubAddress(false);
+
+		static int testphase[] = {2, 3, 4, 5, 6, 7, 0};
+		for (int i=0; i<8; i++)
+		{
+			if (hub.IsValid()) break;
+
+			SetTBM_Phase160(testphase[i]);
+			SetTBM_Phase400(testphase[i]);
+			InitModule(true);
+		Find_HubAddress(false);
+		}
+
 		if (hub.IsValid())
 		{
 			mod.SetHubAddr(hub);
@@ -1266,6 +1368,20 @@ void CSlot::DelayScan(unsigned int sel, unsigned int group)
 		k->DelayScan(group);
 		k->SetTBM_Default();
 		power.CbPoff();
+	}
+	tb.Flush();
+}
+
+
+void CSlot::PhaseScan(unsigned int sel, int hub)
+{
+	CModule *k = FindModuleBySelector(sel);
+	if (k)
+	{
+		k->hub = hub;
+		k->InitModule();
+		k->PhaseScan();
+		k->SetTBM_Default();
 	}
 	tb.Flush();
 }

@@ -51,3 +51,4 @@ CMD_REG(srda, "[<sel> [<hub>]]", "RDA read back signal test D1=trg, A1=SDA, A2=R
 CMD_REG(shubdef, "<sel range> <hub>", "Set default hub addr for module id")
 CMD_REG(shubundef, "<sel range>", "Set hub addr for module id as undefined")
 CMD_REG(sdelayscan, "<sel> <port>", "Delay scan for ROC data port")
+CMD_REG(phasescan, "<sel> <hub>", "Phase scan")

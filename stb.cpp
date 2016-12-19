@@ -93,6 +93,12 @@ void DelayScan(unsigned int sel, unsigned int group)
 }
 
 
+void PhaseScan(unsigned int sel, int hub)
+{
+	slot.PhaseScan(sel, hub);
+}
+
+
 } // namespace stb
 
 

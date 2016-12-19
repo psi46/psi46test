@@ -68,6 +68,7 @@ public:
 	void Test();
 
 	void DelayScan(unsigned int group);
+	void PhaseScan();
 };
 
 
@@ -104,6 +105,7 @@ public:
 
 	CModule* FindModuleBySelector(unsigned int sel);
 	void DelayScan(unsigned int sel, unsigned int group);
+	void PhaseScan(unsigned int sel, int hub);
 };
 
 

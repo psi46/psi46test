@@ -230,7 +230,7 @@ CMD_PROC(shvoff)
 CMD_PROC(sselsdata)
 {
 	int ch;
-	PAR_INT(ch, 0, 15);
+	PAR_INT(ch, 0, 41);
 
 	tb.stb_SetSdata((uint8_t)ch);
 	DO_FLUSH
@@ -338,4 +338,13 @@ CMD_PROC(sdelayscan)
 	PAR_INT(group, 0, 7);
 
 	stb::DelayScan(sel, group);
+}
+
+CMD_PROC(phasescan)
+{
+	int sel, hub;
+	PAR_INT(sel, 0, 41)
+	PAR_INT(hub, 0, 31);
+
+	stb::PhaseScan(sel, hub);
 }
