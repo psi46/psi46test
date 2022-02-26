@@ -4,6 +4,7 @@
 
 #include <string>
 #include <list>
+#include <intrin.h>
 #include "config.h"
 
 // MSVC: __FUNCTION__ __FUNCDNAME__ __FUNCSIG__

@@ -6,40 +6,40 @@
 
 const CColor COLOR_TABLE[SIZE_OF_COLORTABLE] =
 {
-	{ 0.0, 0.0, 0.0 },  //  0 black
-	{ 0.5, 0.5, 0.5 },  //  1 dark gray
-	{ .75, .75, .75 },  //  2 light gray
-	{ 1.0, 1.0, 1.0 },  //  3 white
+	{ 0.0f, 0.0f, 0.0f },  //  0 black
+	{ 0.5f, 0.5f, 0.5f },  //  1 dark gray
+	{ .75f, .75f, .75f },  //  2 light gray
+	{ 1.0f, 1.0f, 1.0f },  //  3 white
 
-	{ .75, 0.0, 0.0 },  //  4 dark red
-	{ 1.0, 0.0, 0.0 },  //  5 red
-	{ 1.0, 0.4, 0.5 },  //  6 light red
+	{ .75f, 0.0f, 0.0f },  //  4 dark red
+	{ 1.0f, 0.0f, 0.0f },  //  5 red
+	{ 1.0f, 0.4f, 0.5f },  //  6 light red
 
-	{ 0.0, 0.5, 0.0 },  //  7 dark green
-	{ 0.0, .75, 0.0 },  //  8 green
-	{ 0.0, 1.0, 0.0 },  //  9 green
-	{ .75, 1.0, 0.0 },  // 10 yellow green
-	{ 0.7, 1.0, 0.7 },  // 11 light green
+	{ 0.0f, 0.5f, 0.0f },  //  7 dark green
+	{ 0.0f, .75f, 0.0f },  //  8 green
+	{ 0.0f, 1.0f, 0.0f },  //  9 green
+	{ .75f, 1.0f, 0.0f },  // 10 yellow green
+	{ 0.7f, 1.0f, 0.7f },  // 11 light green
 
-	{ 0.0, 0.5, 0.5 },  // 12 dark blue green
+	{ 0.0f, 0.5f, 0.5f },  // 12 dark blue green
 
-	{ 0.0, 0.0, 1.0 },  // 13 dark blue
-	{ .25, 0.5, 1.0 },  // 14 blue
-	{ 0.0, .75, 1.0 },  // 15 blue
-	{ 0.5, .75, 1.0 },  // 16 blue
-	{ 0.0, 1.0, 1.0 },  // 17 light blue
-	{ 0.5, 1.0, 1.0 },  // 18 light blue
+	{ 0.0f, 0.0f, 1.0f },  // 13 dark blue
+	{ .25f, 0.5f, 1.0f },  // 14 blue
+	{ 0.0f, .75f, 1.0f },  // 15 blue
+	{ 0.5f, .75f, 1.0f },  // 16 blue
+	{ 0.0f, 1.0f, 1.0f },  // 17 light blue
+	{ 0.5f, 1.0f, 1.0f },  // 18 light blue
 
-	{ 0.5, .25, 0.0 },  // 19 dark brown
-	{ .75, 0.5, 0.0 },  // 20 brown
-	{ 1.0, 0.5, .25 },  // 21 orange
-	{ 1.0, .75, 0.5 },  // 22 light orange
-	{ 1.0, 1.0, 0.0 },  // 23 yellow
-	{ 1.0, 1.0, .75 },  // 24 light yellow
+	{ 0.5f, .25f, 0.0f },  // 19 dark brown
+	{ .75f, 0.5f, 0.0f },  // 20 brown
+	{ 1.0f, 0.5f, .25f },  // 21 orange
+	{ 1.0f, .75f, 0.5f },  // 22 light orange
+	{ 1.0f, 1.0f, 0.0f },  // 23 yellow
+	{ 1.0f, 1.0f, .75f },  // 24 light yellow
 
-	{ 0.5, 0.0, 0.5 },  // 25 dark red blue
-	{ 1.0, 0.0, 1.0 },  // 26 red blue
-	{ 1.0, .75, 1.0 }   // 27 light red blue
+	{ 0.5f, 0.0f, 0.5f },  // 25 dark red blue
+	{ 1.0f, 0.0f, 1.0f },  // 26 red blue
+	{ 1.0f, .75f, 1.0f }   // 27 light red blue
 };
 
 

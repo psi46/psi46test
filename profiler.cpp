@@ -61,7 +61,7 @@ void Watchpoint::Report(const char *filename)
 
 	// --- print title
 	fprintf(f, "%-*s %s\n", width+1, "Function", "Counts    Total ms");
-	for (int k = 0; k < width+20; k++) fputc('-', f);
+	for (unsigned int k = 0; k < width+20; k++) fputc('-', f);
 	fprintf(f, "\n");
 
 	// --- print list
